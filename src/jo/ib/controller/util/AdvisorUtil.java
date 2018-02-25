@@ -61,9 +61,9 @@ public class AdvisorUtil {
             // reading group
             case 2:
                 if (line.startsWith("<name>")) {
-                    group.name(getVal(line));
+                    group.setName(getVal(line));
                 } else if (line.startsWith("<defaultMethod>")) {
-                    group.defaultMethod(Method.valueOf(getVal(line)));
+                    group.setDefaultMethod(Method.valueOf(getVal(line)));
                 } else if (line.startsWith("<ListOfAccts")) {
                     state = 3;
                 } else if (line.equals("</Group>")) {
@@ -132,10 +132,10 @@ public class AdvisorUtil {
             // reading Profile
             case 2:
                 if (line.startsWith("<name>")) {
-                    profile.name(getVal(line));
+                    profile.setName(getVal(line));
                 } else if (line.startsWith("<type>")) {
                     int i = Integer.parseInt(getVal(line));
-                    profile.type(Type.get(i));
+                    profile.setType(Type.get(i));
                 } else if (line.startsWith("<ListOfAllocations")) {
                     state = 3;
                 } else if (line.equals("</AllocationProfile>")) {
@@ -161,13 +161,13 @@ public class AdvisorUtil {
             // reading Allocation
             case 4:
                 if (line.startsWith("<acct>")) {
-                    alloc.account(getVal(line));
+                    alloc.setAccount(getVal(line));
                 } else if (line.startsWith("<amount>")) {
                     alloc.amount(getVal(line));
                 } else if (line.startsWith("<posEff>")) {
                     // skip this
                 } else if (line.equals("</Allocation>")) {
-                    profile.add(alloc);
+                    profile.addAllocation(alloc);
                     state = 3;
                 } else {
                     err(line);
@@ -222,9 +222,9 @@ public class AdvisorUtil {
             // reading Alias
             case 2:
                 if (line.startsWith("<account>")) {
-                    alias.account(getVal(line));
+                    alias.setAccount(getVal(line));
                 } else if (line.startsWith("<alias>")) {
-                    alias.alias(getVal(line));
+                    alias.setAlias(getVal(line));
                 } else if (line.equals("</AccountAlias>")) {
                     list.add(alias);
                     state = 1;
@@ -254,10 +254,10 @@ public class AdvisorUtil {
         buf.append("<ListOfGroups>\n");
         for (Group group : groups) {
             buf.append("<Group>\n");
-            buf.append(String.format("<name>%s</name>\n", group.name()));
-            buf.append(String.format("<defaultMethod>%s</defaultMethod>\n", group.defaultMethod()));
+            buf.append(String.format("<name>%s</name>\n", group.getName()));
+            buf.append(String.format("<defaultMethod>%s</defaultMethod>\n", group.getDefaultMethod()));
             buf.append("<ListOfAccts varName=\"list\"\n>");
-            for (String acct : group.accounts()) {
+            for (String acct : group.getAccounts()) {
                 buf.append(String.format("<String>%s</String>\n", acct));
             }
             buf.append("</ListOfAccts>\n");
@@ -273,13 +273,13 @@ public class AdvisorUtil {
         buf.append("<ListOfProfiles>\n");
         for (Profile profile : profiles) {
             buf.append("<Profile>\n");
-            buf.append(String.format("<name>%s</name>\n", profile.name()));
-            buf.append(String.format("<type>%s</type>\n", profile.type().ordinal()));
+            buf.append(String.format("<name>%s</name>\n", profile.getName()));
+            buf.append(String.format("<type>%s</type>\n", profile.getType().ordinal()));
             buf.append("<ListOfAllocations varName=\"listOfAllocations\">\n");
-            for (Allocation alloc : profile.allocations()) {
+            for (Allocation alloc : profile.getAllocations()) {
                 buf.append("<Allocation>\n");
-                buf.append(String.format("<acct>%s</acct>\n", alloc.account()));
-                buf.append(String.format("<amount>%s</amount>\n", alloc.amount()));
+                buf.append(String.format("<acct>%s</acct>\n", alloc.getAccount()));
+                buf.append(String.format("<amount>%s</amount>\n", alloc.getAmount()));
                 buf.append("</Allocation>\n");
             }
             buf.append("</ListOfAllocations>\n");

@@ -15,49 +15,41 @@ public class Position {
     private double unrealPnl;
     private double realPnl;
 
-    public Contract contract() {
+    public Contract getContract() {
         return this.contract;
     }
 
-    public int conid() {
+    public int getConid() {
         return this.contract.conid();
     }
 
-    public double averageCost() {
+    public double getAverageCost() {
         return this.averageCost;
     }
 
-    public double marketPrice() {
+    public double getMarketPrice() {
         return this.marketPrice;
     }
 
-    public double marketValue() {
+    public double getMarketValue() {
         return this.marketValue;
     }
 
-    public double realPnl() {
+    public double getRealPnl() {
         return this.realPnl;
     }
 
-    public double unrealPnl() {
+    public double getUnrealPnl() {
         return this.unrealPnl;
     }
 
-    public double position() {
+    public double getPosition() {
         return this.position;
     }
 
-    public String account() {
+    public String getAccount() {
         return this.account;
     }
-
-    // public void account(String v) { this.account = v;}
-    // public void averageCost(double v) { this.averageCost = v;}
-    // public void marketPrice(double v) { this.marketPrice = v;}
-    // public void marketValue(double v) { this.marketValue = v;}
-    // public void position(int v) { this.position = v;}
-    // public void realPnl(double v) { this.realPnl = v;}
-    // public void unrealPnl(double v) { this.unrealPnl = v;}
 
     public Position(Contract contract, String account, double position, double marketPrice, double marketValue, double averageCost, double unrealPnl, double realPnl) {
         this.contract = contract;

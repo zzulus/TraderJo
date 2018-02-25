@@ -20,35 +20,35 @@ public class Bar {
     private final long volume;
     private final int count;
 
-    public long time() {
+    public long getTime() {
         return this.time;
     }
 
-    public double high() {
+    public double getHigh() {
         return this.high;
     }
 
-    public double low() {
+    public double getLow() {
         return this.low;
     }
 
-    public double open() {
+    public double getOpen() {
         return this.open;
     }
 
-    public double close() {
+    public double getClose() {
         return this.close;
     }
 
-    public double wap() {
+    public double getWap() {
         return this.wap;
     }
 
-    public long volume() {
+    public long getVolume() {
         return this.volume;
     }
 
-    public int count() {
+    public int getCount() {
         return this.count;
     }
 

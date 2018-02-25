@@ -16,40 +16,40 @@ public class Profile {
     private Type type;
     private List<Allocation> allocations = new ArrayList<Allocation>();
 
-    public String name() {
+    public String getName() {
         return this.name;
     }
 
-    public Type type() {
+    public Type getType() {
         return this.type;
     }
 
-    public List<Allocation> allocations() {
+    public List<Allocation> getAllocations() {
         return this.allocations;
     }
 
-    public void name(String v) {
-        this.name = v;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void type(Type v) {
-        this.type = v;
+    public void setType(Type type) {
+        this.type = type;
     }
 
-    public void add(Allocation v) {
-        this.allocations.add(v);
+    public void addAllocation(Allocation allocation) {
+        this.allocations.add(allocation);
     }
 
-    public void setAllocations(String val) {
+    public void setAllocations(String allocationsStr) {
         this.allocations.clear();
 
-        StringTokenizer st = new StringTokenizer(val, ", ");
+        StringTokenizer st = new StringTokenizer(allocationsStr, ", ");
         while (st.hasMoreTokens()) {
             String tok = st.nextToken();
             StringTokenizer st2 = new StringTokenizer(tok, SEPARATOR);
 
             Allocation alloc = new Allocation();
-            alloc.account(st2.nextToken());
+            alloc.setAccount(st2.nextToken());
             alloc.amount(st2.nextToken());
 
             this.allocations.add(alloc);
@@ -68,20 +68,20 @@ public class Profile {
         private String account;
         private String amount;
 
-        public String account() {
+        public String getAccount() {
             return this.account;
         }
 
-        public String amount() {
+        public String getAmount() {
             return this.amount;
         }
 
-        public void account(String v) {
-            this.account = v;
+        public void setAccount(String account) {
+            this.account = account;
         }
 
-        public void amount(String v) {
-            this.amount = v;
+        public void amount(String amount) {
+            this.amount = amount;
         }
 
         @Override

@@ -1,9 +1,7 @@
-package jo.ib.controller.model;
+package jo.ib.controller.handler;
 
 import com.ib.client.TickType;
 import com.ib.client.Types.MktDataType;
-
-import jo.ib.controller.handler.ITopMktDataHandler;
 
 public class TopMktDataAdapter implements ITopMktDataHandler {
     @Override

@@ -7,19 +7,19 @@ public class Alias {
     private String account;
     private String alias;
 
-    public String alias() {
+    public String getAlias() {
         return alias;
     }
 
-    public String account() {
+    public String getAccount() {
         return account;
     }
 
-    public void alias(String v) {
+    public void setAlias(String v) {
         alias = v;
     }
 
-    public void account(String v) {
+    public void setAccount(String v) {
         account = v;
     }
 

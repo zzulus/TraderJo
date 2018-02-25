@@ -4,6 +4,7 @@
 package jo.ib.controller.model;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import com.ib.client.Types.Method;
@@ -11,26 +12,26 @@ import com.ib.client.Types.Method;
 public class Group {
     private String name;
     private Method defaultMethod;
-    private ArrayList<String> accounts = new ArrayList<String>();
+    private List<String> accounts = new ArrayList<String>();
 
-    public String name() {
+    public String getName() {
         return this.name;
     }
 
-    public Method defaultMethod() {
+    public Method getDefaultMethod() {
         return this.defaultMethod;
     }
 
-    public ArrayList<String> accounts() {
+    public List<String> getAccounts() {
         return this.accounts;
     }
 
-    public void name(String v) {
-        this.name = v;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void defaultMethod(Method v) {
-        this.defaultMethod = v;
+    public void setDefaultMethod(Method defaultMethod) {
+        this.defaultMethod = defaultMethod;
     }
 
     public void addAccount(String acct) {

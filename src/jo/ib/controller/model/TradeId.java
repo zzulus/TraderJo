@@ -7,11 +7,11 @@ public class TradeId {
     private String key;
     private String full;
 
-    public String key() {
+    public String getKey() {
         return this.key;
     }
 
-    public String full() {
+    public String getFull() {
         return this.full;
     }
 
