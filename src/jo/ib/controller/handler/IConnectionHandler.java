@@ -1,6 +1,6 @@
 package jo.ib.controller.handler;
 
-import java.util.ArrayList;
+import java.util.List;
 
 // ---------------------------------------- Constructor and Connection handling ----------------------------------------
 public interface IConnectionHandler {
@@ -8,7 +8,7 @@ public interface IConnectionHandler {
 
     void disconnected();
 
-    void accountList(ArrayList<String> list);
+    void accountList(List<String> accounts);
 
     void error(Exception e);
 

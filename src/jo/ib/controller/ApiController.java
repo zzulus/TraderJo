@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -42,7 +43,6 @@ import com.ib.client.Types.FundamentalType;
 import com.ib.client.Types.MktDataType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
-import com.ib.controller.ApiConnection.ILogger;
 
 import jo.ib.controller.handler.IAccountHandler;
 import jo.ib.controller.handler.IAccountSummaryHandler;
@@ -77,6 +77,7 @@ import jo.ib.controller.util.AdvisorUtil;
 import jo.ib.controller.util.ConcurrentHashSet;
 
 public class ApiController implements EWrapper {
+    // TODO WTF is that?
     private interface IInternalContractDetailsHandler {
         void contractDetails(ContractDetails data);
 
@@ -84,8 +85,10 @@ public class ApiController implements EWrapper {
     }
 
     private ApiConnection client;
-    private int reqId; // used for all requests except orders; designed not to conflict with orderId
-    private int orderId;
+
+    // used for all requests except orders; designed not to conflict with orderId
+    private AtomicInteger reqId = new AtomicInteger();
+    private AtomicInteger orderId = new AtomicInteger();
 
     private final IConnectionHandler connectionHandler;
     private ITradeReportHandler tradeReportHandler;
@@ -111,9 +114,10 @@ public class ApiController implements EWrapper {
     private final Map<Integer, IAccountUpdateMultiHandler> accountUpdateMultiMap = new HashMap<Integer, IAccountUpdateMultiHandler>();
     private final Map<Integer, ISecDefOptParamsReqHandler> secDefOptParamsReqMap = new HashMap<Integer, ISecDefOptParamsReqHandler>();
     private final Map<Integer, ISoftDollarTiersReqHandler> softDollarTiersReqMap = new HashMap<>();
+
     private boolean connected = false;
 
-    public ApiConnection client() {
+    public ApiConnection getClient() {
         return this.client;
     }
 
@@ -124,14 +128,14 @@ public class ApiController implements EWrapper {
 
     private void startMsgProcessingThread() {
         final EReaderSignal signal = new EJavaSignal();
-        final EReader reader = new EReader(client(), signal);
+        final EReader reader = new EReader(getClient(), signal);
 
         reader.start();
 
         new Thread() {
             @Override
             public void run() {
-                while (client().isConnected()) {
+                while (getClient().isConnected()) {
                     signal.waitForSignal();
                     try {
                         reader.processMsgs();
@@ -146,7 +150,6 @@ public class ApiController implements EWrapper {
     public void connect(String host, int port, int clientId, String connectionOpts) {
         this.client.eConnect(host, port, clientId);
         startMsgProcessingThread();
-
     }
 
     public void disconnect() {
@@ -156,7 +159,6 @@ public class ApiController implements EWrapper {
         this.client.eDisconnect();
         this.connectionHandler.disconnected();
         this.connected = false;
-
     }
 
     @Override
@@ -170,8 +172,8 @@ public class ApiController implements EWrapper {
 
     @Override
     public void nextValidId(int orderId) {
-        this.orderId = orderId;
-        this.reqId = this.orderId + 10000000; // let order id's not collide with other request id's
+        this.orderId.set(orderId);
+        this.reqId.set(this.orderId.get() + 10000000); // let order id's not collide with other request id's
         this.connected = true;
         if (this.connectionHandler != null) {
             this.connectionHandler.connected();
@@ -222,7 +224,7 @@ public class ApiController implements EWrapper {
 
     @Override
     public void updateAccountValue(String tag, String value, String currency, String account) {
-        if (tag.equals("Currency")) { // ignore this, it is useless
+        if ("Currency".equals(tag)) { // ignore this, it is useless
             return;
         }
 
@@ -271,10 +273,9 @@ public class ApiController implements EWrapper {
             sb.append(tag);
         }
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.acctSummaryHandlers.put(reqId, handler);
         this.client.reqAccountSummary(reqId, group, sb.toString());
-
     }
 
     private boolean isConnected() {
@@ -288,7 +289,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.acctSummaryHandlers, handler);
         if (reqId != null) {
             this.client.cancelAccountSummary(reqId);
-
         }
     }
 
@@ -296,10 +296,9 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.mktValSummaryHandlers.put(reqId, handler);
         this.client.reqAccountSummary(reqId, group, "$LEDGER");
-
     }
 
     public void cancelMarketValueSummary(IMarketValueSummaryHandler handler) {
@@ -314,7 +313,7 @@ public class ApiController implements EWrapper {
 
     @Override
     public void accountSummary(int reqId, String account, String tag, String value, String currency) {
-        if (tag.equals("Currency")) { // ignore this, it is useless
+        if ("Currency".equals(tag)) { // ignore this, it is useless
             return;
         }
 
@@ -327,7 +326,6 @@ public class ApiController implements EWrapper {
         if (handler2 != null) {
             handler2.marketValueSummary(account, MarketValueTag.valueOf(tag), value, currency);
         }
-
     }
 
     @Override
@@ -341,7 +339,6 @@ public class ApiController implements EWrapper {
         if (handler2 != null) {
             handler2.marketValueSummaryEnd();
         }
-
     }
 
     public void reqPositions(IPositionHandler handler) {
@@ -395,7 +392,7 @@ public class ApiController implements EWrapper {
     }
 
     private void internalReqContractDetails(Contract contract, final IInternalContractDetailsHandler processor) {
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.contractDetailsMap.put(reqId, processor);
         this.orderHandlers.put(reqId, new IOrderHandler() {
             public void handle(int errorCode, String errorMsg) {
@@ -454,32 +451,29 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.topMktDataMap.put(reqId, handler);
         this.client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
-
     }
 
     public void reqOptionMktData(Contract contract, String genericTickList, boolean snapshot, IOptHandler handler) {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.topMktDataMap.put(reqId, handler);
         this.optionCompMap.put(reqId, handler);
         this.client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
-
     }
 
     public void reqEfpMktData(Contract contract, String genericTickList, boolean snapshot, IEfpHandler handler) {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.topMktDataMap.put(reqId, handler);
         this.efpMap.put(reqId, handler);
         this.client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
-
     }
 
     public void cancelTopMktData(ITopMktDataHandler handler) {
@@ -490,9 +484,8 @@ public class ApiController implements EWrapper {
         if (reqId != null) {
             this.client.cancelMktData(reqId);
         } else {
-            show("Error: could not cancel top market data");
+            show("Error: could not cancel top market data subscription");
         }
-
     }
 
     public void cancelOptionMktData(IOptHandler handler) {
@@ -510,7 +503,6 @@ public class ApiController implements EWrapper {
             return;
 
         this.client.reqMarketDataType(type.ordinal());
-
     }
 
     @Override
@@ -574,11 +566,10 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.deepMktDataMap.put(reqId, handler);
         ArrayList<TagValue> mktDepthOptions = new ArrayList<TagValue>();
         this.client.reqMktDepth(reqId, contract, numRows, mktDepthOptions);
-
     }
 
     public void cancelDeepMktData(IDeepMktDataHandler handler) {
@@ -588,7 +579,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.deepMktDataMap, handler);
         if (reqId != null) {
             this.client.cancelMktDepth(reqId);
-
         }
     }
 
@@ -613,20 +603,18 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.optionCompMap.put(reqId, handler);
         this.client.calculateImpliedVolatility(reqId, c, optPrice, underPrice);
-
     }
 
     public void reqOptionComputation(Contract c, double vol, double underPrice, IOptHandler handler) {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.optionCompMap.put(reqId, handler);
         this.client.calculateOptionPrice(reqId, c, vol, underPrice);
-
     }
 
     void cancelOptionComp(IOptHandler handler) {
@@ -636,7 +624,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.optionCompMap, handler);
         if (reqId != null) {
             this.client.cancelCalculateOptionPrice(reqId);
-
         }
     }
 
@@ -655,7 +642,7 @@ public class ApiController implements EWrapper {
             return;
 
         this.tradeReportHandler = handler;
-        this.client.reqExecutions(this.reqId++, filter);
+        this.client.reqExecutions(this.reqId.incrementAndGet(), filter);
 
     }
 
@@ -697,7 +684,6 @@ public class ApiController implements EWrapper {
             return;
 
         this.client.replaceFA(FADataType.PROFILES.ordinal(), AdvisorUtil.getProfilesXml(profiles));
-
     }
 
     @Override
@@ -711,14 +697,13 @@ public class ApiController implements EWrapper {
 
         // when placing new order, assign new order id
         if (order.orderId() == 0) {
-            order.orderId(this.orderId++);
+            order.orderId(this.orderId.incrementAndGet());
             if (handler != null) {
                 this.orderHandlers.put(order.orderId(), handler);
             }
         }
 
         this.client.placeOrder(contract, order);
-
     }
 
     public void cancelOrder(int orderId) {
@@ -734,15 +719,13 @@ public class ApiController implements EWrapper {
             return;
 
         this.client.reqGlobalCancel();
-
     }
 
     public void exerciseOption(String account, Contract contract, ExerciseType type, int quantity, boolean override) {
         if (!checkConnection())
             return;
 
-        this.client.exerciseOptions(this.reqId++, contract, type.ordinal(), quantity, account, override ? 1 : 0);
-
+        this.client.exerciseOptions(this.reqId.incrementAndGet(), contract, type.ordinal(), quantity, account, override ? 1 : 0);
     }
 
     public void removeOrderHandler(IOrderHandler handler) {
@@ -755,7 +738,6 @@ public class ApiController implements EWrapper {
 
         this.liveOrderHandlers.add(handler);
         this.client.reqAllOpenOrders();
-
     }
 
     public void takeTwsOrders(ILiveOrderHandler handler) {
@@ -773,7 +755,6 @@ public class ApiController implements EWrapper {
 
         this.liveOrderHandlers.add(handler);
         this.client.reqAutoOpenOrders(true);
-
     }
 
     public void removeLiveOrderHandler(ILiveOrderHandler handler) {
@@ -819,18 +800,16 @@ public class ApiController implements EWrapper {
 
         this.scannerHandler = handler;
         this.client.reqScannerParameters();
-
     }
 
     public void reqScannerSubscription(ScannerSubscription sub, IScannerHandler handler) {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.scannerMap.put(reqId, handler);
         ArrayList<TagValue> scannerSubscriptionOptions = new ArrayList<TagValue>();
         this.client.reqScannerSubscription(reqId, sub, scannerSubscriptionOptions);
-
     }
 
     public void cancelScannerSubscription(IScannerHandler handler) {
@@ -840,7 +819,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.scannerMap, handler);
         if (reqId != null) {
             this.client.cancelScannerSubscription(reqId);
-
         }
     }
 
@@ -875,10 +853,10 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.historicalDataMap.put(reqId, handler);
         String durationStr = duration + " " + durationUnit.toString().charAt(0);
-        this.client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(), rthOnly ? 1 : 0, 2, Collections.<TagValue>emptyList());
+        this.client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(), rthOnly ? 1 : 0, 2, Collections.emptyList());
 
     }
 
@@ -889,7 +867,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.historicalDataMap, handler);
         if (reqId != null) {
             this.client.cancelHistoricalData(reqId);
-
         }
     }
 
@@ -919,11 +896,10 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.realTimeBarMap.put(reqId, handler);
         ArrayList<TagValue> realTimeBarsOptions = new ArrayList<TagValue>();
         this.client.reqRealTimeBars(reqId, contract, 0, whatToShow.toString(), rthOnly, realTimeBarsOptions);
-
     }
 
     public void cancelRealtimeBars(IRealTimeBarHandler handler) {
@@ -933,7 +909,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.realTimeBarMap, handler);
         if (reqId != null) {
             this.client.cancelRealTimeBars(reqId);
-
         }
     }
 
@@ -950,10 +925,9 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.fundMap.put(reqId, handler);
         this.client.reqFundamentalData(reqId, contract, reportType.getApiString());
-
     }
 
     @Override
@@ -970,7 +944,6 @@ public class ApiController implements EWrapper {
 
         this.timeHandler = handler;
         this.client.reqCurrentTime();
-
     }
 
     protected boolean checkConnection() {
@@ -993,7 +966,6 @@ public class ApiController implements EWrapper {
 
         this.bulletinHandler = handler;
         this.client.reqNewsBulletins(allMessages);
-
     }
 
     public void cancelBulletins() {
@@ -1012,7 +984,7 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.positionMultiMap.put(reqId, handler);
         this.client.reqPositionsMulti(reqId, account, modelCode);
 
@@ -1025,7 +997,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.positionMultiMap, handler);
         if (reqId != null) {
             this.client.cancelPositionsMulti(reqId);
-
         }
     }
 
@@ -1049,10 +1020,9 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.accountUpdateMultiMap.put(reqId, handler);
         this.client.reqAccountUpdatesMulti(reqId, account, modelCode, ledgerAndNLV);
-
     }
 
     public void cancelAccountUpdatesMulti(IAccountUpdateMultiHandler handler) {
@@ -1143,7 +1113,7 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
         this.secDefOptParamsReqMap.put(reqId, handler);
         this.client.reqSecDefOptParams(reqId, underlyingSymbol, futFopExchange, /* currency, */ underlyingSecType, underlyingConId);
 
@@ -1171,7 +1141,7 @@ public class ApiController implements EWrapper {
         if (!checkConnection())
             return;
 
-        int reqId = this.reqId++;
+        int reqId = this.reqId.incrementAndGet();
 
         this.softDollarTiersReqMap.put(reqId, handler);
         this.client.reqSoftDollarTiers(reqId);
