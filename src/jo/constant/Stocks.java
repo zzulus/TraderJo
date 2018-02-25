@@ -10,7 +10,7 @@ public class Stocks {
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange("SMART");
-        contract.primaryExch("ISLAND");        
+        contract.primaryExch("ISLAND");
         contract.symbol("TQQQ");
         return contract;
     }
