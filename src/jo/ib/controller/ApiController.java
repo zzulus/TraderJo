@@ -309,7 +309,6 @@ public class ApiController implements EWrapper {
         Integer reqId = getAndRemoveKey(this.mktValSummaryHandlers, handler);
         if (reqId != null) {
             this.client.cancelAccountSummary(reqId);
-
         }
     }
 
