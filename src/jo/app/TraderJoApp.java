@@ -230,7 +230,7 @@ public class TraderJoApp implements EWrapper {
 
     @Override
     public void managedAccounts(String accountsStr) {
-        //log.info("managedAccounts: " + accountsStr);
+        // log.info("managedAccounts: " + accountsStr);
 
         String[] arr = StringUtils.split(accountsStr, ',');
         List<String> accounts = Arrays.asList(arr);
@@ -384,7 +384,7 @@ public class TraderJoApp implements EWrapper {
 
     @Override
     public void connectAck() {
-       log.info("connectAck");
+        log.info("connectAck");
     }
 
     @Override
