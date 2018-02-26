@@ -5,13 +5,45 @@ import com.ib.client.Types.SecType;
 
 public class Stocks {
 
-    public static Contract TQQQ() {
+    public static Contract TQQQ_SMART() {
         Contract contract = new Contract();
+        contract.symbol("TQQQ");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange("SMART");
+        contract.primaryExch("NASDAQ");
+        contract.conid(72539702);
+        return contract;
+    }
+
+    public static Contract TQQQ_NASDAQ() {
+        Contract contract = new Contract();
+        contract.symbol("TQQQ");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange("ISLAND");
+        contract.primaryExch("NASDAQ");
+        contract.conid(72539702);
+        return contract;
+    }
+
+    public static Contract MSFT_SMART() {
+        Contract contract = new Contract();
+        contract.symbol("MSFT");
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange("SMART");
         contract.primaryExch("ISLAND");
-        contract.symbol("TQQQ");
+        return contract;
+    }
+
+    public static Contract MSFT_NASDAQ() {
+        Contract contract = new Contract();
+        contract.symbol("MSFT");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange("ISLAND");
+        contract.primaryExch("ISLAND");
         return contract;
     }
 

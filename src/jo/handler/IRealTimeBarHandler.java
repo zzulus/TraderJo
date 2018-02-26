@@ -1,6 +1,6 @@
 package jo.handler;
 
-import jo.ib.controller.model.Bar;
+import jo.model.Bar;
 
 // ----------------------------------------- Real-time bars --------------------------------------
 public interface IRealTimeBarHandler {

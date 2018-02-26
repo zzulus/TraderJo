@@ -14,6 +14,30 @@ public interface ILiveOrderHandler {
 
     void openOrderEnd();
 
+    /**
+     * Order status.
+     *
+     * @param orderId
+     *            the order id
+     * @param status
+     *            the status
+     * @param filled
+     *            number of stocks filled
+     * @param remaining
+     *            number of stocks remaining to be filled
+     * @param avgFillPrice
+     *            the avg fill price
+     * @param permId
+     *            the perm id
+     * @param parentId
+     *            the parent id
+     * @param lastFillPrice
+     *            the last fill price
+     * @param clientId
+     *            the client id
+     * @param whyHeld
+     *            the why held
+     */
     void orderStatus(int orderId, OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld);
 
     void handle(int orderId, int errorCode, String errorMsg); // add permId?

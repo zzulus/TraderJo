@@ -15,11 +15,15 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.ib.client.CommissionReport;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.DeltaNeutralContract;
 import com.ib.client.EClientErrors;
+import com.ib.client.EClientSocket;
 import com.ib.client.EJavaSignal;
 import com.ib.client.EReader;
 import com.ib.client.EReaderSignal;
@@ -44,6 +48,7 @@ import com.ib.client.Types.MktDataType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
 
+import jo.constant.ConnectionConstants;
 import jo.handler.IAccountHandler;
 import jo.handler.IAccountSummaryHandler;
 import jo.handler.IAccountUpdateMultiHandler;
@@ -68,15 +73,17 @@ import jo.handler.ITimeHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.handler.ITradeReportHandler;
 import jo.ib.controller.model.AccountSummaryTag;
-import jo.ib.controller.model.Bar;
 import jo.ib.controller.model.Group;
 import jo.ib.controller.model.MarketValueTag;
 import jo.ib.controller.model.Position;
 import jo.ib.controller.model.Profile;
+import jo.model.Bar;
 import jo.util.AdvisorUtil;
 import jo.util.ConcurrentHashSet;
 
-public class ApiController {
+public class IBService {
+    private static final Logger log = LogManager.getLogger(IBService.class);
+
     // TODO WTF is that?
     private interface IInternalContractDetailsHandler {
         void contractDetails(ContractDetails data);
@@ -84,14 +91,15 @@ public class ApiController {
         void contractDetailsEnd();
     }
 
-    private ApiConnection client;
-    private ApiConnectionBridge apiBridge;
+    private EClientSocket client;
+    private EReaderSignal signal;
+    private EReader reader;
+    private final IBAdapter ibAdapter = new IBAdapter();
 
-    // used for all requests except orders; designed not to conflict with orderId
     private AtomicInteger reqId = new AtomicInteger();
     private AtomicInteger orderId = new AtomicInteger();
 
-    private final IConnectionHandler connectionHandler;
+    private IConnectionHandler connectionHandler;
     private ITradeReportHandler tradeReportHandler;
     private IScannerHandler scannerHandler;
     private ITimeHandler timeHandler;
@@ -108,29 +116,23 @@ public class ApiController {
     private final Map<Integer, IOrderHandler> orderHandlers = new ConcurrentHashMap<>();
     private final Map<Integer, IAccountSummaryHandler> acctSummaryHandlers = new ConcurrentHashMap<>();
     private final Map<Integer, IMarketValueSummaryHandler> mktValSummaryHandlers = new ConcurrentHashMap<>();
-    private final Set<IPositionHandler> positionHandlers = new ConcurrentHashSet<>();
-    private final Set<IAccountHandler> accountHandlers = new ConcurrentHashSet<>();
-    private final Set<ILiveOrderHandler> liveOrderHandlers = new ConcurrentHashSet<>();
     private final Map<Integer, IPositionMultiHandler> positionMultiMap = new ConcurrentHashMap<>();
     private final Map<Integer, IAccountUpdateMultiHandler> accountUpdateMultiMap = new ConcurrentHashMap<>();
     private final Map<Integer, ISecDefOptParamsReqHandler> secDefOptParamsReqMap = new ConcurrentHashMap<>();
     private final Map<Integer, ISoftDollarTiersReqHandler> softDollarTiersReqMap = new ConcurrentHashMap<>();
+    private final Set<IPositionHandler> positionHandlers = new ConcurrentHashSet<>();
+    private final Set<IAccountHandler> accountHandlers = new ConcurrentHashSet<>();
+    private final Set<ILiveOrderHandler> liveOrderHandlers = new ConcurrentHashSet<>();
 
-    private boolean isConnected = false;
+    private volatile boolean isConnected = false;
 
-    public ApiController(IConnectionHandler handler) {
-        this.connectionHandler = handler;
-        this.apiBridge = new ApiConnectionBridge();
-        this.client = new ApiConnection(this.apiBridge);
+    public IBService() {
     }
 
     private void startMsgProcessingThread() {
-        final EReaderSignal signal = new EJavaSignal();
-        final EReader reader = new EReader(getClient(), signal);
-
         reader.start();
 
-        new Thread() {
+        new Thread("IBService") {
             @Override
             public void run() {
                 while (getClient().isConnected()) {
@@ -138,27 +140,25 @@ public class ApiController {
                     try {
                         reader.processMsgs();
                     } catch (IOException e) {
-                        apiBridge.error(e);
+                        ibAdapter.error(e);
                     }
                 }
             }
         }.start();
     }
 
-    public ApiConnection getClient() {
-        return client;
+    public void connectLocalhostLive(IConnectionHandler handler) {
+        int clientId = (int) (System.currentTimeMillis() / 1000);
+        connect(handler, ConnectionConstants.LOCALHOST, ConnectionConstants.LIVE_TRADING_PORT, clientId);
     }
 
-    private int getNextRequestId() {
-        return reqId.incrementAndGet();
-    }
-    
-    private int getNextOrderId() {
-        return orderId.incrementAndGet();
-    }    
+    public void connect(IConnectionHandler handler, String host, int port, int clientId) {
+        connectionHandler = handler;
 
-    public void connect(String host, int port, int clientId, String connectionOpts) {
+        signal = new EJavaSignal();
+        client = new EClientSocket(ibAdapter, signal);
         client.eConnect(host, port, clientId);
+        reader = new EReader(client, signal);
         startMsgProcessingThread();
     }
 
@@ -166,9 +166,9 @@ public class ApiController {
         if (!checkConnection())
             return;
 
+        isConnected = false;
         client.eDisconnect();
         connectionHandler.disconnected();
-        isConnected = false;
     }
 
     public void reqAccountUpdates(boolean subscribe, String acctCode, IAccountHandler handler) {
@@ -253,7 +253,7 @@ public class ApiController {
         if (!checkConnection())
             return;
 
-        final ArrayList<ContractDetails> list = new ArrayList<ContractDetails>();
+        final ArrayList<ContractDetails> list = new ArrayList<>();
         internalReqContractDetails(contract, new IInternalContractDetailsHandler() {
             @Override
             public void contractDetails(ContractDetails data) {
@@ -306,7 +306,7 @@ public class ApiController {
 
         int reqId = getNextRequestId();
         topMktDataMap.put(reqId, handler);
-        client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
+        client.reqMktData(reqId, contract, genericTickList, snapshot, null);
     }
 
     public void reqOptionMktData(Contract contract, String genericTickList, boolean snapshot, IOptHandler handler) {
@@ -364,7 +364,7 @@ public class ApiController {
 
         int reqId = getNextRequestId();
         deepMktDataMap.put(reqId, handler);
-        ArrayList<TagValue> mktDepthOptions = new ArrayList<TagValue>();
+        ArrayList<TagValue> mktDepthOptions = new ArrayList<>();
         client.reqMktDepth(reqId, contract, numRows, mktDepthOptions);
     }
 
@@ -413,7 +413,6 @@ public class ApiController {
 
         tradeReportHandler = handler;
         client.reqExecutions(getNextRequestId(), filter);
-
     }
 
     public void updateGroups(List<Group> groups) {
@@ -442,7 +441,7 @@ public class ApiController {
             }
         }
 
-        client.placeOrder(contract, order);
+        client.placeOrder(order.orderId(), contract, order);
     }
 
     public void cancelOrder(int orderId) {
@@ -512,7 +511,7 @@ public class ApiController {
 
         int reqId = getNextRequestId();
         scannerMap.put(reqId, handler);
-        ArrayList<TagValue> scannerSubscriptionOptions = new ArrayList<TagValue>();
+        ArrayList<TagValue> scannerSubscriptionOptions = new ArrayList<>();
         client.reqScannerSubscription(reqId, sub, scannerSubscriptionOptions);
     }
 
@@ -532,7 +531,15 @@ public class ApiController {
      * @param duration
      *            is number of durationUnits
      */
-    public void reqHistoricalData(Contract contract, String endDateTime, int duration, DurationUnit durationUnit, BarSize barSize, WhatToShow whatToShow, boolean rthOnly, IHistoricalDataHandler handler) {
+    public void reqHistoricalData(Contract contract,
+            String endDateTime,
+            int duration,
+            DurationUnit durationUnit,
+            BarSize barSize,
+            WhatToShow whatToShow,
+            boolean rthOnly,
+            IHistoricalDataHandler handler) {
+
         if (!checkConnection())
             return;
 
@@ -558,7 +565,7 @@ public class ApiController {
 
         int reqId = getNextRequestId();
         realTimeBarMap.put(reqId, handler);
-        ArrayList<TagValue> realTimeBarsOptions = new ArrayList<TagValue>();
+        ArrayList<TagValue> realTimeBarsOptions = new ArrayList<>();
         client.reqRealTimeBars(reqId, contract, 0, whatToShow.toString(), rthOnly, realTimeBarsOptions);
     }
 
@@ -587,16 +594,6 @@ public class ApiController {
 
         timeHandler = handler;
         client.reqCurrentTime();
-    }
-
-    protected boolean checkConnection() {
-        // TODO Throw IllegalState exception
-        if (!isConnected()) {
-            this.apiBridge.error(EClientErrors.NO_VALID_ID, EClientErrors.NOT_CONNECTED.code(), EClientErrors.NOT_CONNECTED.msg());
-            return false;
-        }
-
-        return true;
     }
 
     public void reqBulletins(boolean allMessages, IBulletinHandler handler) {
@@ -675,6 +672,31 @@ public class ApiController {
         this.client.reqSoftDollarTiers(reqId);
     }
 
+    public EClientSocket getClient() {
+        return client;
+    }
+
+    // ==========================================================================
+    // Private stuff
+    // ==========================================================================
+    private int getNextRequestId() {
+        return reqId.incrementAndGet();
+    }
+
+    private int getNextOrderId() {
+        return orderId.incrementAndGet();
+    }
+
+    protected boolean checkConnection() {
+        // TODO Throw IllegalState exception
+        if (!isConnected()) {
+            this.ibAdapter.error(EClientErrors.NO_VALID_ID, EClientErrors.NOT_CONNECTED.code(), EClientErrors.NOT_CONNECTED.msg());
+            return false;
+        }
+
+        return true;
+    }
+
     // TODO Migrate to BiDiMap
     private static <K, V> K getAndRemoveKey(Map<K, V> map, V value) {
         for (Entry<K, V> entry : map.entrySet()) {
@@ -686,16 +708,18 @@ public class ApiController {
         return null;
     }
 
-    // This class ties EWrapper and ApiController handlers
-    private class ApiConnectionBridge implements EWrapper {
+    // ==========================================================================
+    // Thing translating calls from EWrapper to callbacks.
+    // ==========================================================================
+    private class IBAdapter implements EWrapper {
 
         @Override
-        public void managedAccounts(String accounts) {
-            List<String> list = new ArrayList<String>();
-            for (StringTokenizer st = new StringTokenizer(accounts, ","); st.hasMoreTokens();) {
-                list.add(st.nextToken());
+        public void managedAccounts(String accountsStr) {
+            List<String> accounts = new ArrayList<>();
+            for (StringTokenizer st = new StringTokenizer(accountsStr, ","); st.hasMoreTokens();) {
+                accounts.add(st.nextToken());
             }
-            connectionHandler.accountList(list);
+            connectionHandler.accountList(accounts);
         }
 
         @Override
@@ -720,13 +744,13 @@ public class ApiController {
                 handler.handle(errorCode, errorMsg);
             }
 
-            for (ILiveOrderHandler liveHandler : ApiController.this.liveOrderHandlers) {
+            for (ILiveOrderHandler liveHandler : IBService.this.liveOrderHandlers) {
                 liveHandler.handle(id, errorCode, errorMsg);
             }
 
             // "no sec def found" response?
             if (errorCode == 200) {
-                IInternalContractDetailsHandler hand = ApiController.this.contractDetailsMap.remove(id);
+                IInternalContractDetailsHandler hand = IBService.this.contractDetailsMap.remove(id);
                 if (hand != null) {
                     hand.contractDetailsEnd();
                 }
@@ -987,7 +1011,7 @@ public class ApiController {
 
         @Override
         public void openOrderEnd() {
-            for (ILiveOrderHandler handler : ApiController.this.liveOrderHandlers) {
+            for (ILiveOrderHandler handler : IBService.this.liveOrderHandlers) {
                 handler.openOrderEnd();
             }
         }
