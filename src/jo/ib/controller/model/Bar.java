@@ -6,7 +6,7 @@ package jo.ib.controller.model;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import jo.ib.controller.util.Formats;
+import jo.util.Formats;
 
 public class Bar {
     private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyyMMdd HH:mm:ss"); // format for historical query
