@@ -436,9 +436,10 @@ public class IBService {
         // when placing new order, assign new order id
         if (order.orderId() == 0) {
             order.orderId(getNextOrderId());
-            if (handler != null) {
-                orderHandlers.put(order.orderId(), handler);
-            }
+        }
+
+        if (handler != null) {
+            orderHandlers.put(order.orderId(), handler);
         }
 
         client.placeOrder(order.orderId(), contract, order);
@@ -683,7 +684,7 @@ public class IBService {
         return reqId.incrementAndGet();
     }
 
-    private int getNextOrderId() {
+    public int getNextOrderId() {
         return orderId.incrementAndGet();
     }
 
@@ -967,6 +968,9 @@ public class IBService {
 
         @Override
         public void execDetails(int reqId, Contract contract, Execution execution) {
+            log.info("execDetails: req {}, stock {}, orderId {}, avgPrice {}, execId {}",
+                    reqId, contract.symbol(), execution.orderId(), execution.avgPrice(), execution.execId());
+            
             if (tradeReportHandler != null) {
                 int i = execution.execId().lastIndexOf('.');
                 String tradeKey = execution.execId().substring(0, i);

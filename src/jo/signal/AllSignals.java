@@ -3,6 +3,10 @@ package jo.signal;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
+import com.ib.client.Contract;
+
+import jo.app.App;
+import jo.model.MarketData;
 
 public class AllSignals implements Signal {
     private List<Signal> signals;
@@ -14,9 +18,9 @@ public class AllSignals implements Signal {
     }
 
     @Override
-    public boolean isActive() {
+    public boolean isActive(App app, Contract contract, MarketData marketData) {
         for (Signal signal : signals) {
-            if (!signal.isActive()) {
+            if (!signal.isActive(app, contract, marketData)) {
                 return false;
             }
         }

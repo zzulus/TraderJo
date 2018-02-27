@@ -12,7 +12,8 @@ import com.google.common.collect.Lists;
 
 import jo.command.AppCommand;
 import jo.command.InitStockDataCommand;
-import jo.command.SleepCommand;
+import jo.command.StartBotMA1Command;
+import jo.command.StartBotMA2Command;
 import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.handler.IConnectionHandler;
@@ -27,11 +28,14 @@ public class App {
 
     public App() {
         postConnectCommands = Lists.newArrayList(
-                new InitStockDataCommand(Stocks.TQQQ_SMART())
-                //new SleepCommand(1000l),
-                // new InitStockDataCommand(Stocks.RWE_IBIS()),
-                //new InitStockDataCommand(Stocks.TQQQ_NASDAQ())
-                );
+                new InitStockDataCommand(Stocks.TQQQ_SMART()),
+                new StartBotMA1Command(Stocks.TQQQ_SMART()),
+                new StartBotMA2Command(Stocks.TQQQ_SMART())
+
+        // new SleepCommand(1000l),
+        // new InitStockDataCommand(Stocks.RWE_IBIS()),
+        // new InitStockDataCommand(Stocks.TQQQ_NASDAQ())
+        );
     }
 
     public void start() {
@@ -83,6 +87,10 @@ public class App {
 
     public Map<String, MarketData> getStockMarketDataMap() {
         return stockMarketDataMap;
+    }
+
+    public MarketData getStockMarketData(String symbol) {
+        return stockMarketDataMap.get(symbol);
     }
 
     public void setPostConnectCommands(List<AppCommand> postConnectCommands) {

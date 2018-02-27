@@ -1,5 +1,7 @@
 package jo.model;
 
+import java.util.function.Consumer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,8 +49,8 @@ public class Bars {
     }
 
     public synchronized void addBar(Bar bar) {
-        log.info("AddBar: {}", bar);
-        
+        //log.info("AddBar: {}", bar);
+
         time.add(bar.getTime());
         high.add(bar.getHigh());
         low.add(bar.getLow());
@@ -59,6 +61,38 @@ public class Bars {
         count.add(bar.getCount());
 
         lastPos++;
+    }
+
+    public TLongArrayList getTime() {
+        return time;
+    }
+
+    public TDoubleArrayList getHigh() {
+        return high;
+    }
+
+    public TDoubleArrayList getLow() {
+        return low;
+    }
+
+    public TDoubleArrayList getOpen() {
+        return open;
+    }
+
+    public TDoubleArrayList getClose() {
+        return close;
+    }
+
+    public TDoubleArrayList getWap() {
+        return wap;
+    }
+
+    public TLongArrayList getVolume() {
+        return volume;
+    }
+
+    public TIntArrayList getCount() {
+        return count;
     }
 
     public int getSize() {

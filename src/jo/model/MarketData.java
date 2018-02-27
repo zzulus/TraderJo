@@ -19,26 +19,26 @@ public class MarketData {
 
     private Map<BarSize, Bars> barsMap = new ConcurrentHashMap<>();
     private CircularFifoQueue<MarketDataTrade> trades = new CircularFifoQueue<>(4096);
-    private double todayOpenPrice;
-    private double prevDayClosePrice;
-    private double todayLowPrice;
-    private double todayHighPrice;
+    private volatile double todayOpenPrice;
+    private volatile double prevDayClosePrice;
+    private volatile double todayLowPrice;
+    private volatile double todayHighPrice;
 
-    private double high13Price;
-    private double low13Price;
-    private double high26Price;
-    private double low26Price;
-    private double high52Price;
-    private double low52Price;
+    private volatile double high13Price;
+    private volatile double low13Price;
+    private volatile double high26Price;
+    private volatile double low26Price;
+    private volatile double high52Price;
+    private volatile double low52Price;
 
-    private double askPrice;
-    private int askSize;
-    private double bidPrice;
-    private int bidSize;
-    private double lastPrice;
-    private int lastSize;
-    private int averageVolume;
-    private int todayVolume;
+    private volatile double askPrice;
+    private volatile int askSize;
+    private volatile double bidPrice;
+    private volatile int bidSize;
+    private volatile double lastPrice;
+    private volatile int lastSize;
+    private volatile int averageVolume;
+    private volatile int todayVolume;
 
     private ITopMktDataHandler topMktDataHandler = new TopMktDataHandler();
 
@@ -161,7 +161,7 @@ public class MarketData {
 
         @Override
         public void tickPrice(TickType tickType, double price, int canAutoExecute) {
-            log.info("tickPrice: {} {}", tickType, price);
+            // log.info("tickPrice: {} {}", tickType, price);
 
             switch (tickType) {
             case ASK:
@@ -172,9 +172,11 @@ public class MarketData {
                 break;
             case LAST:
                 lastPrice = price;
+                //log.info("Last: {}", price);
                 break;
             case HIGH:
                 todayHighPrice = price;
+                log.info("TodayHighPrice: {}", price);
                 break;
             case LOW:
                 todayLowPrice = price;
@@ -235,7 +237,7 @@ public class MarketData {
         public void tickString(TickType tickType, String value) {
             switch (tickType) {
             case RT_TRD_VOLUME:
-                log.info("tickString: {} {}", tickType, value);
+                // log.info("tickString: {} {}", tickType, value);
                 processRTVolume(value);
                 break;
 
@@ -270,6 +272,7 @@ public class MarketData {
                     double vwap = Double.parseDouble(vwapStr);
 
                     MarketDataTrade trade = new MarketDataTrade(price, size, time, dayTotalVolume, vwap);
+                    // log.info("processRTVolume: {}", ToStringBuilder.reflectionToString(trade));
                     addTrade(trade);
                 }
             }
