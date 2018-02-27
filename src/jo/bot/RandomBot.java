@@ -44,16 +44,19 @@ public class RandomBot extends BaseBot {
                         Thread.sleep(1000);
 
                         if (signal.isActive(app, contract, marketData)) {
-                            log.info("Signal is active " + marketData.getLastPrice());
+                            // log.info("Signal is active " + marketData.getLastPrice());
 
                             final double lastPrice = marketData.getLastPrice();
-                            final double openPrice = lastPrice - 0.04d;
-                            final double profitPrice = lastPrice + profitTarget;
+                            double openPrice = lastPrice - 0.04d;
+                            double profitPrice = lastPrice + profitTarget;
                             boolean needModify = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) > 0.02);
+
+                            openPrice = fixPriceVariance(openPrice);
+                            profitPrice = fixPriceVariance(profitPrice);
 
                             if (!takeProfitOrderIsActive) {
                                 openOrder = new Order();
-                                openOrder.orderRef("rnd");
+                                openOrder.orderRef("rnd" + profitTarget);
                                 openOrder.orderId(ib.getNextOrderId());
                                 openOrder.action(Action.BUY);
                                 openOrder.orderType(OrderType.LMT);
@@ -62,7 +65,7 @@ public class RandomBot extends BaseBot {
                                 openOrder.transmit(false);
 
                                 takeProfitOrder = new Order();
-                                takeProfitOrder.orderRef("rnd");
+                                takeProfitOrder.orderRef("rnd" + profitTarget);
                                 takeProfitOrder.orderId(ib.getNextOrderId());
                                 takeProfitOrder.action(Action.SELL);
                                 takeProfitOrder.orderType(OrderType.LMT);

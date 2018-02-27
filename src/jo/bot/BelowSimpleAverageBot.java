@@ -5,6 +5,8 @@ import static java.lang.Math.abs;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderType;
@@ -19,7 +21,7 @@ import jo.signal.HasAtLeastNBarsSignal;
 import jo.signal.NotCloseToDailyHighSignal;
 import jo.signal.Signal;
 
-public class BelowSimpleAverageBot extends BaseBot {
+public class BelowSimpleAverageBot extends BaseBot {    
     private int periodSeconds;
     private Double prevAveragePrice;
     private double belowAverageVal;
@@ -53,7 +55,7 @@ public class BelowSimpleAverageBot extends BaseBot {
                         Thread.sleep(1000);
 
                         if (signal.isActive(app, contract, marketData)) {
-                            log.info("Signal is active " + marketData.getLastPrice());
+                            //log.info("Signal is active " + marketData.getLastPrice());
 
                             Double averagePrice = bars.getAverageClose(periodSeconds / 5);
                             if (averagePrice == null) {
@@ -61,8 +63,12 @@ public class BelowSimpleAverageBot extends BaseBot {
                                 continue;
                             }
 
-                            final double openPrice = averagePrice - belowAverageVal;
-                            final double profitPrice = averagePrice + profitTarget;
+                            double openPrice = averagePrice - belowAverageVal;
+                            double profitPrice = averagePrice + profitTarget;
+                            
+                            openPrice = fixPriceVariance(openPrice);
+                            profitPrice = fixPriceVariance(profitPrice);
+                            
                             boolean needModify = (prevAveragePrice != null && abs(prevAveragePrice - averagePrice) > 0.02);
 
                             if (!takeProfitOrderIsActive) {
