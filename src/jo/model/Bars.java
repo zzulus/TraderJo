@@ -1,6 +1,6 @@
 package jo.model;
 
-import java.util.function.Consumer;
+import javax.annotation.Nullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +14,7 @@ import gnu.trove.list.array.TLongArrayList;
 public class Bars {
     private static final Logger log = LogManager.getLogger(Bars.class);
 
-    private int lastPos = -1;
+    private int size = 0;
 
     private final TLongArrayList time = new TLongArrayList();
     private final TDoubleArrayList high = new TDoubleArrayList();
@@ -26,14 +26,15 @@ public class Bars {
     private final TIntArrayList count = new TIntArrayList();
 
     public Bar getLastBar() {
+        Preconditions.checkArgument(size > 0, "No data yet");
         return getBar(0);
     }
 
     public Bar getBar(int offsetFromEnd) {
-        Preconditions.checkArgument(lastPos > -1, "No data yet");
+        Preconditions.checkArgument(size > 0, "No data yet");
 
-        int offset = lastPos - offsetFromEnd;
-        Preconditions.checkArgument(offset > -1, "Index out of bound: lastPos %s, offsetFromEnd %s", lastPos, offsetFromEnd);
+        int offset = size - offsetFromEnd - 1;
+        Preconditions.checkArgument(offset > -1, "Index out of bound: lastPos %s, offsetFromEnd %s", size, offsetFromEnd);
 
         Bar bar = new Bar();
         bar.setTime(time.get(offset));
@@ -49,7 +50,7 @@ public class Bars {
     }
 
     public synchronized void addBar(Bar bar) {
-        //log.info("AddBar: {}", bar);
+        // log.info("AddBar: {}", bar);
 
         time.add(bar.getTime());
         high.add(bar.getHigh());
@@ -60,7 +61,22 @@ public class Bars {
         volume.add(bar.getVolume());
         count.add(bar.getCount());
 
-        lastPos++;
+        size++;
+    }
+
+    @Nullable
+    public Double getAverageClose(int period) {
+        int size = close.size();
+        if (size < period) {
+            return null;
+        }
+
+        double acc = 0;
+        for (int i = 0; i < period; i++) {
+            acc = acc + close.get(size - i - 1);
+        }
+
+        return acc / period;
     }
 
     public TLongArrayList getTime() {
@@ -96,6 +112,6 @@ public class Bars {
     }
 
     public int getSize() {
-        return lastPos + 1;
+        return size;
     }
 }

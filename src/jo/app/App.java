@@ -1,5 +1,7 @@
 package jo.app;
 
+import static jo.constant.Stocks.TQQQ_SMART;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +12,9 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import jo.bot.BelowSimpleAverageBot;
 import jo.bot.Bot;
-import jo.bot.MA1Bot;
+import jo.bot.RandomBot;
 import jo.command.AppCommand;
 import jo.command.InitStockDataCommand;
 import jo.command.StartBotsCommand;
@@ -28,8 +31,12 @@ public class App {
     private Map<String, MarketData> stockMarketDataMap = new ConcurrentHashMap<>();
 
     public App() {
-        MA1Bot bot1 = new MA1Bot(Stocks.TQQQ_SMART(), 50);        
-        List<Bot> bots = Lists.newArrayList(bot1);
+        Bot bot1 = new RandomBot(TQQQ_SMART(), 50, 0.30d);
+        Bot bot2 = new RandomBot(TQQQ_SMART(), 50, 0.10d);
+        Bot bot3 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 90, /* belowAverageVal */ 0.03, 0.10);
+        Bot bot4 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 900, /* belowAverageVal */ 0.20, 0.20);
+
+        List<Bot> bots = Lists.newArrayList(bot1, bot2, bot3, bot4);
 
         postConnectCommands = Lists.newArrayList(
                 new InitStockDataCommand(Stocks.TQQQ_SMART()),

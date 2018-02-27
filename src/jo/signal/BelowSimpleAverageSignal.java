@@ -1,8 +1,5 @@
 package jo.signal;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
@@ -12,8 +9,6 @@ import jo.model.Bars;
 import jo.model.MarketData;
 
 public class BelowSimpleAverageSignal implements Signal {
-    private static final Logger log = LogManager.getLogger(BelowSimpleAverageSignal.class);
-
     private int period;
     private double delta;
     private Bars bars;
