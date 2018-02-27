@@ -10,10 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import jo.bot.Bot;
+import jo.bot.MA1Bot;
 import jo.command.AppCommand;
 import jo.command.InitStockDataCommand;
-import jo.command.StartBotMA1Command;
-import jo.command.StartBotMA2Command;
+import jo.command.StartBotsCommand;
 import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.handler.IConnectionHandler;
@@ -27,15 +28,12 @@ public class App {
     private Map<String, MarketData> stockMarketDataMap = new ConcurrentHashMap<>();
 
     public App() {
+        MA1Bot bot1 = new MA1Bot(Stocks.TQQQ_SMART(), 50);        
+        List<Bot> bots = Lists.newArrayList(bot1);
+
         postConnectCommands = Lists.newArrayList(
                 new InitStockDataCommand(Stocks.TQQQ_SMART()),
-                new StartBotMA1Command(Stocks.TQQQ_SMART()),
-                new StartBotMA2Command(Stocks.TQQQ_SMART())
-
-        // new SleepCommand(1000l),
-        // new InitStockDataCommand(Stocks.RWE_IBIS()),
-        // new InitStockDataCommand(Stocks.TQQQ_NASDAQ())
-        );
+                new StartBotsCommand(bots));
     }
 
     public void start() {

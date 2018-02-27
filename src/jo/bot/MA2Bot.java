@@ -1,21 +1,21 @@
-package jo.command;
+package jo.bot;
 
-import java.io.IOException;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.collect.Lists;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
+import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
-import com.ib.client.Types.WhatToShow;
 
 import jo.app.App;
 import jo.controller.IBService;
@@ -28,9 +28,10 @@ import jo.signal.HasAtLeastNBarsSignal;
 import jo.signal.NotCloseToDailyHighSignal;
 import jo.signal.Signal;
 
-public class StartBotMA1Command implements AppCommand {
-    private static final Logger log = LogManager.getLogger(StartBotMA1Command.class);
-    private Contract contract;
+public class MA2Bot implements Bot {
+    private static final Logger log = LogManager.getLogger(MA2Bot.class);
+    private final Contract contract;
+    private final int totalQuantity;
     private MarketData marketData;
     private Bars bars;
 
@@ -40,30 +41,34 @@ public class StartBotMA1Command implements AppCommand {
     private OpenPositionOrderHandler openPositionOrderHandler = new OpenPositionOrderHandler();
     private TakeProfitOrderHandler takeProfitOrderHandler = new TakeProfitOrderHandler();
 
-    public StartBotMA1Command(Contract contract) {
+    public MA2Bot(Contract contract, int totalQuantity) {
+        checkArgument(totalQuantity > 0 && totalQuantity < 500);
+        checkNotNull(contract);
+
         this.contract = contract;
+        this.totalQuantity = totalQuantity;
 
         List<Signal> signals = new ArrayList<>();
-        signals.add(new HasAtLeastNBarsSignal(90 / 5)); // 90 seconds
+        signals.add(new HasAtLeastNBarsSignal(180));
         signals.add(new NotCloseToDailyHighSignal(0.2d));
-        signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d)); // 90 seconds
+        signals.add(new BelowSimpleAverageSignal(180, 0.20d));
 
         signal = new AllSignals(signals);
     }
 
     @Override
-    public void execute(IBService ib, App app) {
+    public void start(IBService ib, App app) {
         log.info("Start bot for {}", contract.symbol());
         marketData = app.getStockMarketData(contract.symbol());
         bars = marketData.getBars(BarSize._5_secs);
 
-        new Thread("Bot 1#" + contract.symbol()) {
+        new Thread("Bot 2#" + contract.symbol()) {
             @Override
             public void run() {
                 int activeCnt = 0;
                 while (true) {
                     try {
-                        Thread.currentThread().sleep(100l);
+                        Thread.sleep(100l);
                         if (hasActiveTrade) {
                             continue;
                         }
@@ -73,8 +78,7 @@ public class StartBotMA1Command implements AppCommand {
                             log.info("Signal is active " + marketData.getLastPrice());
 
                             if (activeCnt > 3) {
-                                int totalQuantity = 50;
-                                double lastPrice = marketData.getLastPrice();
+                                final double lastPrice = marketData.getLastPrice();
 
                                 Order openOrder = new Order();
                                 openOrder.orderId(ib.getNextOrderId());
@@ -87,14 +91,14 @@ public class StartBotMA1Command implements AppCommand {
                                 Order takeProfitOrder = new Order();
                                 takeProfitOrder.orderId(ib.getNextOrderId());
                                 takeProfitOrder.action(Action.SELL);
-                                takeProfitOrder.orderType("LMT");
+                                takeProfitOrder.orderType(OrderType.LMT);
                                 takeProfitOrder.totalQuantity(totalQuantity);
-                                takeProfitOrder.lmtPrice(lastPrice + 0.10d);
+                                takeProfitOrder.lmtPrice(lastPrice + 0.30d);
                                 takeProfitOrder.parentId(openOrder.orderId());
                                 takeProfitOrder.transmit(true);
 
                                 log.info("Placing order: Open at {}, close at {}, last {}", openOrder.lmtPrice(), takeProfitOrder.lmtPrice(), lastPrice);
-                                                                
+
                                 ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
                                 ib.placeOrModifyOrder(contract, takeProfitOrder, takeProfitOrderHandler);
 
