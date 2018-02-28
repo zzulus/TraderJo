@@ -55,7 +55,10 @@ public class App {
 
             @Override
             public void message(int id, int errorCode, String errorMsg) {
-                log.info("message: " + errorMsg);
+                log.info("message: id {}, errorCode {}, errorMsg {}", id, errorCode, errorMsg);
+                if (errorMsg.contains("Connectivity between IB and Trader Workstation has been lost")) {
+                    System.exit(0);
+                }
             }
 
             @Override
