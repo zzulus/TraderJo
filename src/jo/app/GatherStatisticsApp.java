@@ -15,7 +15,7 @@ import jo.model.Bar;
 import jo.model.Bars;
 
 // http://etfdb.com/type/equity/all/leveraged/#etfs&sort_name=three_month_average_volume&sort_order=desc&page=1
-public class GatherStatisticsMain {
+public class GatherStatisticsApp {
     public static void main(String[] args) throws InterruptedException {
         final IBService ib = new IBService();
         Contract contract = new Contract();

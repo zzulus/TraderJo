@@ -5,75 +5,69 @@ import static java.lang.Math.abs;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
-import com.ib.client.Types.BarSize;
 
 import jo.app.TraderApp;
 import jo.controller.IBService;
-import jo.model.Bars;
 import jo.signal.AllSignals;
 import jo.signal.HasAtLeastNBarsSignal;
+import jo.signal.LastTradesPositiveRestriction;
+import jo.signal.NasdaqRegularHoursRestriction;
 import jo.signal.NotCloseToDailyHighRestriction;
+import jo.signal.RandomSignal;
 import jo.signal.Signal;
+import jo.util.SyncSignal;
 
-public class BelowSimpleAverageBot extends BaseBot {    
-    private int periodSeconds;
-    private Double prevAveragePrice;
-    private double belowAverageVal;
-    private double profitTarget;
+public class ChaseTrendBot extends BaseBot {
+    private double profitTarget = 0.30d;
+    private Signal startSignal;
 
-    public BelowSimpleAverageBot(Contract contract, int totalQuantity, int periodSeconds, double belowAverageVal, double profitTarget) {
+    public ChaseTrendBot(Contract contract, int totalQuantity, double profitTarget) {
         super(contract, totalQuantity);
-        this.periodSeconds = periodSeconds;
-        this.belowAverageVal = belowAverageVal;
         this.profitTarget = profitTarget;
 
-        List<Signal> signals = new ArrayList<>();
-        signals.add(new HasAtLeastNBarsSignal(periodSeconds / 5)); // 90 seconds
-        signals.add(new NotCloseToDailyHighRestriction(0.2d));
-        // signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
+        List<Signal> positionSignals = new ArrayList<>();
+        positionSignals.add(new NasdaqRegularHoursRestriction(15));
 
-        positionSignal = new AllSignals(signals);
+        positionSignal = new AllSignals(positionSignals);
+        startSignal = new HasAtLeastNBarsSignal(6);
     }
 
     @Override
     public void start(IBService ib, TraderApp app) {
         log.info("Start bot for {}", contract.symbol());
         marketData = app.getStockMarketData(contract.symbol());
-        Bars bars = marketData.getBars(BarSize._5_secs);
+        SyncSignal marketDataSignal = marketData.getUpdateSignal();
 
-        new Thread("Bot 1#" + contract.symbol()) {
+        new Thread("Bot Chase#" + contract.symbol()) {
             @Override
             public void run() {
+                while (!startSignal.isActive(app, contract, marketData)) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (Exception e) {
+                        log.error("Error in bot", e);
+                    }
+                }
+
                 while (true) {
                     try {
-                        Thread.sleep(1000);
+                        marketDataSignal.waitForSignal();
+
+                        final double lastPrice = marketData.getLastPrice();
+                        double openPrice = lastPrice - 0.04d;
+                        double profitPrice = openPrice + profitTarget;
+                        boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) > 0.02);
+
+                        openPrice = fixPriceVariance(openPrice);
+                        profitPrice = fixPriceVariance(profitPrice);
 
                         if (positionSignal.isActive(app, contract, marketData)) {
-                            //log.info("Signal is active " + marketData.getLastPrice());
-
-                            Double averagePrice = bars.getAverageClose(periodSeconds / 5);
-                            if (averagePrice == null) {
-                                log.error("getAverageClose({}/5)  returned null", periodSeconds);
-                                continue;
-                            }
-
-                            double openPrice = averagePrice - belowAverageVal;
-                            double profitPrice = averagePrice + profitTarget;
-                            
-                            openPrice = fixPriceVariance(openPrice);
-                            profitPrice = fixPriceVariance(profitPrice);
-                            
-                            boolean needModify = (prevAveragePrice != null && abs(prevAveragePrice - averagePrice) > 0.02);
-
                             if (!takeProfitOrderIsActive) {
                                 openOrder = new Order();
-                                openOrder.orderRef("ave" + periodSeconds);
                                 openOrder.orderId(ib.getNextOrderId());
                                 openOrder.action(Action.BUY);
                                 openOrder.orderType(OrderType.LMT);
@@ -82,7 +76,6 @@ public class BelowSimpleAverageBot extends BaseBot {
                                 openOrder.transmit(false);
 
                                 takeProfitOrder = new Order();
-                                takeProfitOrder.orderRef("ave" + periodSeconds);
                                 takeProfitOrder.orderId(ib.getNextOrderId());
                                 takeProfitOrder.action(Action.SELL);
                                 takeProfitOrder.orderType(OrderType.LMT);
@@ -92,15 +85,14 @@ public class BelowSimpleAverageBot extends BaseBot {
                                 takeProfitOrder.transmit(true);
 
                                 placeOrders(ib);
-
-                            } else if (openOrderIsActive && takeProfitOrderIsActive && needModify) {
+                            }
+                        } else {
+                            if (openOrderIsActive && takeProfitOrderIsActive && updateOrders) {
                                 openOrder.lmtPrice(openPrice);
                                 takeProfitOrder.lmtPrice(profitPrice);
 
                                 modifyOrders(ib);
                             }
-
-                            prevAveragePrice = averagePrice;
                         }
                     } catch (Exception e) {
                         log.error("Error in bot", e);
@@ -108,5 +100,9 @@ public class BelowSimpleAverageBot extends BaseBot {
                 }
             }
         }.start();
+    }
+
+    protected void takeProfitOrderFilled() {
+        super.takeProfitOrderFilled();
     }
 }

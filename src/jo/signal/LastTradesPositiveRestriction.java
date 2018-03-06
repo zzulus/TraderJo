@@ -1,29 +1,24 @@
 package jo.signal;
 
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+
 import com.ib.client.Contract;
-import com.ib.client.Types.BarSize;
 
-import gnu.trove.list.array.TDoubleArrayList;
 import jo.app.TraderApp;
-import jo.model.Bars;
 import jo.model.MarketData;
+import jo.model.MarketDataTrade;
 
-public class LastClosePositiveRestriction implements Signal {
+public class LastTradesPositiveRestriction implements Signal {
     private int len;
-    private Bars bars;
 
-    public LastClosePositiveRestriction(int len) {
+    public LastTradesPositiveRestriction(int len) {
         this.len = len;
     }
 
     @Override
     public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
-        if (bars == null) {
-            bars = marketData.getBars(BarSize._5_secs);
-        }
-        TDoubleArrayList close = bars.getClose(); // close or positive bars?
-
-        int size = close.size();
+        CircularFifoQueue<MarketDataTrade> trades = marketData.getTrades();
+        int size = trades.size();
         boolean isActive = true;
         if (size < len) {
             return false;
@@ -33,8 +28,8 @@ public class LastClosePositiveRestriction implements Signal {
         int start = size - len;
 
         for (int i = start; i < end; i++) {
-            double p1 = close.get(i);
-            double p2 = close.get(i + 1);
+            double p1 = trades.get(i).getPrice();
+            double p2 = trades.get(i + 1).getPrice();
             if (p1 > p2) {
                 isActive = false;
                 break;

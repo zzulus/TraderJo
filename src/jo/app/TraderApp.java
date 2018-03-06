@@ -20,15 +20,19 @@ import jo.controller.IBService;
 import jo.handler.IConnectionHandler;
 import jo.model.MarketData;
 
-public class App {
-    private static final Logger log = LogManager.getLogger(App.class);
+public class TraderApp {
+    private static final Logger log = LogManager.getLogger(TraderApp.class);
     private List<AppCommand> postConnectCommands = new ArrayList<>();
     private IBService ib;
     // Key - Stock name, e.g. SPY
     private Map<String, MarketData> stockMarketDataMap = new ConcurrentHashMap<>();
 
-    public App() {
-        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, 0.20d);
+    public static void main(String[] args) {
+        new TraderApp().start();
+    }
+
+    public TraderApp() {
+        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, 0.5d);
         // Bot bot2 = new RandomBot(TQQQ_SMART(), 50, 0.10d);
         // Bot bot3 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 90, /* belowAverageVal */ 0.03, 0.10);
         // Bot bot4 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 900, /* belowAverageVal */ 0.20, 0.20);
@@ -74,7 +78,7 @@ public class App {
                 log.info("connected, executing post connect commands");
 
                 for (AppCommand command : postConnectCommands) {
-                    command.execute(ib, App.this);
+                    command.execute(ib, TraderApp.this);
                 }
             }
 

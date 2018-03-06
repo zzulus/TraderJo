@@ -9,7 +9,7 @@ import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
-import jo.app.App;
+import jo.app.TraderApp;
 import jo.controller.IBService;
 import jo.model.Bars;
 import jo.signal.AllSignals;
@@ -31,7 +31,7 @@ public class MA90SecBot extends BaseBot {
     }
 
     @Override
-    public void start(IBService ib, App app) {
+    public void start(IBService ib, TraderApp app) {
         log.info("Start bot for {}", contract.symbol());
         marketData = app.getStockMarketData(contract.symbol());
         Bars bars = marketData.getBars(BarSize._5_secs);

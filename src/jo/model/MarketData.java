@@ -13,6 +13,7 @@ import com.ib.client.Types.BarSize;
 import com.ib.client.Types.MktDataType;
 
 import jo.handler.ITopMktDataHandler;
+import jo.util.SyncSignal;
 
 public class MarketData {
     private static final Logger log = LogManager.getLogger(MarketData.class);
@@ -41,11 +42,13 @@ public class MarketData {
     private volatile int todayVolume;
 
     private ITopMktDataHandler topMktDataHandler = new TopMktDataHandler();
+    private final SyncSignal updateSignal = new SyncSignal();
 
     public void addTrade(MarketDataTrade trade) {
         synchronized (trades) {
             trades.add(trade);
         }
+        updateSignal.signalAll();
     }
 
     public MarketDataTrade getLastTrade() {
@@ -82,6 +85,7 @@ public class MarketData {
 
     public void addBar(BarSize barSize, Bar bar) {
         barsMap.get(barSize).addBar(bar);
+        updateSignal.signalAll();
     }
 
     public Bars getBars(BarSize barSize) {
@@ -156,6 +160,10 @@ public class MarketData {
         return todayVolume;
     }
 
+    public SyncSignal getUpdateSignal() {
+        return updateSignal;
+    }
+
     // TODO Extract
     private class TopMktDataHandler implements ITopMktDataHandler {
 
@@ -172,7 +180,7 @@ public class MarketData {
                 break;
             case LAST:
                 lastPrice = price;
-                //log.info("Last: {}", price);
+                // log.info("Last: {}", price);
                 break;
             case HIGH:
                 todayHighPrice = price;
@@ -208,6 +216,8 @@ public class MarketData {
             default:
                 break;
             }
+            
+            updateSignal.signalAll();
         }
 
         @Override
@@ -231,6 +241,8 @@ public class MarketData {
             default:
                 break;
             }
+            
+            updateSignal.signalAll();
         }
 
         @Override
@@ -239,6 +251,7 @@ public class MarketData {
             case RT_TRD_VOLUME:
                 // log.info("tickString: {} {}", tickType, value);
                 processRTVolume(value);
+                updateSignal.signalAll();
                 break;
 
             default:
@@ -287,6 +300,5 @@ public class MarketData {
         public void marketDataType(MktDataType marketDataType) {
 
         }
-
     }
 }

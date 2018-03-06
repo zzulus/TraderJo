@@ -2,11 +2,11 @@ package jo.signal;
 
 import com.ib.client.Contract;
 
-import jo.app.App;
+import jo.app.TraderApp;
 import jo.model.MarketData;
 
 public interface Signal {
-    boolean isActive(App app, Contract contract, MarketData marketData);
+    boolean isActive(TraderApp app, Contract contract, MarketData marketData);
 
     String getName();
 }

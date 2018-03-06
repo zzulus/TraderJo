@@ -8,7 +8,7 @@ import com.ib.client.Order;
 import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 
-import jo.app.App;
+import jo.app.TraderApp;
 import jo.controller.IBService;
 import jo.signal.AllSignals;
 import jo.signal.BelowSimpleAverageSignal;
@@ -29,7 +29,7 @@ public class MA15MinBot extends BaseBot {
     }
 
     @Override
-    public void start(IBService ib, App app) {
+    public void start(IBService ib, TraderApp app) {
         log.info("Start bot for {}", contract.symbol());
         marketData = app.getStockMarketData(contract.symbol());
 
