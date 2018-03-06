@@ -15,7 +15,7 @@ import jo.model.Bars;
 import jo.signal.AllSignals;
 import jo.signal.BelowSimpleAverageSignal;
 import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.NotCloseToDailyHighSignal;
+import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.Signal;
 
 public class MA90SecBot extends BaseBot {
@@ -24,10 +24,10 @@ public class MA90SecBot extends BaseBot {
 
         List<Signal> signals = new ArrayList<>();
         signals.add(new HasAtLeastNBarsSignal(90 / 5)); // 90 seconds
-        signals.add(new NotCloseToDailyHighSignal(0.2d));
+        signals.add(new NotCloseToDailyHighRestriction(0.2d));
         //signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
 
-        signal = new AllSignals(signals);
+        positionSignal = new AllSignals(signals);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class MA90SecBot extends BaseBot {
                             continue;
                         }
 
-                        if (signal.isActive(app, contract, marketData)) {
+                        if (positionSignal.isActive(app, contract, marketData)) {
                             log.info("Signal is active " + marketData.getLastPrice());
 
                             Double currentTarget = bars.getAverageClose(90 / 5);

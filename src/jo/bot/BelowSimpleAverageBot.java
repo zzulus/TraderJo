@@ -18,7 +18,7 @@ import jo.controller.IBService;
 import jo.model.Bars;
 import jo.signal.AllSignals;
 import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.NotCloseToDailyHighSignal;
+import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.Signal;
 
 public class BelowSimpleAverageBot extends BaseBot {    
@@ -35,10 +35,10 @@ public class BelowSimpleAverageBot extends BaseBot {
 
         List<Signal> signals = new ArrayList<>();
         signals.add(new HasAtLeastNBarsSignal(periodSeconds / 5)); // 90 seconds
-        signals.add(new NotCloseToDailyHighSignal(0.2d));
+        signals.add(new NotCloseToDailyHighRestriction(0.2d));
         // signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
 
-        signal = new AllSignals(signals);
+        positionSignal = new AllSignals(signals);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class BelowSimpleAverageBot extends BaseBot {
                     try {
                         Thread.sleep(1000);
 
-                        if (signal.isActive(app, contract, marketData)) {
+                        if (positionSignal.isActive(app, contract, marketData)) {
                             //log.info("Signal is active " + marketData.getLastPrice());
 
                             Double averagePrice = bars.getAverageClose(periodSeconds / 5);

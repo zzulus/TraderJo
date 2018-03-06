@@ -91,6 +91,7 @@ public class IBService {
         void contractDetailsEnd();
     }
 
+    private int clientId = (int) (System.currentTimeMillis() / 1000);
     private EClientSocket client;
     private EReaderSignal signal;
     private EReader reader;
@@ -148,7 +149,6 @@ public class IBService {
     }
 
     public void connectLocalhostLive(IConnectionHandler handler) {
-        int clientId = (int) (System.currentTimeMillis() / 1000);
         connect(handler, ConnectionConstants.LOCALHOST, ConnectionConstants.LIVE_TRADING_PORT, clientId);
     }
 
@@ -169,6 +169,10 @@ public class IBService {
         isConnected = false;
         client.eDisconnect();
         connectionHandler.disconnected();
+    }
+
+    public void setClientId(int clientId) {
+        this.clientId = clientId;
     }
 
     public void reqAccountUpdates(boolean subscribe, String acctCode, IAccountHandler handler) {
@@ -970,7 +974,7 @@ public class IBService {
         public void execDetails(int reqId, Contract contract, Execution execution) {
             log.info("execDetails: req {}, stock {}, orderId {}, avgPrice {}, execId {}",
                     reqId, contract.symbol(), execution.orderId(), execution.avgPrice(), execution.execId());
-            
+
             if (tradeReportHandler != null) {
                 int i = execution.execId().lastIndexOf('.');
                 String tradeKey = execution.execId().substring(0, i);
@@ -1015,7 +1019,7 @@ public class IBService {
 
         @Override
         public void openOrderEnd() {
-            for (ILiveOrderHandler handler : IBService.this.liveOrderHandlers) {
+            for (ILiveOrderHandler handler : liveOrderHandlers) {
                 handler.openOrderEnd();
             }
         }

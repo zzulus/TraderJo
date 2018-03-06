@@ -22,7 +22,7 @@ public abstract class BaseBot implements Bot {
     protected final int totalQuantity;
     protected MarketData marketData;
 
-    protected Signal signal;
+    protected Signal positionSignal;
     protected volatile boolean openOrderIsActive = false;
     protected volatile boolean takeProfitOrderIsActive = false;
 
@@ -48,7 +48,7 @@ public abstract class BaseBot implements Bot {
             throw new IllegalStateException("takeProfitOrder is active");
         }
 
-        if (takeProfitOrder.lmtPrice() < 0.1 || openOrder.lmtPrice() < 0.1) {
+        if (takeProfitOrder.lmtPrice() < 130 || openOrder.lmtPrice() < 130) {
             throw new IllegalStateException("open/close price doesn't conform to min 0.10 price rule");
         }
 
@@ -75,7 +75,7 @@ public abstract class BaseBot implements Bot {
             return;
         }
 
-        if (takeProfitOrder.lmtPrice() < 0.1 || openOrder.lmtPrice() < 0.1) {
+        if (takeProfitOrder.lmtPrice() < 130 || openOrder.lmtPrice() < 130) {
             throw new IllegalStateException("open/close price doesn't conform to min 0.10 price rule");
         }
 
@@ -83,7 +83,7 @@ public abstract class BaseBot implements Bot {
             throw new IllegalStateException("open/close price doesn't conform to min 0.05 diff rule");
         }
 
-        // TODO USe existing handlers?
+        // TODO Use existing handlers?
         ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
         ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
     }
@@ -94,11 +94,12 @@ public abstract class BaseBot implements Bot {
         return d * minTick;
     }
 
-    public static void main(String[] args) {
-        System.out.println(fixPriceVariance(175.7866666666667d));
-        System.out.println(fixPriceVariance(175.91666666666669));
-        System.out.println(fixPriceVariance(175.86500000000004));
-        System.out.println(fixPriceVariance(175.99500000000003));
+    protected void openPositionOrderFilled() {
+        openOrderIsActive = false;
+    }
+
+    protected void takeProfitOrderFilled() {
+        takeProfitOrderIsActive = false;
     }
 
     protected class OpenPositionOrderHandler implements IOrderHandler {
@@ -111,7 +112,7 @@ public abstract class BaseBot implements Bot {
             log.info("orderState: {}", status);
             if (isActive && "Filled".equals(status)) {
                 isActive = false;
-                openOrderIsActive = false;
+                openPositionOrderFilled();
             }
         }
 
@@ -122,6 +123,7 @@ public abstract class BaseBot implements Bot {
 
         @Override
         public void handle(int errorCode, String errorMsg) {
+            log.error("Error: {} - {}", errorCode, errorMsg);
         }
 
     }
@@ -136,7 +138,7 @@ public abstract class BaseBot implements Bot {
             log.info("orderState: {}", status);
             if (isActive && "Filled".equals(status)) {
                 isActive = false;
-                takeProfitOrderIsActive = false;
+                takeProfitOrderFilled();
             }
         }
 

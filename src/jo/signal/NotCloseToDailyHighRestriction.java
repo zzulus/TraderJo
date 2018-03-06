@@ -5,10 +5,10 @@ import com.ib.client.Contract;
 import jo.app.App;
 import jo.model.MarketData;
 
-public class NotCloseToDailyHighSignal implements Signal {
+public class NotCloseToDailyHighRestriction implements Signal {
     private double delta;
 
-    public NotCloseToDailyHighSignal(double delta) {
+    public NotCloseToDailyHighRestriction(double delta) {
         this.delta = delta;
     }
 

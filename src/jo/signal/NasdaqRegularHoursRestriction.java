@@ -13,8 +13,13 @@ import jo.model.MarketData;
 // Pre-Market:     4:00 a.m. to 9:30 a.m.
 // Regular Market: 9:30 a.m. to 4:00 p.m.
 // After Market:   4:00 p.m. to 8:00 p.m.
-public class NasdaqRegularHoursSignal implements Signal {
+public class NasdaqRegularHoursRestriction implements Signal {
     private static final ZoneId EST_ZONE = ZoneId.of("America/New_York");
+    private int endOffsetMinutes;
+
+    public NasdaqRegularHoursRestriction(int endOffsetMinutes) {
+        this.endOffsetMinutes = endOffsetMinutes;
+    }
 
     @Override
     public boolean isActive(App app, Contract contract, MarketData marketData) {
@@ -27,11 +32,14 @@ public class NasdaqRegularHoursSignal implements Signal {
         int longTime = hour * 100 + minute;
 
         return dayOfWeek >= 1 && dayOfWeek <= 5 &&
-                longTime >= 930 && longTime <= 1600;
+                longTime >= 930 && longTime <= 1600 - endOffsetMinutes;
     }
 
     public String getName() {
         return "NasdaqRegularHoursSignal";
     }
 
+    public void setEndOffsetMinutes(int endOffsetMinutes) {
+        this.endOffsetMinutes = endOffsetMinutes;
+    }
 }

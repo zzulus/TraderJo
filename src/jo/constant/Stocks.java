@@ -5,54 +5,64 @@ import com.ib.client.Types.SecType;
 
 public class Stocks {
 
-    public static Contract TQQQ_SMART() {
+    public static Contract TQQQ(boolean smart) {
         Contract contract = new Contract();
         contract.symbol("TQQQ");
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
-        contract.exchange("SMART");
+        contract.exchange(smart ? "SMART" : "ISLAND");
         contract.primaryExch("NASDAQ");
-        contract.conid(72539702);
+        // contract.conid(72539702);
         return contract;
     }
 
-    public static Contract TQQQ_NASDAQ() {
+    public static Contract SQQQ(boolean smart) {
         Contract contract = new Contract();
-        contract.symbol("TQQQ");
+        contract.symbol("SQQQ");
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
-        contract.exchange("ISLAND");
+        contract.exchange(smart ? "SMART" : "ISLAND");
         contract.primaryExch("NASDAQ");
-        contract.conid(72539702);
         return contract;
     }
 
-    public static Contract MSFT_SMART() {
+    public static Contract SPY(boolean smart) {
+        Contract contract = new Contract();
+        contract.symbol("SPY");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange(smart ? "SMART" : "ISLAND");
+        contract.primaryExch("NASDAQ");
+        return contract;
+    }
+
+    public static Contract MSFT(boolean smart) {
         Contract contract = new Contract();
         contract.symbol("MSFT");
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
-        contract.exchange("SMART");
+        contract.exchange(smart ? "SMART" : "ISLAND");
         contract.primaryExch("ISLAND");
         return contract;
     }
 
-    public static Contract MSFT_NASDAQ() {
+    public static Contract AAPL(boolean smart) {
         Contract contract = new Contract();
-        contract.symbol("MSFT");
+        contract.symbol("AAPL");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange(smart ? "SMART" : "ISLAND");
+        contract.primaryExch("ISLAND");
+        return contract;
+    }
+
+    public static Contract toNasdaq(Contract c) {
+        Contract contract = new Contract();
+        contract.symbol(c.symbol());
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange("ISLAND");
         contract.primaryExch("ISLAND");
-        return contract;
-    }
-
-    public static Contract RWE_IBIS() {
-        Contract contract = new Contract();
-        contract.secType(SecType.STK);
-        contract.currency(Currency.EUR);
-        contract.exchange("SMART");
-        contract.symbol("RWE");
         return contract;
     }
 }

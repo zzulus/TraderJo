@@ -13,7 +13,7 @@ import jo.controller.IBService;
 import jo.signal.AllSignals;
 import jo.signal.BelowSimpleAverageSignal;
 import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.NotCloseToDailyHighSignal;
+import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.Signal;
 
 public class MA15MinBot extends BaseBot {
@@ -22,10 +22,10 @@ public class MA15MinBot extends BaseBot {
 
         List<Signal> signals = new ArrayList<>();
         signals.add(new HasAtLeastNBarsSignal(180));
-        signals.add(new NotCloseToDailyHighSignal(0.2d));
+        signals.add(new NotCloseToDailyHighRestriction(0.2d));
         signals.add(new BelowSimpleAverageSignal(900 / 5, 0.20d)); // 15 min
 
-        signal = new AllSignals(signals);
+        positionSignal = new AllSignals(signals);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class MA15MinBot extends BaseBot {
                             continue;
                         }
 
-                        if (signal.isActive(app, contract, marketData)) {
+                        if (positionSignal.isActive(app, contract, marketData)) {
                             log.info("Signal is active " + marketData.getLastPrice());
 
                             final double lastPrice = marketData.getLastPrice();
