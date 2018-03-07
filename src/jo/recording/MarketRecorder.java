@@ -26,7 +26,7 @@ import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.handler.ITopMktDataHandler;
 import jo.model.Bar;
-import jo.recording.event.BaseEvent;
+import jo.recording.event.AbstractEvent;
 import jo.recording.event.MarketDepthEvent;
 import jo.recording.event.RealTimeBarEvent;
 import jo.recording.event.TickPriceEvent;
@@ -38,7 +38,7 @@ public class MarketRecorder implements Recorder {
     private Contract contract;
     private OutputStream out;
     private PrintWriter ps;
-    private ArrayBlockingQueue<BaseEvent> q = new ArrayBlockingQueue<>(64000);
+    private ArrayBlockingQueue<AbstractEvent> q = new ArrayBlockingQueue<>(64000);
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public MarketRecorder(Contract contract) {
@@ -76,8 +76,8 @@ public class MarketRecorder implements Recorder {
         try {
             while (true) {
                 Object event = q.take();
-                String str = objectMapper.writeValueAsString(event);
-                ps.println(str); // todo writye to stream closes stream
+                String str = objectMapper.writeValueAsString(event); // wtf, writeValue(stream) closes the stream
+                ps.println(str);
             }
         } catch (InterruptedException e) {
             // terminated

@@ -3,7 +3,8 @@ package jo.recording.event;
 import com.ib.client.Types.DeepSide;
 import com.ib.client.Types.DeepType;
 
-public class MarketDepthEvent extends BaseEvent {
+public class MarketDepthEvent extends AbstractEvent {
+    public static final String TYPE = "MarketDepth";
     private int position;
     private String marketMaker;
     private DeepType operation;
@@ -11,8 +12,12 @@ public class MarketDepthEvent extends BaseEvent {
     private double price;
     private int size;
 
+    public MarketDepthEvent() {
+        super(TYPE);
+    }
+
     public MarketDepthEvent(int position, String marketMaker, DeepType operation, DeepSide side, double price, int size) {
-        super("MarketDepth");
+        super(TYPE);
         this.position = position;
         this.marketMaker = marketMaker;
         this.operation = operation;

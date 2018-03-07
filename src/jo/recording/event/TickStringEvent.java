@@ -2,12 +2,17 @@ package jo.recording.event;
 
 import com.ib.client.TickType;
 
-public class TickStringEvent extends BaseEvent {
+public class TickStringEvent extends AbstractEvent {
+    public static final String TYPE = "TickString";
     private TickType tickType;
     private String value;
 
+    public TickStringEvent() {
+        super(TYPE);
+    }
+
     public TickStringEvent(TickType tickType, String value) {
-        super("TickString");
+        super(TYPE);
         this.tickType = tickType;
         this.value = value;
     }

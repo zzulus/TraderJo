@@ -4,13 +4,18 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 
-public class OpenOrderEvent extends BaseEvent {
+public class OpenOrderEvent extends AbstractEvent {
+    public static final String TYPE = "OpenOrder";
     private Contract contract;
     private Order order;
     private OrderState orderState;
 
+    public OpenOrderEvent() {
+        super(TYPE);
+    }
+    
     public OpenOrderEvent(Contract contract, Order order, OrderState orderState) {
-        super("OpenOrder");
+        super(TYPE);
         this.contract = contract;
         this.order = order;
         this.orderState = orderState;

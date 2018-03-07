@@ -2,12 +2,17 @@ package jo.recording.event;
 
 import com.ib.client.CommissionReport;
 
-public class CommissionReportEvent extends BaseEvent {
+public class CommissionReportEvent extends AbstractEvent {
+    public static final String TYPE = "CommissionReport";
     private String tradeKey;
     private CommissionReport commissionReport;
 
+    public CommissionReportEvent() {
+        super(TYPE);
+    }
+
     public CommissionReportEvent(String tradeKey, CommissionReport commissionReport) {
-        super("CommissionReport");
+        super(TYPE);
         this.tradeKey = tradeKey;
         this.commissionReport = commissionReport;
     }

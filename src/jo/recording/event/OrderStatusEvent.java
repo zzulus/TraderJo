@@ -2,7 +2,8 @@ package jo.recording.event;
 
 import com.ib.client.OrderStatus;
 
-public class OrderStatusEvent extends BaseEvent {
+public class OrderStatusEvent extends AbstractEvent {
+    public static final String TYPE = "OrderStatus";
     private int orderId;
     private OrderStatus status;
     private double filled;
@@ -13,9 +14,13 @@ public class OrderStatusEvent extends BaseEvent {
     private double lastFillPrice;
     private int clientId;
     private String whyHeld;
+    
+    public OrderStatusEvent() {
+        super(TYPE);
+    }
 
     public OrderStatusEvent(int orderId, OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-        super("OrderStatus");
+        super(TYPE);
         this.orderId = orderId;
         this.status = status;
         this.filled = filled;

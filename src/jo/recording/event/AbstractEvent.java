@@ -1,10 +1,10 @@
 package jo.recording.event;
 
-public abstract class BaseEvent {
+public abstract class AbstractEvent {
     private String type;
     private long time = System.currentTimeMillis();    
 
-    public BaseEvent(String type) {
+    public AbstractEvent(String type) {
         this.type = type;
     }
 

@@ -26,7 +26,7 @@ import com.ib.client.OrderStatus;
 import jo.controller.IBService;
 import jo.handler.ILiveOrderHandler;
 import jo.handler.ITradeReportHandler;
-import jo.recording.event.BaseEvent;
+import jo.recording.event.AbstractEvent;
 import jo.recording.event.CommissionReportEvent;
 import jo.recording.event.OpenOrderEvent;
 import jo.recording.event.OrderErrorEvent;
@@ -37,7 +37,7 @@ public class TradeRecorder implements Recorder {
     private static final Logger log = LogManager.getLogger(TradeRecorder.class);
     private OutputStream out;
     private PrintWriter ps;
-    private ArrayBlockingQueue<BaseEvent> q = new ArrayBlockingQueue<>(64000);
+    private ArrayBlockingQueue<AbstractEvent> q = new ArrayBlockingQueue<>(64000);
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public TradeRecorder() {

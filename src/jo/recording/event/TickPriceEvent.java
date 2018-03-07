@@ -2,13 +2,18 @@ package jo.recording.event;
 
 import com.ib.client.TickType;
 
-public class TickPriceEvent extends BaseEvent {
+public class TickPriceEvent extends AbstractEvent {
+    public static final String TYPE = "TickPrice";
     private TickType tickType;
     private double price;
     private int canAutoExecute;
 
+    public TickPriceEvent() {
+        super(TYPE);
+    }
+
     public TickPriceEvent(TickType tickType, double price, int canAutoExecute) {
-        super("TickPrice");
+        super(TYPE);
         this.tickType = tickType;
         this.price = price;
         this.canAutoExecute = canAutoExecute;

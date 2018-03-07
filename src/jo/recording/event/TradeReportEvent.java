@@ -3,13 +3,18 @@ package jo.recording.event;
 import com.ib.client.Contract;
 import com.ib.client.Execution;
 
-public class TradeReportEvent extends BaseEvent {
+public class TradeReportEvent extends AbstractEvent {
+    public static final String TYPE = "TradeReport";
     private String tradeKey;
     private Contract contract;
     private Execution execution;
 
+    public TradeReportEvent() {
+        super(TYPE);
+    }
+
     public TradeReportEvent(String tradeKey, Contract contract, Execution execution) {
-        super("TradeReport");
+        super(TYPE);
         this.tradeKey = tradeKey;
         this.contract = contract;
         this.execution = execution;

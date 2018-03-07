@@ -2,11 +2,16 @@ package jo.recording.event;
 
 import jo.model.Bar;
 
-public class RealTimeBarEvent extends BaseEvent {
+public class RealTimeBarEvent extends AbstractEvent {
+    public static final String TYPE = "RealTimeBar";
     private Bar bar;
 
+    public RealTimeBarEvent() {
+        super(TYPE);
+    }
+
     public RealTimeBarEvent(Bar bar) {
-        super("RealTimeBar");
+        super(TYPE);
         this.bar = bar;
     }
 
