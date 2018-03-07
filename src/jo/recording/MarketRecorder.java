@@ -59,6 +59,11 @@ public class MarketRecorder implements Recorder {
         ib.reqDeepMktData(Stocks.toNasdaq(contract), 40, this::updateMktDepth);
     }
 
+    @Override
+    public void stop() {
+        ps.close();
+    }
+
     private void addBarEvent(Bar bar) {
         q.add(new RealTimeBarEvent(bar));
     }

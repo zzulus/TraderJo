@@ -59,6 +59,11 @@ public class TradeRecorder implements Recorder {
         ib.reqLiveOrders(handler);
     }
 
+    @Override
+    public void stop() {
+        ps.close();
+    }
+
     public void pollQueue() {
         try {
             while (true) {
@@ -98,7 +103,7 @@ public class TradeRecorder implements Recorder {
 
         @Override
         public void tradeReportEnd() {
-            //q.add(new TradeReportEndEvent());
+            // q.add(new TradeReportEndEvent());
         }
 
         @Override

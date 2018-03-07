@@ -8,10 +8,10 @@ import jo.app.TraderApp;
 import jo.model.MarketData;
 import jo.model.MarketDataTrade;
 
-public class LastTradesPositiveRestriction implements Signal {
+public class LastTradesNotNegativeRestriction implements Signal {
     private int len;
 
-    public LastTradesPositiveRestriction(int len) {
+    public LastTradesNotNegativeRestriction(int len) {
         this.len = len;
     }
 

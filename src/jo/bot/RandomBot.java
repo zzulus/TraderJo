@@ -13,11 +13,12 @@ import com.ib.client.Types.Action;
 import jo.app.TraderApp;
 import jo.controller.IBService;
 import jo.signal.AllSignals;
+import jo.signal.AskIsGreaterThanLastRestriction;
 import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.LastTradesPositiveRestriction;
+import jo.signal.LastIsGreaterThanCloseRestriction;
 import jo.signal.NasdaqRegularHoursRestriction;
 import jo.signal.NotCloseToDailyHighRestriction;
-import jo.signal.RandomSignal;
+import jo.signal.NotCloseToHourHighRestriction;
 import jo.signal.Signal;
 import jo.util.SyncSignal;
 
@@ -31,9 +32,14 @@ public class RandomBot extends BaseBot {
 
         List<Signal> positionSignals = new ArrayList<>();
         // positionSignals.add(openAfterTimeRestriction); // TODO bullshit, add trend + support/resistance
+        //positionSignals.add(new BarShapeHLHRestriction());
         positionSignals.add(new NotCloseToDailyHighRestriction(0.3d));
-        positionSignals.add(new RandomSignal(0.5d));
-        positionSignals.add(new LastTradesPositiveRestriction(3));
+        positionSignals.add(new NotCloseToHourHighRestriction(0.3d)); // TODO this is bullshit too
+
+        // positionSignals.add(new RandomSignal(0.5d));
+        positionSignals.add(new LastIsGreaterThanCloseRestriction());
+        positionSignals.add(new AskIsGreaterThanLastRestriction());
+        
         positionSignals.add(new NasdaqRegularHoursRestriction(15));
 
         positionSignal = new AllSignals(positionSignals);
@@ -56,13 +62,16 @@ public class RandomBot extends BaseBot {
                         log.error("Error in bot", e);
                     }
                 }
+                log.info("Bot activated");
+                
 
                 while (true) {
                     try {
                         marketDataSignal.waitForSignal();
+                        //System.out.println("Signal");
 
                         final double lastPrice = marketData.getLastPrice();
-                        double openPrice = lastPrice - 0.04d;
+                        double openPrice = marketData.getAskPrice() - 0.01;
                         // double openPrice = (marketData.getBidPrice() + marketData.getAskPrice()) / 2;
                         double profitPrice = openPrice + profitTarget;
                         boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) > 0.02);

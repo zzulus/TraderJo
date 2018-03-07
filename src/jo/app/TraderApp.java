@@ -32,7 +32,7 @@ public class TraderApp {
     }
 
     public TraderApp() {
-        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, 0.5d);
+        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, 0.11d);
         // Bot bot2 = new RandomBot(TQQQ_SMART(), 50, 0.10d);
         // Bot bot3 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 90, /* belowAverageVal */ 0.03, 0.10);
         // Bot bot4 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 900, /* belowAverageVal */ 0.20, 0.20);

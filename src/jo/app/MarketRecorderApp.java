@@ -27,7 +27,7 @@ public class MarketRecorderApp {
         records.add(new MarketRecorder(Stocks.AAPL(true)));
         records.add(new MarketRecorder(Stocks.TQQQ(true)));
         records.add(new MarketRecorder(Stocks.SQQQ(true)));
-        //records.add(new MarketRecorder(Stocks.SPY(true)));
+        // records.add(new MarketRecorder(Stocks.SPY(true)));
 
         ib = new IBService();
         ib.setClientId(0);
@@ -43,6 +43,9 @@ public class MarketRecorderApp {
             public void message(int id, int errorCode, String errorMsg) {
                 log.info("message: id {}, errorCode {}, errorMsg {}", id, errorCode, errorMsg);
                 if (errorMsg.contains("Connectivity between IB and Trader Workstation has been lost")) {
+                    for (Recorder recorder : records) {
+                        recorder.stop();
+                    }
                     System.exit(0);
                 }
             }

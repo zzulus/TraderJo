@@ -14,7 +14,7 @@ import jo.app.TraderApp;
 import jo.controller.IBService;
 import jo.signal.AllSignals;
 import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.LastTradesPositiveRestriction;
+import jo.signal.LastTradesNotNegativeRestriction;
 import jo.signal.NasdaqRegularHoursRestriction;
 import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.RandomSignal;

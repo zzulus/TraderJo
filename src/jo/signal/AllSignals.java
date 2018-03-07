@@ -21,6 +21,7 @@ public class AllSignals implements Signal {
     public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
         for (Signal signal : signals) {
             if (!signal.isActive(app, contract, marketData)) {
+                //System.out.println(signal.getClass() + " is not active");
                 return false;
             }
         }

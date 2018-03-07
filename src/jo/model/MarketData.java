@@ -19,7 +19,7 @@ public class MarketData {
     private static final Logger log = LogManager.getLogger(MarketData.class);
 
     private Map<BarSize, Bars> barsMap = new ConcurrentHashMap<>();
-    private CircularFifoQueue<MarketDataTrade> trades = new CircularFifoQueue<>(4096);
+    private CircularFifoQueue<MarketDataTrade> trades = new CircularFifoQueue<>(4 * 4096);
     private volatile double todayOpenPrice;
     private volatile double prevDayClosePrice;
     private volatile double todayLowPrice;
@@ -54,12 +54,6 @@ public class MarketData {
     public MarketDataTrade getLastTrade() {
         synchronized (trades) {
             return trades.get(trades.size() - 1);
-        }
-    }
-
-    public MarketDataTrade getTrade(int tradesBack) {
-        synchronized (trades) {
-            return trades.get(trades.size() - 1 - tradesBack);
         }
     }
 
@@ -216,7 +210,7 @@ public class MarketData {
             default:
                 break;
             }
-            
+
             updateSignal.signalAll();
         }
 
@@ -241,7 +235,7 @@ public class MarketData {
             default:
                 break;
             }
-            
+
             updateSignal.signalAll();
         }
 
