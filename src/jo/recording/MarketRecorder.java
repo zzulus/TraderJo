@@ -23,7 +23,7 @@ import com.ib.client.Types.MktDataType;
 import com.ib.client.Types.WhatToShow;
 
 import jo.constant.Stocks;
-import jo.controller.IBService;
+import jo.controller.IBroker;
 import jo.handler.ITopMktDataHandler;
 import jo.model.Bar;
 import jo.recording.event.AbstractEvent;
@@ -46,7 +46,7 @@ public class MarketRecorder implements Recorder {
         objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
     }
 
-    public void start(IBService ib) {
+    public void start(IBroker ib) {
         openFile();
 
         Thread writerThread = new Thread(this::pollQueue);
@@ -55,7 +55,7 @@ public class MarketRecorder implements Recorder {
         writerThread.start();
 
         ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, (b) -> addBarEvent(b));
-        ib.reqTopMktData(contract, "165,375", /* snapshot */false, new TopMktDataHandler());
+        ib.reqTopMktData(contract, "165,375,295", /* snapshot */false, new TopMktDataHandler());
         ib.reqDeepMktData(Stocks.toNasdaq(contract), 40, this::updateMktDepth);
     }
 

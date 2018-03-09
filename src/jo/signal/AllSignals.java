@@ -5,7 +5,7 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.ib.client.Contract;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.MarketData;
 
 public class AllSignals implements Signal {
@@ -18,7 +18,7 @@ public class AllSignals implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         for (Signal signal : signals) {
             if (!signal.isActive(app, contract, marketData)) {
                 //System.out.println(signal.getClass() + " is not active");

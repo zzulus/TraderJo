@@ -1,9 +1,9 @@
 package jo.recording;
 
-import jo.controller.IBService;
+import jo.controller.IBroker;
 
 public interface Recorder {
-    void start(IBService ib);
+    void start(IBroker ib);
 
     void stop();
 

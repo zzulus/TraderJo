@@ -9,6 +9,7 @@ import com.ib.client.Types.WhatToShow;
 
 import gnu.trove.list.array.TDoubleArrayList;
 import jo.controller.IBService;
+import jo.controller.IBroker;
 import jo.handler.ConnectionHandlerAdapter;
 import jo.handler.IHistoricalDataHandler;
 import jo.model.Bar;
@@ -17,7 +18,7 @@ import jo.model.Bars;
 // http://etfdb.com/type/equity/all/leveraged/#etfs&sort_name=three_month_average_volume&sort_order=desc&page=1
 public class GatherStatisticsApp {
     public static void main(String[] args) throws InterruptedException {
-        final IBService ib = new IBService();
+        final IBroker ib = new IBService();
         Contract contract = new Contract();
         contract.symbol("TQQQ");
         contract.secType("STK");

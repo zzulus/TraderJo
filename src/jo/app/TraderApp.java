@@ -17,13 +17,14 @@ import jo.command.InitStockDataCommand;
 import jo.command.StartBotsCommand;
 import jo.constant.Stocks;
 import jo.controller.IBService;
+import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
 import jo.model.MarketData;
 
-public class TraderApp {
+public class TraderApp implements IApp {
     private static final Logger log = LogManager.getLogger(TraderApp.class);
     private List<AppCommand> postConnectCommands = new ArrayList<>();
-    private IBService ib;
+    private IBroker ib;
     // Key - Stock name, e.g. SPY
     private Map<String, MarketData> stockMarketDataMap = new ConcurrentHashMap<>();
 
@@ -32,7 +33,7 @@ public class TraderApp {
     }
 
     public TraderApp() {
-        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, 0.11d);
+        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, -0.1, 0.11d);
         // Bot bot2 = new RandomBot(TQQQ_SMART(), 50, 0.10d);
         // Bot bot3 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 90, /* belowAverageVal */ 0.03, 0.10);
         // Bot bot4 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 900, /* belowAverageVal */ 0.20, 0.20);
@@ -90,15 +91,18 @@ public class TraderApp {
         ib.connectLocalhostLive(connHandler);
     }
 
-    public IBService getIb() {
+    @Override
+    public IBroker getIb() {
         return ib;
     }
 
-    public Map<String, MarketData> getStockMarketDataMap() {
+    @Override
+    public Map<String, MarketData> getMarketDataMap() {
         return stockMarketDataMap;
     }
 
-    public MarketData getStockMarketData(String symbol) {
+    @Override
+    public MarketData getMarketData(String symbol) {
         return stockMarketDataMap.get(symbol);
     }
 

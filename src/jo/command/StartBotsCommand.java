@@ -2,9 +2,9 @@ package jo.command;
 
 import java.util.List;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.bot.Bot;
-import jo.controller.IBService;
+import jo.controller.IBroker;
 
 public class StartBotsCommand implements AppCommand {
     private List<Bot> bots;
@@ -14,7 +14,7 @@ public class StartBotsCommand implements AppCommand {
     }
 
     @Override
-    public void execute(IBService ib, TraderApp app) {
+    public void execute(IBroker ib, IApp app) {
         for (Bot bot : bots) {
             bot.start(ib, app);
         }

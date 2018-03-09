@@ -1,7 +1,7 @@
 package jo.command;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 
 public class SleepCommand implements AppCommand {
     private long sleepMs;
@@ -11,7 +11,7 @@ public class SleepCommand implements AppCommand {
     }
 
     @Override
-    public void execute(IBService ib, TraderApp app) {
+    public void execute(IBroker ib, IApp app) {
         try {
             Thread.currentThread().sleep(sleepMs);
         } catch (InterruptedException e) {

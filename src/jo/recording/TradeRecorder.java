@@ -23,7 +23,7 @@ import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 
-import jo.controller.IBService;
+import jo.controller.IBroker;
 import jo.handler.ILiveOrderHandler;
 import jo.handler.ITradeReportHandler;
 import jo.recording.event.AbstractEvent;
@@ -44,7 +44,7 @@ public class TradeRecorder implements Recorder {
         objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
     }
 
-    public void start(IBService ib) {
+    public void start(IBroker ib) {
         openFile();
 
         Thread writerThread = new Thread(this::pollQueue);

@@ -1,6 +1,6 @@
 package jo.handler;
 
-import jo.ib.controller.model.Position;
+import jo.controller.model.Position;
 
 // ---------------------------------------- Account and portfolio updates ----------------------------------------
 public interface IAccountHandler {

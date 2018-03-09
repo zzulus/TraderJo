@@ -11,8 +11,8 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.WhatToShow;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 import jo.model.Bars;
 import jo.model.MarketData;
 
@@ -26,10 +26,10 @@ public class InitStockDataCommand implements AppCommand {
     }
 
     @Override
-    public void execute(IBService ib, TraderApp app) {
+    public void execute(IBroker ib, IApp app) {
         log.info("Init stock data for {}", contract.symbol());
 
-        Map<String, MarketData> stockMarketDataMap = app.getStockMarketDataMap();
+        Map<String, MarketData> stockMarketDataMap = app.getMarketDataMap();
 
         MarketData marketData = new MarketData();
         stockMarketDataMap.put(contract.symbol(), marketData);

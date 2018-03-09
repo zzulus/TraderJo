@@ -3,7 +3,7 @@ package jo.signal;
 import com.google.common.base.Preconditions;
 import com.ib.client.Contract;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.MarketData;
 
 public class RandomSignal implements Signal {
@@ -15,7 +15,7 @@ public class RandomSignal implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         return Math.random() <= weight;
     }
     

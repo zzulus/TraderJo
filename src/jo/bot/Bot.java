@@ -1,8 +1,8 @@
 package jo.bot;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 
 public interface Bot {
-    void start(IBService ib, TraderApp app);
+    void start(IBroker ib, IApp app);
 }

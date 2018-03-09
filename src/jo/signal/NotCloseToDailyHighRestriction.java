@@ -2,7 +2,7 @@ package jo.signal;
 
 import com.ib.client.Contract;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.MarketData;
 
 public class NotCloseToDailyHighRestriction implements Signal {
@@ -13,7 +13,7 @@ public class NotCloseToDailyHighRestriction implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         return marketData.getTodayHighPrice() - marketData.getLastPrice() > delta;
     }
 

@@ -11,7 +11,7 @@ import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 
-import jo.controller.IBService;
+import jo.controller.IBroker;
 import jo.handler.IOrderHandler;
 import jo.model.MarketData;
 import jo.signal.Signal;
@@ -29,6 +29,8 @@ public abstract class BaseBot implements Bot {
     protected Order openOrder;
     protected Order takeProfitOrder;
 
+    protected Thread thread;
+
     public BaseBot(Contract contract, int totalQuantity) {
         checkArgument(totalQuantity > 0);
         checkNotNull(contract);
@@ -37,7 +39,7 @@ public abstract class BaseBot implements Bot {
         this.totalQuantity = totalQuantity;
     }
 
-    protected void placeOrders(IBService ib) {
+    protected void placeOrders(IBroker ib) {
         log.info("Placing order: Open at {}, close at {}", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
 
         if (openOrderIsActive) {
@@ -53,7 +55,8 @@ public abstract class BaseBot implements Bot {
         }
 
         if (takeProfitOrder.lmtPrice() - openOrder.lmtPrice() < 0.05) {
-            throw new IllegalStateException("open/close price doesn't conform to min 0.05 diff rule");
+            String msg = String.format("open/close price doesn't conform to min 0.05 diff rule, open %.2f, close %.2f", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
+            throw new IllegalStateException(msg);
         }
         openOrderIsActive = true;
         takeProfitOrderIsActive = true;
@@ -62,7 +65,7 @@ public abstract class BaseBot implements Bot {
         ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
     }
 
-    protected void modifyOrders(IBService ib) {
+    protected void modifyOrders(IBroker ib) {
         log.info("Modify orders: Open at {}, close at {}", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
 
         if (!openOrderIsActive) {
@@ -87,6 +90,18 @@ public abstract class BaseBot implements Bot {
         ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
         ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
     }
+    
+    protected void stopLossOrder(IBroker ib) {
+        log.info("Stop loss order  at {}", takeProfitOrder.lmtPrice());
+        
+        if (!takeProfitOrderIsActive) {
+            // throw new IllegalStateException("takeProfitOrder is not active");
+            return;
+        }
+
+        // TODO Use existing handlers?
+        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+    }
 
     protected static double fixPriceVariance(double price) {
         double minTick = 0.01;
@@ -100,6 +115,10 @@ public abstract class BaseBot implements Bot {
 
     protected void takeProfitOrderFilled() {
         takeProfitOrderIsActive = false;
+    }
+
+    public void shutdown() {
+        thread.interrupt();
     }
 
     protected class OpenPositionOrderHandler implements IOrderHandler {

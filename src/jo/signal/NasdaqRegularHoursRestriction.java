@@ -6,7 +6,7 @@ import java.time.temporal.ChronoField;
 
 import com.ib.client.Contract;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.MarketData;
 
 // nasdaq
@@ -22,7 +22,7 @@ public class NasdaqRegularHoursRestriction implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         // TODO switch to epochTime and precomputed ranges
         ZonedDateTime timeInNY = ZonedDateTime.now(EST_ZONE);
 

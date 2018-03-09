@@ -1,8 +1,8 @@
 package jo.command;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 
 public interface AppCommand {
-    void execute(IBService ib, TraderApp app);
+    void execute(IBroker ib, IApp app);
 }

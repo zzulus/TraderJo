@@ -13,8 +13,8 @@ import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 import jo.model.Bars;
 import jo.signal.AllSignals;
 import jo.signal.HasAtLeastNBarsSignal;
@@ -42,9 +42,9 @@ public class BelowSimpleAverageBot extends BaseBot {
     }
 
     @Override
-    public void start(IBService ib, TraderApp app) {
+    public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getStockMarketData(contract.symbol());
+        marketData = app.getMarketData(contract.symbol());
         Bars bars = marketData.getBars(BarSize._5_secs);
 
         new Thread("Bot 1#" + contract.symbol()) {

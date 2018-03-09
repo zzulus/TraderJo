@@ -1,6 +1,6 @@
 package jo.handler;
 
-import jo.ib.controller.model.AccountSummaryTag;
+import jo.controller.model.AccountSummaryTag;
 
 // ---------------------------------------- Account Summary handling ----------------------------------------
 public interface IAccountSummaryHandler {

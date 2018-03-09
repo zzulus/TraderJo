@@ -2,7 +2,7 @@
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License,
 as applicable. */
 
-package jo.ib.controller.model;
+package jo.controller.model;
 
 public enum ScanCode {
     TOP_PERC_GAIN,

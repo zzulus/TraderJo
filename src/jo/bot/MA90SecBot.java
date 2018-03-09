@@ -9,39 +9,61 @@ import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 import jo.model.Bars;
 import jo.signal.AllSignals;
-import jo.signal.BelowSimpleAverageSignal;
 import jo.signal.HasAtLeastNBarsSignal;
 import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.Signal;
+import jo.util.SyncSignal;
 
 public class MA90SecBot extends BaseBot {
+    private double in = -0.04d;
+    private double out = +0.04d;
+
+    public MA90SecBot(Contract contract, int totalQuantity, double inDelta, double outDelta) {
+        this(contract, totalQuantity);
+        this.in = inDelta;
+        this.out = outDelta;
+    }
+
     public MA90SecBot(Contract contract, int totalQuantity) {
         super(contract, totalQuantity);
 
         List<Signal> signals = new ArrayList<>();
         signals.add(new HasAtLeastNBarsSignal(90 / 5)); // 90 seconds
         signals.add(new NotCloseToDailyHighRestriction(0.2d));
-        //signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
+        // signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
 
         positionSignal = new AllSignals(signals);
     }
 
     @Override
-    public void start(IBService ib, TraderApp app) {
+    public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getStockMarketData(contract.symbol());
+        marketData = app.getMarketData(contract.symbol());
         Bars bars = marketData.getBars(BarSize._5_secs);
+        SyncSignal marketDataSignal = marketData.getUpdateSignal();
 
-        new Thread("Bot 1#" + contract.symbol()) {
+        this.thread = new Thread("Bot 1#" + contract.symbol()) {
             @Override
             public void run() {
                 while (true) {
+                    if (Thread.interrupted()) {
+                        return;
+                    }
+
                     try {
-                        Thread.sleep(1000);
+                        marketDataSignal.waitForSignal();
+                        double lastPrice = marketData.getLastPrice();
+//                        if (!openOrderIsActive && takeProfitOrderIsActive && openOrder.lmtPrice() - lastPrice > out*2) {
+//                            // openOrder.lmtPrice(openPrice);
+//                            takeProfitOrder.lmtPrice(lastPrice);
+//
+//                            modifyOrders(ib);
+//                        }
+
                         if (takeProfitOrderIsActive) {
                             continue;
                         }
@@ -54,9 +76,13 @@ public class MA90SecBot extends BaseBot {
                                 continue;
                             }
 
-                            final double lastPrice = marketData.getLastPrice();
-                            final double openPrice = lastPrice - 0.04d;
-                            final double profitPrice = lastPrice + 0.10d;
+                            // final double lastPrice = marketData.getLastPrice();
+                            final double openPrice = lastPrice + in;
+                            final double profitPrice = openPrice + out;
+
+                            if (profitPrice - openPrice < 0.05) {
+                                throw new RuntimeException("Wtf");
+                            }
 
                             openOrder = new Order();
                             openOrder.orderRef("ave90");
@@ -84,6 +110,7 @@ public class MA90SecBot extends BaseBot {
                     }
                 }
             }
-        }.start();
+        };
+        thread.start();
     }
 }

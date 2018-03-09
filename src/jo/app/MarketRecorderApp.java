@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import jo.constant.Stocks;
 import jo.controller.IBService;
+import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
 import jo.recording.MarketRecorder;
 import jo.recording.Recorder;
@@ -15,7 +16,7 @@ import jo.recording.TradeRecorder;
 
 public class MarketRecorderApp {
     private static final Logger log = LogManager.getLogger(TraderApp.class);
-    private IBService ib;
+    private IBroker ib;
 
     public static void main(String[] args) {
         new MarketRecorderApp().start();

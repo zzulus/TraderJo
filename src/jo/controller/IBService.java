@@ -49,6 +49,11 @@ import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
 
 import jo.constant.ConnectionConstants;
+import jo.controller.model.AccountSummaryTag;
+import jo.controller.model.Group;
+import jo.controller.model.MarketValueTag;
+import jo.controller.model.Position;
+import jo.controller.model.Profile;
 import jo.handler.IAccountHandler;
 import jo.handler.IAccountSummaryHandler;
 import jo.handler.IAccountUpdateMultiHandler;
@@ -72,16 +77,11 @@ import jo.handler.ISoftDollarTiersReqHandler;
 import jo.handler.ITimeHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.handler.ITradeReportHandler;
-import jo.ib.controller.model.AccountSummaryTag;
-import jo.ib.controller.model.Group;
-import jo.ib.controller.model.MarketValueTag;
-import jo.ib.controller.model.Position;
-import jo.ib.controller.model.Profile;
 import jo.model.Bar;
 import jo.util.AdvisorUtil;
 import jo.util.ConcurrentHashSet;
 
-public class IBService {
+public class IBService implements IBroker {
     private static final Logger log = LogManager.getLogger(IBService.class);
 
     // TODO WTF is that?
@@ -148,10 +148,12 @@ public class IBService {
         }.start();
     }
 
+    @Override
     public void connectLocalhostLive(IConnectionHandler handler) {
         connect(handler, ConnectionConstants.LOCALHOST, ConnectionConstants.LIVE_TRADING_PORT, clientId);
     }
 
+    @Override
     public void connect(IConnectionHandler handler, String host, int port, int clientId) {
         connectionHandler = handler;
 
@@ -162,6 +164,7 @@ public class IBService {
         startMsgProcessingThread();
     }
 
+    @Override
     public void disconnect() {
         if (!checkConnection())
             return;
@@ -171,10 +174,12 @@ public class IBService {
         connectionHandler.disconnected();
     }
 
+    @Override
     public void setClientId(int clientId) {
         this.clientId = clientId;
     }
 
+    @Override
     public void reqAccountUpdates(boolean subscribe, String acctCode, IAccountHandler handler) {
         if (!checkConnection())
             return;
@@ -187,6 +192,7 @@ public class IBService {
      * @param group
      *            pass "All" to get data for all accounts
      */
+    @Override
     public void reqAccountSummary(String group, AccountSummaryTag[] tags, IAccountSummaryHandler handler) {
         if (!checkConnection())
             return;
@@ -208,6 +214,7 @@ public class IBService {
         return isConnected;
     }
 
+    @Override
     public void cancelAccountSummary(IAccountSummaryHandler handler) {
         if (!checkConnection())
             return;
@@ -218,6 +225,7 @@ public class IBService {
         }
     }
 
+    @Override
     public void reqMarketValueSummary(String group, IMarketValueSummaryHandler handler) {
         if (!checkConnection())
             return;
@@ -227,6 +235,7 @@ public class IBService {
         client.reqAccountSummary(reqId, group, "$LEDGER");
     }
 
+    @Override
     public void cancelMarketValueSummary(IMarketValueSummaryHandler handler) {
         if (!checkConnection())
             return;
@@ -237,6 +246,7 @@ public class IBService {
         }
     }
 
+    @Override
     public void reqPositions(IPositionHandler handler) {
         if (!checkConnection())
             return;
@@ -245,6 +255,7 @@ public class IBService {
         client.reqPositions();
     }
 
+    @Override
     public void cancelPositions(IPositionHandler handler) {
         if (!checkConnection())
             return;
@@ -253,6 +264,7 @@ public class IBService {
         client.cancelPositions();
     }
 
+    @Override
     public void reqContractDetails(Contract contract, final IContractDetailsHandler processor) {
         if (!checkConnection())
             return;
@@ -304,6 +316,7 @@ public class IBService {
         client.reqContractDetails(reqId, contract);
     }
 
+    @Override
     public void reqTopMktData(Contract contract, String genericTickList, boolean snapshot, ITopMktDataHandler handler) {
         if (!checkConnection())
             return;
@@ -313,6 +326,7 @@ public class IBService {
         client.reqMktData(reqId, contract, genericTickList, snapshot, null);
     }
 
+    @Override
     public void reqOptionMktData(Contract contract, String genericTickList, boolean snapshot, IOptHandler handler) {
         if (!checkConnection())
             return;
@@ -323,6 +337,7 @@ public class IBService {
         client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
     }
 
+    @Override
     public void reqEfpMktData(Contract contract, String genericTickList, boolean snapshot, IEfpHandler handler) {
         if (!checkConnection())
             return;
@@ -333,6 +348,7 @@ public class IBService {
         client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
     }
 
+    @Override
     public void cancelTopMktData(ITopMktDataHandler handler) {
         if (!checkConnection())
             return;
@@ -345,16 +361,19 @@ public class IBService {
         }
     }
 
+    @Override
     public void cancelOptionMktData(IOptHandler handler) {
         cancelTopMktData(handler);
         getAndRemoveKey(this.optionCompMap, handler);
     }
 
+    @Override
     public void cancelEfpMktData(IEfpHandler handler) {
         cancelTopMktData(handler);
         getAndRemoveKey(this.efpMap, handler);
     }
 
+    @Override
     public void reqMktDataType(MktDataType type) {
         if (!checkConnection())
             return;
@@ -362,6 +381,7 @@ public class IBService {
         client.reqMarketDataType(type.ordinal());
     }
 
+    @Override
     public void reqDeepMktData(Contract contract, int numRows, IDeepMktDataHandler handler) {
         if (!checkConnection())
             return;
@@ -372,6 +392,7 @@ public class IBService {
         client.reqMktDepth(reqId, contract, numRows, mktDepthOptions);
     }
 
+    @Override
     public void cancelDeepMktData(IDeepMktDataHandler handler) {
         if (!checkConnection())
             return;
@@ -383,6 +404,7 @@ public class IBService {
     }
 
     // ---------------------------------------- Option computations ----------------------------------------
+    @Override
     public void reqOptionVolatility(Contract c, double optPrice, double underPrice, IOptHandler handler) {
         if (!checkConnection())
             return;
@@ -392,6 +414,7 @@ public class IBService {
         client.calculateImpliedVolatility(reqId, c, optPrice, underPrice);
     }
 
+    @Override
     public void reqOptionComputation(Contract c, double vol, double underPrice, IOptHandler handler) {
         if (!checkConnection())
             return;
@@ -401,7 +424,8 @@ public class IBService {
         client.calculateOptionPrice(reqId, c, vol, underPrice);
     }
 
-    void cancelOptionComp(IOptHandler handler) {
+    @Override
+    public void cancelOptionComp(IOptHandler handler) {
         if (!checkConnection())
             return;
 
@@ -411,6 +435,7 @@ public class IBService {
         }
     }
 
+    @Override
     public void reqExecutions(ExecutionFilter filter, ITradeReportHandler handler) {
         if (!checkConnection())
             return;
@@ -419,6 +444,7 @@ public class IBService {
         client.reqExecutions(getNextRequestId(), filter);
     }
 
+    @Override
     public void updateGroups(List<Group> groups) {
         if (!checkConnection())
             return;
@@ -426,6 +452,7 @@ public class IBService {
         client.replaceFA(FADataType.GROUPS.ordinal(), AdvisorUtil.getGroupsXml(groups));
     }
 
+    @Override
     public void updateProfiles(List<Profile> profiles) {
         if (!checkConnection())
             return;
@@ -433,6 +460,7 @@ public class IBService {
         client.replaceFA(FADataType.PROFILES.ordinal(), AdvisorUtil.getProfilesXml(profiles));
     }
 
+    @Override
     public void placeOrModifyOrder(Contract contract, final Order order, final IOrderHandler handler) {
         if (!checkConnection())
             return;
@@ -449,6 +477,7 @@ public class IBService {
         client.placeOrder(order.orderId(), contract, order);
     }
 
+    @Override
     public void cancelOrder(int orderId) {
         if (!checkConnection())
             return;
@@ -456,6 +485,7 @@ public class IBService {
         client.cancelOrder(orderId);
     }
 
+    @Override
     public void cancelAllOrders() {
         if (!checkConnection())
             return;
@@ -463,6 +493,7 @@ public class IBService {
         client.reqGlobalCancel();
     }
 
+    @Override
     public void exerciseOption(String account, Contract contract, ExerciseType type, int quantity, boolean override) {
         if (!checkConnection())
             return;
@@ -470,10 +501,12 @@ public class IBService {
         client.exerciseOptions(getNextRequestId(), contract, type.ordinal(), quantity, account, override ? 1 : 0);
     }
 
+    @Override
     public void removeOrderHandler(IOrderHandler handler) {
         getAndRemoveKey(this.orderHandlers, handler);
     }
 
+    @Override
     public void reqLiveOrders(ILiveOrderHandler handler) {
         if (!checkConnection())
             return;
@@ -482,6 +515,7 @@ public class IBService {
         client.reqAllOpenOrders();
     }
 
+    @Override
     public void takeTwsOrders(ILiveOrderHandler handler) {
         if (!checkConnection())
             return;
@@ -490,6 +524,7 @@ public class IBService {
         client.reqOpenOrders();
     }
 
+    @Override
     public void takeFutureTwsOrders(ILiveOrderHandler handler) {
         if (!checkConnection())
             return;
@@ -498,10 +533,12 @@ public class IBService {
         client.reqAutoOpenOrders(true);
     }
 
+    @Override
     public void removeLiveOrderHandler(ILiveOrderHandler handler) {
         liveOrderHandlers.remove(handler);
     }
 
+    @Override
     public void reqScannerParameters(IScannerHandler handler) {
         if (!checkConnection())
             return;
@@ -510,6 +547,7 @@ public class IBService {
         client.reqScannerParameters();
     }
 
+    @Override
     public void reqScannerSubscription(ScannerSubscription sub, IScannerHandler handler) {
         if (!checkConnection())
             return;
@@ -520,6 +558,7 @@ public class IBService {
         client.reqScannerSubscription(reqId, sub, scannerSubscriptionOptions);
     }
 
+    @Override
     public void cancelScannerSubscription(IScannerHandler handler) {
         if (!checkConnection())
             return;
@@ -536,6 +575,7 @@ public class IBService {
      * @param duration
      *            is number of durationUnits
      */
+    @Override
     public void reqHistoricalData(Contract contract,
             String endDateTime,
             int duration,
@@ -554,6 +594,7 @@ public class IBService {
         client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(), rthOnly ? 1 : 0, 2, Collections.emptyList());
     }
 
+    @Override
     public void cancelHistoricalData(IHistoricalDataHandler handler) {
         if (!checkConnection())
             return;
@@ -564,6 +605,7 @@ public class IBService {
         }
     }
 
+    @Override
     public void reqRealTimeBars(Contract contract, WhatToShow whatToShow, boolean rthOnly, IRealTimeBarHandler handler) {
         if (!checkConnection())
             return;
@@ -574,6 +616,7 @@ public class IBService {
         client.reqRealTimeBars(reqId, contract, 0, whatToShow.toString(), rthOnly, realTimeBarsOptions);
     }
 
+    @Override
     public void cancelRealtimeBars(IRealTimeBarHandler handler) {
         if (!checkConnection())
             return;
@@ -584,6 +627,7 @@ public class IBService {
         }
     }
 
+    @Override
     public void reqFundamentals(Contract contract, FundamentalType reportType, IFundamentalsHandler handler) {
         if (!checkConnection())
             return;
@@ -593,6 +637,7 @@ public class IBService {
         client.reqFundamentalData(reqId, contract, reportType.getApiString());
     }
 
+    @Override
     public void reqCurrentTime(ITimeHandler handler) {
         if (!checkConnection())
             return;
@@ -601,6 +646,7 @@ public class IBService {
         client.reqCurrentTime();
     }
 
+    @Override
     public void reqBulletins(boolean allMessages, IBulletinHandler handler) {
         if (!checkConnection())
             return;
@@ -609,6 +655,7 @@ public class IBService {
         client.reqNewsBulletins(allMessages);
     }
 
+    @Override
     public void cancelBulletins() {
         if (!checkConnection())
             return;
@@ -616,6 +663,7 @@ public class IBService {
         client.cancelNewsBulletins();
     }
 
+    @Override
     public void reqPositionsMulti(String account, String modelCode, IPositionMultiHandler handler) {
         if (!checkConnection())
             return;
@@ -625,6 +673,7 @@ public class IBService {
         client.reqPositionsMulti(reqId, account, modelCode);
     }
 
+    @Override
     public void cancelPositionsMulti(IPositionMultiHandler handler) {
         if (!checkConnection())
             return;
@@ -635,6 +684,7 @@ public class IBService {
         }
     }
 
+    @Override
     public void reqAccountUpdatesMulti(String account, String modelCode, boolean ledgerAndNLV, IAccountUpdateMultiHandler handler) {
         if (!checkConnection())
             return;
@@ -644,6 +694,7 @@ public class IBService {
         client.reqAccountUpdatesMulti(reqId, account, modelCode, ledgerAndNLV);
     }
 
+    @Override
     public void cancelAccountUpdatesMulti(IAccountUpdateMultiHandler handler) {
         if (!checkConnection())
             return;
@@ -654,10 +705,12 @@ public class IBService {
         }
     }
 
+    @Override
     public void show(String string) {
         this.connectionHandler.show(string);
     }
 
+    @Override
     public void reqSecDefOptParams(String underlyingSymbol, String futFopExchange, /* String currency, */ String underlyingSecType, int underlyingConId, ISecDefOptParamsReqHandler handler) {
         if (!checkConnection())
             return;
@@ -667,6 +720,7 @@ public class IBService {
         client.reqSecDefOptParams(reqId, underlyingSymbol, futFopExchange, /* currency, */ underlyingSecType, underlyingConId);
     }
 
+    @Override
     public void reqSoftDollarTiers(ISoftDollarTiersReqHandler handler) {
         if (!checkConnection())
             return;
@@ -688,6 +742,7 @@ public class IBService {
         return reqId.incrementAndGet();
     }
 
+    @Override
     public int getNextOrderId() {
         return orderId.incrementAndGet();
     }

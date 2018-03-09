@@ -2,6 +2,7 @@ package jo.model;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +45,15 @@ public class MarketData {
     private ITopMktDataHandler topMktDataHandler = new TopMktDataHandler();
     private final SyncSignal updateSignal = new SyncSignal();
 
+    public MarketData() {
+        initBars(BarSize._5_secs);
+        initBars(BarSize._1_min);
+        initBars(BarSize._2_mins);
+        initBars(BarSize._15_mins);
+        initBars(BarSize._30_mins);
+        initBars(BarSize._1_hour);
+    }
+
     public void addTrade(MarketDataTrade trade) {
         synchronized (trades) {
             trades.add(trade);
@@ -77,8 +87,27 @@ public class MarketData {
         return topMktDataHandler;
     }
 
-    public void addBar(BarSize barSize, Bar bar) {
-        barsMap.get(barSize).addBar(bar);
+    public synchronized void addBar(BarSize barSize, Bar bar) {
+        Bars bars = barsMap.computeIfAbsent(barSize, (k) -> new Bars());
+        bars.addBar(bar);
+        int size = bars.getSize();
+        
+//        initBars(BarSize._5_secs);
+//        initBars(BarSize._1_min);
+//        initBars(BarSize._2_mins);
+//        initBars(BarSize._15_mins);
+//        initBars(BarSize._30_mins);
+//        initBars(BarSize._1_hour);
+        
+        int b1m = (int) (TimeUnit.MINUTES.toSeconds(1)/5);
+        int b2m = (int) (TimeUnit.MINUTES.toSeconds(2)/5);
+        int b5m = (int) (TimeUnit.MINUTES.toSeconds(5)/5);
+        int b10m = (int) (TimeUnit.MINUTES.toSeconds(10)/5);
+        
+        
+        //if(size % )
+                
+        
         updateSignal.signalAll();
     }
 
@@ -178,7 +207,7 @@ public class MarketData {
                 break;
             case HIGH:
                 todayHighPrice = price;
-                log.info("TodayHighPrice: {}", price);
+                //log.info("TodayHighPrice: {}", price);
                 break;
             case LOW:
                 todayLowPrice = price;

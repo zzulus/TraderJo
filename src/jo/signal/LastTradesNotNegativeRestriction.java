@@ -4,7 +4,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import com.ib.client.Contract;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.MarketData;
 import jo.model.MarketDataTrade;
 
@@ -16,7 +16,7 @@ public class LastTradesNotNegativeRestriction implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         CircularFifoQueue<MarketDataTrade> trades = marketData.getTrades();
         int size = trades.size();
         boolean isActive = true;

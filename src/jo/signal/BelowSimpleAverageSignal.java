@@ -4,7 +4,7 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
 import gnu.trove.list.array.TDoubleArrayList;
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.Bars;
 import jo.model.MarketData;
 
@@ -19,7 +19,7 @@ public class BelowSimpleAverageSignal implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         if (bars == null) {
             bars = marketData.getBars(BarSize._5_secs);
         }

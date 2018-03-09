@@ -11,11 +11,11 @@ import java.util.List;
 
 import com.ib.client.Types.Method;
 
-import jo.ib.controller.model.Alias;
-import jo.ib.controller.model.Group;
-import jo.ib.controller.model.Profile;
-import jo.ib.controller.model.Profile.Allocation;
-import jo.ib.controller.model.Profile.Type;
+import jo.controller.model.Alias;
+import jo.controller.model.Group;
+import jo.controller.model.Profile;
+import jo.controller.model.Profile.Allocation;
+import jo.controller.model.Profile.Type;
 
 public class AdvisorUtil {
     static List<Group> getGroups(String xml) {

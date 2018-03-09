@@ -2,7 +2,7 @@ package jo.signal;
 
 import com.ib.client.Contract;
 
-import jo.app.TraderApp;
+import jo.app.IApp;
 import jo.model.MarketData;
 
 public class AskIsGreaterThanLastRestriction implements Signal {
@@ -11,7 +11,7 @@ public class AskIsGreaterThanLastRestriction implements Signal {
     }
 
     @Override
-    public boolean isActive(TraderApp app, Contract contract, MarketData marketData) {
+    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         // bid < last < ask
         return marketData.getAskPrice() > marketData.getLastPrice();
     }

@@ -10,8 +10,8 @@ import com.ib.client.Order;
 import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 
-import jo.app.TraderApp;
-import jo.controller.IBService;
+import jo.app.IApp;
+import jo.controller.IBroker;
 import jo.signal.AllSignals;
 import jo.signal.AskIsGreaterThanLastRestriction;
 import jo.signal.HasAtLeastNBarsSignal;
@@ -23,58 +23,69 @@ import jo.signal.Signal;
 import jo.util.SyncSignal;
 
 public class RandomBot extends BaseBot {
-    private double profitTarget = 0.30d;
+    private double in = -0.01d;
+    private double out = 0.30d;
     private Signal startSignal;
 
-    public RandomBot(Contract contract, int totalQuantity, double profitTarget) {
+    public RandomBot(Contract contract, int totalQuantity, double in, double out) {
         super(contract, totalQuantity);
-        this.profitTarget = profitTarget;
+        this.in = in;
+        this.out = out;
 
         List<Signal> positionSignals = new ArrayList<>();
         // positionSignals.add(openAfterTimeRestriction); // TODO bullshit, add trend + support/resistance
-        //positionSignals.add(new BarShapeHLHRestriction());
+        // positionSignals.add(new BarShapeHLHRestriction());
         positionSignals.add(new NotCloseToDailyHighRestriction(0.3d));
         positionSignals.add(new NotCloseToHourHighRestriction(0.3d)); // TODO this is bullshit too
 
         // positionSignals.add(new RandomSignal(0.5d));
         positionSignals.add(new LastIsGreaterThanCloseRestriction());
         positionSignals.add(new AskIsGreaterThanLastRestriction());
-        
-        positionSignals.add(new NasdaqRegularHoursRestriction(15));
+
+        // positionSignals.add(new NasdaqRegularHoursRestriction(15));
 
         positionSignal = new AllSignals(positionSignals);
         startSignal = new HasAtLeastNBarsSignal(6);
     }
 
     @Override
-    public void start(IBService ib, TraderApp app) {
+    public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getStockMarketData(contract.symbol());
+        marketData = app.getMarketData(contract.symbol());
         SyncSignal marketDataSignal = marketData.getUpdateSignal();
 
-        new Thread("Bot Rnd#" + contract.symbol()) {
+        this.thread = new Thread("Bot Rnd#" + contract.symbol()) {
             @Override
             public void run() {
-                while (!startSignal.isActive(app, contract, marketData)) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception e) {
-                        log.error("Error in bot", e);
+                while (true) {
+                    if (Thread.interrupted()) {
+                        return;
+                    }
+
+                    marketDataSignal.waitForSignal();
+                    if (startSignal.isActive(app, contract, marketData)) {
+                        break;
                     }
                 }
                 log.info("Bot activated");
-                
 
                 while (true) {
+                    if (Thread.interrupted()) {
+                        return;
+                    }
+
                     try {
                         marketDataSignal.waitForSignal();
-                        //System.out.println("Signal");
+                        // System.out.println("Signal");
 
                         final double lastPrice = marketData.getLastPrice();
-                        double openPrice = marketData.getAskPrice() - 0.01;
-                        // double openPrice = (marketData.getBidPrice() + marketData.getAskPrice()) / 2;
-                        double profitPrice = openPrice + profitTarget;
+                        double openPrice = marketData.getAskPrice() + in;
+                        double profitPrice = openPrice + out;
                         boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) > 0.02);
+
+                        if (profitPrice - openPrice < 0.05) {
+                            throw new RuntimeException("Wtf");
+                        }
 
                         openPrice = fixPriceVariance(openPrice);
                         profitPrice = fixPriceVariance(profitPrice);
@@ -100,20 +111,28 @@ public class RandomBot extends BaseBot {
 
                                 placeOrders(ib);
                             }
-                        } else {
-                            if (openOrderIsActive && takeProfitOrderIsActive && updateOrders) {
-                                openOrder.lmtPrice(openPrice);
-                                takeProfitOrder.lmtPrice(profitPrice);
+                        } else if (openOrderIsActive && takeProfitOrderIsActive && updateOrders) {
+                            openOrder.lmtPrice(openPrice);
+                            takeProfitOrder.lmtPrice(profitPrice);
 
-                                modifyOrders(ib);
-                            }
-                        }
+                            modifyOrders(ib);
+                        } /* 
+                        // DO NOT DO
+                        else if (!openOrderIsActive && takeProfitOrderIsActive && openOrder.lmtPrice() - lastPrice > out) {
+                            //openOrder.lmtPrice(openPrice);
+                            takeProfitOrder.lmtPrice(lastPrice);
+
+                            modifyOrders(ib);
+                        }*/
+
+
                     } catch (Exception e) {
                         log.error("Error in bot", e);
                     }
                 }
             }
-        }.start();
+        };
+        thread.start();
     }
 
     protected void takeProfitOrderFilled() {
