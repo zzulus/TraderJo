@@ -73,7 +73,7 @@ public class Bars {
 
         double acc = 0;
         for (int i = 0; i < period; i++) {
-            acc = acc + close.get(size - i - 1);
+            acc = acc + close.get(size - i);
         }
 
         return acc / period;

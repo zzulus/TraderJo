@@ -25,10 +25,17 @@ public class MarketRecorderApp {
     public void start() {
         List<Recorder> records = new ArrayList<>();
         records.add(new TradeRecorder());
-        records.add(new MarketRecorder(Stocks.AAPL(true)));
-        records.add(new MarketRecorder(Stocks.TQQQ(true)));
-        records.add(new MarketRecorder(Stocks.SQQQ(true)));
-        // records.add(new MarketRecorder(Stocks.SPY(true)));
+        records.add(new MarketRecorder(Stocks.AAPL(true)).withDeepBook(true));
+        records.add(new MarketRecorder(Stocks.TQQQ(true)).withDeepBook(true));
+        records.add(new MarketRecorder(Stocks.QQQ(true)).withDeepBook(true));
+
+        for (String stock : MarketRecorderStocks.TICKS_ONLY_ETFS) {
+            records.add(new MarketRecorder(Stocks.of(stock, true)).withDeepBook(false));
+        }
+        
+        for (String stock : MarketRecorderStocks.TICKS_ONLY_STOCKS) {
+            records.add(new MarketRecorder(Stocks.of(stock, true)).withDeepBook(false));
+        }
 
         ib = new IBService();
         ib.setClientId(0);
@@ -48,6 +55,10 @@ public class MarketRecorderApp {
                         recorder.stop();
                     }
                     System.exit(0);
+                }
+
+                for (Recorder recorder : records) {
+                    recorder.error(id, errorCode, errorMsg);
                 }
             }
 

@@ -27,6 +27,7 @@ import jo.controller.IBroker;
 import jo.handler.ITopMktDataHandler;
 import jo.model.Bar;
 import jo.recording.event.AbstractEvent;
+import jo.recording.event.ErrorEvent;
 import jo.recording.event.MarketDepthEvent;
 import jo.recording.event.RealTimeBarEvent;
 import jo.recording.event.TickPriceEvent;
@@ -35,6 +36,7 @@ import jo.recording.event.TickStringEvent;
 
 public class MarketRecorder implements Recorder {
     private static final Logger log = LogManager.getLogger(MarketRecorder.class);
+    private boolean recordDeepBook = true;
     private Contract contract;
     private OutputStream out;
     private PrintWriter ps;
@@ -51,12 +53,15 @@ public class MarketRecorder implements Recorder {
 
         Thread writerThread = new Thread(this::pollQueue);
         writerThread.setDaemon(true);
-        writerThread.setName("MarketRecorder:" + contract.symbol());
+        writerThread.setName("MarketRecorder-" + contract.symbol());
         writerThread.start();
 
         ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, (b) -> addBarEvent(b));
         ib.reqTopMktData(contract, "165,375,295", /* snapshot */false, new TopMktDataHandler());
-        ib.reqDeepMktData(Stocks.toNasdaq(contract), 40, this::updateMktDepth);
+
+        if (recordDeepBook) {
+            ib.reqDeepMktData(Stocks.toNasdaq(contract), 40, this::updateMktDepth);
+        }
     }
 
     @Override
@@ -101,6 +106,16 @@ public class MarketRecorder implements Recorder {
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void error(int id, int errorCode, String errorMsg) {
+        q.add(new ErrorEvent(id, errorCode, errorMsg));
+    }
+
+    public MarketRecorder withDeepBook(boolean recordDeepBook) {
+        this.recordDeepBook = recordDeepBook;
+        return this;
     }
 
     private class TopMktDataHandler implements ITopMktDataHandler {

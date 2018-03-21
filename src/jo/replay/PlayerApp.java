@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
@@ -25,9 +26,11 @@ import jo.constant.Stocks;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.EventTypeRegistry;
+import jo.recording.event.MarketDepthEvent;
+import jo.recording.event.TickSizeEvent;
 
-public class Player {
-    private static final Logger log = LogManager.getLogger(Player.class);
+public class PlayerApp {
+    private static final Logger log = LogManager.getLogger(PlayerApp.class);
     private static Map<File, List<AbstractEvent>> EVENTS_CACHE = new HashMap<>();
 
     private Contract contract;
@@ -35,37 +38,36 @@ public class Player {
     private ReplayApp app;
 
     public static void main(String[] args) {
-        File file1 = new File("D:\\autobot\\TraderJo\\log\\2018-03-06\\Market-TQQQ.log");
-        File file2 = new File("D:\\autobot\\TraderJo\\log\\2018-03-06\\Market-TQQQ.log");
-        File file3 = new File("D:\\autobot\\TraderJo\\log\\2018-03-08\\Market-TQQQ.log");
-        File[] files = new File[] { file1, file2, file3 };
+        List<File> files = Lists.newArrayList(
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-06\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-07\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-08\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-09\\Market-TQQQ.log"));
 
-        System.out.println(String.format("In\tOut\tTotal Profit"
-                + "\tTrades\tP&L\tPotential P&L\tCommissions\tPotential Profit"
-                + "\tTrades\tP&L\tPotential P&L\tCommissions\tPotential Profit"
-                + "\tTrades\tP&L\tPotential P&L\tCommissions\tPotential Profit"));
+        System.out.print("In\tOut\tTotal Profit");
+        for (int i = 0; i < files.size(); i++) {
+            System.out.print("\tTrades\tPotential Profit");
+        }
+        System.out.println();
 
-        for (double in = -0.01; in < 0.10; in += 0.01) {
-            for (double out = 0.09; out < 2.0; out += 0.01) {
+        for (double in = -0.01; in < 0.10; in += 0.02) {
+            for (double out = 0.09; out < 2.0; out += 0.02) {
                 // System.out.println(String.format("in %.2f, out %.2f", in, out));
 
                 double totalProfit = 0;
                 StringBuilder t = new StringBuilder();
 
                 for (File file : files) {
-                    MA90SecBot bot = new MA90SecBot(Stocks.TQQQ(true), 100, in, out);
-                    // RandomBot bot = new RandomBot(Stocks.TQQQ(true), 100, in, out);
-                    Player player = new Player();
+                    //MA90SecBot bot = new MA90SecBot(Stocks.TQQQ(true), 100, in, out);
+                    RandomBot bot = new RandomBot(Stocks.TQQQ(true), 100, in, out);
+                    PlayerApp player = new PlayerApp();
                     Stats stats = player.replay(file, bot);
                     bot.shutdown();
-                    
+
                     player.app.getMarketDataMap().values().forEach(md -> md.getUpdateSignal().signalAll());
 
-                    t.append(String.format("\t%d\t%.2f\t%.2f\t%.2f\t%.2f",
+                    t.append(String.format("\t%d\t%.2f",
                             stats.getFilledOrders().size(),
-                            stats.getPnl(),
-                            stats.getPotentialPnl(),
-                            stats.getCommissions(),
                             stats.getPotentialPnl() - stats.getCommissions()));
                     totalProfit += stats.getPotentialPnl() - stats.getCommissions();
                     // System.out.println(stats);
@@ -78,6 +80,8 @@ public class Player {
                 System.out.println(h.append(t));
             }
         }
+        
+        System.exit(0);
     }
 
     public Stats replay(File file, Bot bot) {
@@ -86,7 +90,6 @@ public class Player {
         bot.start(ib, app);
 
         readAndPlay(file);
-        
 
         Stats stats = ib.getOrderManager().getStats();
         return stats;
@@ -106,6 +109,11 @@ public class Player {
     private void readAndPlay(File file) {
         List<AbstractEvent> events = loadEvents(file);
         for (AbstractEvent event : events) {
+            if (event instanceof MarketDepthEvent
+                    || event instanceof MarketDepthEvent
+                    || event instanceof TickSizeEvent) {
+                continue;
+            }
             app.handleReplayEvent(contract, event);
         }
     }

@@ -7,4 +7,5 @@ public interface Recorder {
 
     void stop();
 
+    void error(int id, int errorCode, String errorMsg);
 }

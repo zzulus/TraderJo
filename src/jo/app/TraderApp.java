@@ -10,8 +10,10 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import jo.bot.BelowSimpleAverageBot;
 import jo.bot.Bot;
 import jo.bot.RandomBot;
+import jo.bot.RandomShortingBot;
 import jo.command.AppCommand;
 import jo.command.InitStockDataCommand;
 import jo.command.StartBotsCommand;
@@ -33,15 +35,18 @@ public class TraderApp implements IApp {
     }
 
     public TraderApp() {
-        Bot bot1 = new RandomBot(Stocks.TQQQ(true), 50, -0.1, 0.11d);
-        // Bot bot2 = new RandomBot(TQQQ_SMART(), 50, 0.10d);
-        // Bot bot3 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 90, /* belowAverageVal */ 0.03, 0.10);
+        //Bot bot1 = new RandomShortingBot(Stocks.SQQQ(true), 1000, +0.00, -0.04);
+        // Bot bot1 = new RandomBot(Stocks.TQQQ(true), 100, 1,  0.10d);
+        Bot bot1 = new BelowSimpleAverageBot(Stocks.TQQQ(true), 100, /* periodSeconds */ 90, /* belowAverageVal */ 0.03, 0.10);
         // Bot bot4 = new BelowSimpleAverageBot(TQQQ_SMART(), 50, /* periodSeconds */ 900, /* belowAverageVal */ 0.20, 0.20);
 
         List<Bot> bots = Lists.newArrayList(bot1);
 
         postConnectCommands = Lists.newArrayList(
+                //new InitStockDataCommand(Stocks.TQQQ(true)),
+                new InitStockDataCommand(Stocks.SPY(true)),
                 new InitStockDataCommand(Stocks.TQQQ(true)),
+                //new InitStockDataCommand(Stocks.SQQQ(true)),
                 new StartBotsCommand(bots));
     }
 

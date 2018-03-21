@@ -9,13 +9,13 @@ public class EventTypeRegistry {
             .put(CommissionReportEvent.TYPE, CommissionReportEvent.class)
             .put(MarketDepthEvent.TYPE, MarketDepthEvent.class)
             .put(OpenOrderEvent.TYPE, OpenOrderEvent.class)
-            .put(OrderErrorEvent.TYPE, OrderErrorEvent.class)
+            .put(ErrorEvent.TYPE, ErrorEvent.class)
             .put(OrderStatusEvent.TYPE, OrderStatusEvent.class)
             .put(RealTimeBarEvent.TYPE, RealTimeBarEvent.class)
             .put(TickPriceEvent.TYPE, TickPriceEvent.class)
             .put(TickSizeEvent.TYPE, TickSizeEvent.class)
             .put(TickStringEvent.TYPE, TickStringEvent.class)
-            .put(TradeReportEvent.TYPE, TradeReportEvent.class)
+            .put(TradeReportEvent.TYPE, TradeReportEvent.class)            
             .build();
 
     public static Class<? extends AbstractEvent> getByType(String type) {

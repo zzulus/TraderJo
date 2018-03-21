@@ -31,12 +31,12 @@ public class BelowSimpleAverageSignal implements Signal {
         }
 
         double acc = 0;
-        for (int i = 0; i < period; i++) {
-            acc = acc + close.get(size - i - 1);
+        for (int i = size - period - 1; i < period; i++) {
+            acc = acc + close.get(i);
         }
         double saValue = acc / period;
 
-        //log.info("MA {}, diff {}", saValue, saValue - marketData.getLastPrice());
+        // log.info("MA {}, diff {}", saValue, saValue - marketData.getLastPrice());
 
         return saValue - marketData.getLastPrice() > delta;
     }

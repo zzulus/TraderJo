@@ -91,23 +91,21 @@ public class MarketData {
         Bars bars = barsMap.computeIfAbsent(barSize, (k) -> new Bars());
         bars.addBar(bar);
         int size = bars.getSize();
-        
-//        initBars(BarSize._5_secs);
-//        initBars(BarSize._1_min);
-//        initBars(BarSize._2_mins);
-//        initBars(BarSize._15_mins);
-//        initBars(BarSize._30_mins);
-//        initBars(BarSize._1_hour);
-        
-        int b1m = (int) (TimeUnit.MINUTES.toSeconds(1)/5);
-        int b2m = (int) (TimeUnit.MINUTES.toSeconds(2)/5);
-        int b5m = (int) (TimeUnit.MINUTES.toSeconds(5)/5);
-        int b10m = (int) (TimeUnit.MINUTES.toSeconds(10)/5);
-        
-        
-        //if(size % )
-                
-        
+
+        // initBars(BarSize._5_secs);
+        // initBars(BarSize._1_min);
+        // initBars(BarSize._2_mins);
+        // initBars(BarSize._15_mins);
+        // initBars(BarSize._30_mins);
+        // initBars(BarSize._1_hour);
+
+        int b1m = (int) (TimeUnit.MINUTES.toSeconds(1) / 5);
+        int b2m = (int) (TimeUnit.MINUTES.toSeconds(2) / 5);
+        int b5m = (int) (TimeUnit.MINUTES.toSeconds(5) / 5);
+        int b10m = (int) (TimeUnit.MINUTES.toSeconds(10) / 5);
+
+        // if(size % )
+
         updateSignal.signalAll();
     }
 
@@ -193,6 +191,9 @@ public class MarketData {
         @Override
         public void tickPrice(TickType tickType, double price, int canAutoExecute) {
             // log.info("tickPrice: {} {}", tickType, price);
+            if (price < 0) {
+                return;
+            }
 
             switch (tickType) {
             case ASK:
@@ -207,7 +208,7 @@ public class MarketData {
                 break;
             case HIGH:
                 todayHighPrice = price;
-                //log.info("TodayHighPrice: {}", price);
+                // log.info("TodayHighPrice: {}", price);
                 break;
             case LOW:
                 todayLowPrice = price;
@@ -245,6 +246,10 @@ public class MarketData {
 
         @Override
         public void tickSize(TickType tickType, int size) {
+            if (size < 0) {
+                return;
+            }
+
             switch (tickType) {
             case ASK_SIZE:
                 askSize = size;

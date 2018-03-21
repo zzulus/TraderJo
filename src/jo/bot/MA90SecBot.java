@@ -13,9 +13,12 @@ import jo.app.IApp;
 import jo.controller.IBroker;
 import jo.model.Bars;
 import jo.signal.AllSignals;
+import jo.signal.BelowSimpleAverageSignal;
 import jo.signal.HasAtLeastNBarsSignal;
+import jo.signal.NasdaqRegularHoursRestriction;
 import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.Signal;
+import jo.signal.TwoMASignal;
 import jo.util.SyncSignal;
 
 public class MA90SecBot extends BaseBot {
@@ -32,9 +35,14 @@ public class MA90SecBot extends BaseBot {
         super(contract, totalQuantity);
 
         List<Signal> signals = new ArrayList<>();
-        signals.add(new HasAtLeastNBarsSignal(90 / 5)); // 90 seconds
-        signals.add(new NotCloseToDailyHighRestriction(0.2d));
+        //signals.add(new HasAtLeastNBarsSignal(90 / 5)); // 90 seconds
+        //signals.add(new NasdaqRegularHoursRestriction(0));
+        //signals.add(new NotCloseToDailyHighRestriction(0.2d));
         // signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
+        // signals.add(new BelowSimpleAverageSignal((5 * 60) / 5, 0.03d));
+        
+        int n = 5;
+        signals.add(new TwoMASignal(n, 2 * n + 1));
 
         positionSignal = new AllSignals(signals);
     }
@@ -56,28 +64,18 @@ public class MA90SecBot extends BaseBot {
 
                     try {
                         marketDataSignal.waitForSignal();
-                        double lastPrice = marketData.getLastPrice();
-//                        if (!openOrderIsActive && takeProfitOrderIsActive && openOrder.lmtPrice() - lastPrice > out*2) {
-//                            // openOrder.lmtPrice(openPrice);
-//                            takeProfitOrder.lmtPrice(lastPrice);
-//
-//                            modifyOrders(ib);
-//                        }
 
                         if (takeProfitOrderIsActive) {
                             continue;
                         }
+                        //double lastPrice = marketData.getLastPrice();
+                        double basePrice = marketData.getAskPrice();
 
                         if (positionSignal.isActive(app, contract, marketData)) {
-                            log.info("Signal is active " + marketData.getLastPrice());
-
-                            Double currentTarget = bars.getAverageClose(90 / 5);
-                            if (currentTarget == null) {
-                                continue;
-                            }
+                            // log.info("Signal is active " + marketData.getLastPrice());
 
                             // final double lastPrice = marketData.getLastPrice();
-                            final double openPrice = lastPrice + in;
+                            final double openPrice = basePrice + in;
                             final double profitPrice = openPrice + out;
 
                             if (profitPrice - openPrice < 0.05) {
@@ -85,7 +83,6 @@ public class MA90SecBot extends BaseBot {
                             }
 
                             openOrder = new Order();
-                            openOrder.orderRef("ave90");
                             openOrder.orderId(ib.getNextOrderId());
                             openOrder.action(Action.BUY);
                             openOrder.orderType(OrderType.LMT);
@@ -94,7 +91,6 @@ public class MA90SecBot extends BaseBot {
                             openOrder.transmit(false);
 
                             takeProfitOrder = new Order();
-                            takeProfitOrder.orderRef("ave90");
                             takeProfitOrder.orderId(ib.getNextOrderId());
                             takeProfitOrder.action(Action.SELL);
                             takeProfitOrder.orderType(OrderType.LMT);

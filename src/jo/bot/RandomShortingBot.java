@@ -21,14 +21,15 @@ import jo.signal.NotCloseToDailyHighRestriction;
 import jo.signal.NotCloseToHourHighRestriction;
 import jo.signal.RandomSignal;
 import jo.signal.Signal;
+import jo.signal.TrendDownMASignal;
 import jo.util.SyncSignal;
 
-public class RandomBot extends BaseBot {
+public class RandomShortingBot extends BaseBot {
     private double in = -0.01d;
     private double out = 0.30d;
     private Signal startSignal;
 
-    public RandomBot(Contract contract, int totalQuantity, double in, double out) {
+    public RandomShortingBot(Contract contract, int totalQuantity, double in, double out) {
         super(contract, totalQuantity);
         this.in = in;
         this.out = out;
@@ -36,17 +37,19 @@ public class RandomBot extends BaseBot {
         List<Signal> positionSignals = new ArrayList<>();
         // positionSignals.add(openAfterTimeRestriction); // TODO bullshit, add trend + support/resistance
         // positionSignals.add(new BarShapeHLHRestriction());
-        positionSignals.add(new NotCloseToDailyHighRestriction(0.3d));
-        positionSignals.add(new NotCloseToHourHighRestriction(0.3d)); // TODO this is bullshit too
+        // positionSignals.add(new NotCloseToDailyHighRestriction(0.3d));
+        // positionSignals.add(new NotCloseToHourHighRestriction(0.3d)); // TODO this is bullshit too
 
-        positionSignals.add(new RandomSignal(0.05d));
-        //positionSignals.add(new LastIsGreaterThanCloseRestriction());
-        //positionSignals.add(new AskIsGreaterThanLastRestriction());
+        positionSignals.add(new RandomSignal(0.010d));
+        positionSignals.add(new TrendDownMASignal(9));
+
+        // positionSignals.add(new LastIsGreaterThanCloseRestriction());
+        // positionSignals.add(new AskIsGreaterThanLastRestriction());
 
         // positionSignals.add(new NasdaqRegularHoursRestriction(15));
 
         positionSignal = new AllSignals(positionSignals);
-        startSignal = new HasAtLeastNBarsSignal(6);
+        startSignal = new HasAtLeastNBarsSignal(9);
     }
 
     @Override
@@ -81,11 +84,7 @@ public class RandomBot extends BaseBot {
                         final double lastPrice = marketData.getLastPrice();
                         double openPrice = lastPrice + in;
                         double profitPrice = openPrice + out;
-                        boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) > 0.02);
-
-                        if (profitPrice - openPrice < 0.05) {
-                            throw new RuntimeException("Wtf");
-                        }
+                        boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) >= 0.01);
 
                         openPrice = fixPriceVariance(openPrice);
                         profitPrice = fixPriceVariance(profitPrice);
@@ -94,7 +93,7 @@ public class RandomBot extends BaseBot {
                             if (!takeProfitOrderIsActive) {
                                 openOrder = new Order();
                                 openOrder.orderId(ib.getNextOrderId());
-                                openOrder.action(Action.BUY);
+                                openOrder.action(Action.SELL);
                                 openOrder.orderType(OrderType.LMT);
                                 openOrder.totalQuantity(totalQuantity);
                                 openOrder.lmtPrice(openPrice);
@@ -102,29 +101,21 @@ public class RandomBot extends BaseBot {
 
                                 takeProfitOrder = new Order();
                                 takeProfitOrder.orderId(ib.getNextOrderId());
-                                takeProfitOrder.action(Action.SELL);
+                                takeProfitOrder.action(Action.BUY);
                                 takeProfitOrder.orderType(OrderType.LMT);
                                 takeProfitOrder.totalQuantity(totalQuantity);
                                 takeProfitOrder.lmtPrice(profitPrice);
                                 takeProfitOrder.parentId(openOrder.orderId());
                                 takeProfitOrder.transmit(true);
 
-                                placeOrders(ib);
+                                placeShortOrders(ib);
                             }
                         } else if (openOrderIsActive && takeProfitOrderIsActive && updateOrders) {
                             openOrder.lmtPrice(openPrice);
                             takeProfitOrder.lmtPrice(profitPrice);
 
-                            modifyOrders(ib);
-                        } /* 
-                        // DO NOT DO
-                        else if (!openOrderIsActive && takeProfitOrderIsActive && openOrder.lmtPrice() - lastPrice > out) {
-                            //openOrder.lmtPrice(openPrice);
-                            takeProfitOrder.lmtPrice(lastPrice);
-
-                            modifyOrders(ib);
-                        }*/
-
+                            modifyShortOrders(ib);
+                        }
 
                     } catch (Exception e) {
                         log.error("Error in bot", e);

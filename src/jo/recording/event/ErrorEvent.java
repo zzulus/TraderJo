@@ -1,16 +1,16 @@
 package jo.recording.event;
 
-public class OrderErrorEvent extends AbstractEvent {
-    public static final String TYPE = "OrderError";
+public class ErrorEvent extends AbstractEvent {
+    public static final String TYPE = "Error";
     private int orderId;
     private int errorCode;
     private String errorMsg;
 
-    public OrderErrorEvent() {
+    public ErrorEvent() {
         super(TYPE);
     }
 
-    public OrderErrorEvent(int orderId, int errorCode, String errorMsg) {
+    public ErrorEvent(int orderId, int errorCode, String errorMsg) {
         super(TYPE);
         this.orderId = orderId;
         this.errorCode = errorCode;

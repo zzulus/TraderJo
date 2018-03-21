@@ -40,7 +40,8 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void placeOrders(IBroker ib) {
-        log.info("Placing order: Open at {}, close at {}", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
+        log.info("Placing long order: Open at {} {}, close at {} {}",
+                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
 
         if (openOrderIsActive) {
             throw new IllegalStateException("openOrder is active");
@@ -50,8 +51,9 @@ public abstract class BaseBot implements Bot {
             throw new IllegalStateException("takeProfitOrder is active");
         }
 
-        if (takeProfitOrder.lmtPrice() < 130 || openOrder.lmtPrice() < 130) {
-            throw new IllegalStateException("open/close price doesn't conform to min 0.10 price rule");
+        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
+            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule, "
+                    + "open " + openOrder.lmtPrice() + ", take profit " + takeProfitOrder.lmtPrice());
         }
 
         if (takeProfitOrder.lmtPrice() - openOrder.lmtPrice() < 0.05) {
@@ -66,7 +68,8 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void modifyOrders(IBroker ib) {
-        log.info("Modify orders: Open at {}, close at {}", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
+        log.info("Modify long order: Open at {} {}, close at {} {}",
+                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
 
         if (!openOrderIsActive) {
             // throw new IllegalStateException("openOrder is not active");
@@ -78,8 +81,8 @@ public abstract class BaseBot implements Bot {
             return;
         }
 
-        if (takeProfitOrder.lmtPrice() < 130 || openOrder.lmtPrice() < 130) {
-            throw new IllegalStateException("open/close price doesn't conform to min 0.10 price rule");
+        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
+            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule");
         }
 
         if (takeProfitOrder.lmtPrice() - openOrder.lmtPrice() < 0.05) {
@@ -90,10 +93,65 @@ public abstract class BaseBot implements Bot {
         ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
         ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
     }
-    
+
+    protected void placeShortOrders(IBroker ib) {
+        log.info("Placing short order: Open at {} {}, close at {} {}",
+                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
+
+        if (openOrderIsActive) {
+            throw new IllegalStateException("openOrder is active");
+        }
+
+        if (takeProfitOrderIsActive) {
+            throw new IllegalStateException("takeProfitOrder is active");
+        }
+
+        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
+            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule, "
+                    + "open " + openOrder.lmtPrice() + ", take profit " + takeProfitOrder.lmtPrice());
+        }
+
+        if (openOrder.lmtPrice() - takeProfitOrder.lmtPrice() < 0.02) {
+            String msg = String.format("open/close price doesn't conform to min 0.04 diff rule, open %.2f, close %.2f", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
+            throw new IllegalStateException(msg);
+        }
+        openOrderIsActive = true;
+        takeProfitOrderIsActive = true;
+
+        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
+        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+    }
+
+    protected void modifyShortOrders(IBroker ib) {
+        log.info("Modify short order: Open at {} {}, close at {} {}",
+                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
+
+        if (!openOrderIsActive) {
+            // throw new IllegalStateException("openOrder is not active");
+            return;
+        }
+
+        if (takeProfitOrderIsActive) {
+            // throw new IllegalStateException("takeProfitOrder is not active");
+            return;
+        }
+
+        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
+            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule");
+        }
+
+        if (openOrder.lmtPrice() - takeProfitOrder.lmtPrice() < 0.02) {
+            throw new IllegalStateException("open/close price doesn't conform to min 0.04 diff rule");
+        }
+
+        // TODO Use existing handlers?
+        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
+        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+    }
+
     protected void stopLossOrder(IBroker ib) {
         log.info("Stop loss order  at {}", takeProfitOrder.lmtPrice());
-        
+
         if (!takeProfitOrderIsActive) {
             // throw new IllegalStateException("takeProfitOrder is not active");
             return;

@@ -12,13 +12,22 @@ public class Stocks {
         contract.currency(Currency.USD);
         contract.exchange(smart ? "SMART" : "ISLAND");
         contract.primaryExch("NASDAQ");
-        // contract.conid(72539702);
         return contract;
     }
 
     public static Contract SQQQ(boolean smart) {
         Contract contract = new Contract();
         contract.symbol("SQQQ");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange(smart ? "SMART" : "ISLAND");
+        contract.primaryExch("NASDAQ");
+        return contract;
+    }
+    
+    public static Contract QQQ(boolean smart) {
+        Contract contract = new Contract();
+        contract.symbol("QQQ");
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange(smart ? "SMART" : "ISLAND");
@@ -32,13 +41,23 @@ public class Stocks {
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange(smart ? "SMART" : "ISLAND");
-        contract.primaryExch("NASDAQ");
+        contract.primaryExch("ARCA");
         return contract;
     }
 
     public static Contract MSFT(boolean smart) {
         Contract contract = new Contract();
         contract.symbol("MSFT");
+        contract.secType(SecType.STK);
+        contract.currency(Currency.USD);
+        contract.exchange(smart ? "SMART" : "ISLAND");
+        contract.primaryExch("ISLAND");
+        return contract;
+    }
+    
+    public static Contract of(String name, boolean smart) {
+        Contract contract = new Contract();
+        contract.symbol(name);
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange(smart ? "SMART" : "ISLAND");
@@ -52,7 +71,7 @@ public class Stocks {
         contract.secType(SecType.STK);
         contract.currency(Currency.USD);
         contract.exchange(smart ? "SMART" : "ISLAND");
-        contract.primaryExch("ISLAND");
+        contract.primaryExch("NASDAQ");
         return contract;
     }
 

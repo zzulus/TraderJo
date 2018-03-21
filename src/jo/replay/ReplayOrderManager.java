@@ -161,7 +161,7 @@ public class ReplayOrderManager {
         }
     }
 
-    public Stats getStats() {
+    public synchronized Stats getStats() {
         double potentialPnl = pnl;
 
         for (ReplayOrder replayOrder : openOrders.values()) {
