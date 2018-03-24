@@ -39,13 +39,13 @@ public class ChaseTrendBot extends BaseBot {
     @Override
     public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getMarketData(contract.symbol());
-        SyncSignal marketDataSignal = marketData.getUpdateSignal();
+        md = app.getMarketData(contract.symbol());
+        SyncSignal marketDataSignal = md.getUpdateSignal();
 
         new Thread("Bot Chase#" + contract.symbol()) {
             @Override
             public void run() {
-                while (!startSignal.isActive(app, contract, marketData)) {
+                while (!startSignal.isActive(app, contract, md)) {
                     try {
                         Thread.sleep(500);
                     } catch (Exception e) {
@@ -57,7 +57,7 @@ public class ChaseTrendBot extends BaseBot {
                     try {
                         marketDataSignal.waitForSignal();
 
-                        final double lastPrice = marketData.getLastPrice();
+                        final double lastPrice = md.getLastPrice();
                         double openPrice = lastPrice - 0.04d;
                         double profitPrice = openPrice + profitTarget;
                         boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) > 0.02);
@@ -65,7 +65,7 @@ public class ChaseTrendBot extends BaseBot {
                         openPrice = fixPriceVariance(openPrice);
                         profitPrice = fixPriceVariance(profitPrice);
 
-                        if (positionSignal.isActive(app, contract, marketData)) {
+                        if (positionSignal.isActive(app, contract, md)) {
                             if (!takeProfitOrderIsActive) {
                                 openOrder = new Order();
                                 openOrder.orderId(ib.getNextOrderId());

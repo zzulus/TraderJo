@@ -50,9 +50,9 @@ public class MA90SecBot extends BaseBot {
     @Override
     public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getMarketData(contract.symbol());
-        Bars bars = marketData.getBars(BarSize._5_secs);
-        SyncSignal marketDataSignal = marketData.getUpdateSignal();
+        md = app.getMarketData(contract.symbol());
+        Bars bars = md.getBars(BarSize._5_secs);
+        SyncSignal marketDataSignal = md.getUpdateSignal();
 
         this.thread = new Thread("Bot 1#" + contract.symbol()) {
             @Override
@@ -69,9 +69,9 @@ public class MA90SecBot extends BaseBot {
                             continue;
                         }
                         //double lastPrice = marketData.getLastPrice();
-                        double basePrice = marketData.getAskPrice();
+                        double basePrice = md.getAskPrice();
 
-                        if (positionSignal.isActive(app, contract, marketData)) {
+                        if (positionSignal.isActive(app, contract, md)) {
                             // log.info("Signal is active " + marketData.getLastPrice());
 
                             // final double lastPrice = marketData.getLastPrice();

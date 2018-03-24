@@ -20,7 +20,7 @@ public abstract class BaseBot implements Bot {
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final Contract contract;
     protected final int totalQuantity;
-    protected MarketData marketData;
+    protected MarketData md;
 
     protected Signal positionSignal;
     protected volatile boolean openOrderIsActive = false;

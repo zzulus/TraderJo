@@ -55,8 +55,8 @@ public class RandomShortingBot extends BaseBot {
     @Override
     public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getMarketData(contract.symbol());
-        SyncSignal marketDataSignal = marketData.getUpdateSignal();
+        md = app.getMarketData(contract.symbol());
+        SyncSignal marketDataSignal = md.getUpdateSignal();
 
         this.thread = new Thread("Bot Rnd#" + contract.symbol()) {
             @Override
@@ -67,7 +67,7 @@ public class RandomShortingBot extends BaseBot {
                     }
 
                     marketDataSignal.waitForSignal();
-                    if (startSignal.isActive(app, contract, marketData)) {
+                    if (startSignal.isActive(app, contract, md)) {
                         break;
                     }
                 }
@@ -81,7 +81,7 @@ public class RandomShortingBot extends BaseBot {
                     try {
                         marketDataSignal.waitForSignal();
 
-                        final double lastPrice = marketData.getLastPrice();
+                        final double lastPrice = md.getLastPrice();
                         double openPrice = lastPrice + in;
                         double profitPrice = openPrice + out;
                         boolean updateOrders = (openOrder != null && abs(openOrder.lmtPrice() - openPrice) >= 0.01);
@@ -89,7 +89,7 @@ public class RandomShortingBot extends BaseBot {
                         openPrice = fixPriceVariance(openPrice);
                         profitPrice = fixPriceVariance(profitPrice);
 
-                        if (positionSignal.isActive(app, contract, marketData)) {
+                        if (positionSignal.isActive(app, contract, md)) {
                             if (!takeProfitOrderIsActive) {
                                 openOrder = new Order();
                                 openOrder.orderId(ib.getNextOrderId());

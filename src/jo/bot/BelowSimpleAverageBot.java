@@ -55,9 +55,9 @@ public class BelowSimpleAverageBot extends BaseBot {
     @Override
     public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getMarketData(contract.symbol());
-        SyncSignal marketDataSignal = marketData.getUpdateSignal();
-        Bars bars = marketData.getBars(BarSize._5_secs);
+        md = app.getMarketData(contract.symbol());
+        SyncSignal marketDataSignal = md.getUpdateSignal();
+        Bars bars = md.getBars(BarSize._5_secs);
         TDoubleArrayList close = bars.getClose();
 
         new Thread("Bot 1#" + contract.symbol()) {
@@ -71,7 +71,7 @@ public class BelowSimpleAverageBot extends BaseBot {
 
                         marketDataSignal.waitForSignal();
 
-                        double lastPrice = marketData.getLastPrice();
+                        double lastPrice = md.getLastPrice();
                         int size = close.size();
                         Double averagePrice0 = getAverageClose(close, 0, periodSeconds / 5);
                         Double averagePrice1 = getAverageClose(close, 1, periodSeconds / 5);
@@ -112,8 +112,8 @@ public class BelowSimpleAverageBot extends BaseBot {
                                 averagePrice1 - averagePrice2,
                                 lastPrice - averagePrice0);
 
-                        String bidLastAskPrice = fmt(2, marketData.getBidPrice(), marketData.getLastPrice(), marketData.getAskPrice());
-                        String bidLastAskSize = "[" + marketData.getBidSize() + ", " + marketData.getLastSize() + ", " + marketData.getAskSize() + "]";
+                        String bidLastAskPrice = fmt(2, md.getBidPrice(), md.getLastPrice(), md.getAskPrice());
+                        String bidLastAskSize = "[" + md.getBidSize() + ", " + md.getLastSize() + ", " + md.getAskSize() + "]";
 
                         // String msg = String.format("Last %.2favg %s, diff %s", lastPrice, avgs, avgDiffs);
 

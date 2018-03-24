@@ -31,7 +31,7 @@ public class MA15MinBot extends BaseBot {
     @Override
     public void start(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
-        marketData = app.getMarketData(contract.symbol());
+        md = app.getMarketData(contract.symbol());
 
         new Thread("Bot 2#" + contract.symbol()) {
             @Override
@@ -43,10 +43,10 @@ public class MA15MinBot extends BaseBot {
                             continue;
                         }
 
-                        if (positionSignal.isActive(app, contract, marketData)) {
-                            log.info("Signal is active " + marketData.getLastPrice());
+                        if (positionSignal.isActive(app, contract, md)) {
+                            log.info("Signal is active " + md.getLastPrice());
 
-                            final double lastPrice = marketData.getLastPrice();
+                            final double lastPrice = md.getLastPrice();
                             final double openPrice = lastPrice - 0.04d;
                             final double profitPrice = lastPrice + 0.30d;
 
