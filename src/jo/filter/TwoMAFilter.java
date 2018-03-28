@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
@@ -7,14 +7,13 @@ import gnu.trove.list.array.TDoubleArrayList;
 import jo.app.IApp;
 import jo.model.Bars;
 import jo.model.MarketData;
-import jo.util.TACore;
 
-public class TwoMASignal implements Signal {
+public class TwoMAFilter implements Filter {
     private int shortPeriod;
     private int longPeriod;
     private Bars bars;
 
-    public TwoMASignal(int shortPeriod, int longPeriod) {
+    public TwoMAFilter(int shortPeriod, int longPeriod) {
         this.shortPeriod = shortPeriod;
         this.longPeriod = longPeriod;
     }

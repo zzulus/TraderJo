@@ -25,11 +25,11 @@ import com.ib.client.Types.BarSize;
 import gnu.trove.list.array.TDoubleArrayList;
 import jo.app.IApp;
 import jo.controller.IBroker;
+import jo.filter.AllFilters;
+import jo.filter.Filter;
+import jo.filter.HasAtLeastNBarsFilter;
+import jo.filter.NotCloseToDailyHighFilter;
 import jo.model.Bars;
-import jo.signal.AllSignals;
-import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.NotCloseToDailyHighRestriction;
-import jo.signal.Signal;
 import jo.util.SyncSignal;
 
 public class BelowSimpleAverageBot extends BaseBot {
@@ -44,16 +44,16 @@ public class BelowSimpleAverageBot extends BaseBot {
         this.belowAverageVal = belowAverageVal;
         this.profitTarget = profitTarget;
 
-        List<Signal> signals = new ArrayList<>();
-        signals.add(new HasAtLeastNBarsSignal(periodSeconds / 5)); // 90 seconds
-        signals.add(new NotCloseToDailyHighRestriction(0.2d));
+        List<Filter> signals = new ArrayList<>();
+        signals.add(new HasAtLeastNBarsFilter(periodSeconds / 5)); // 90 seconds
+        signals.add(new NotCloseToDailyHighFilter(0.2d));
         // signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
 
-        positionSignal = new AllSignals(signals);
+        positionFilter = new AllFilters(signals);
     }
 
     @Override
-    public void start(IBroker ib, IApp app) {
+    public void init(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
         md = app.getMarketData(contract.symbol());
         SyncSignal marketDataSignal = md.getUpdateSignal();
@@ -234,5 +234,11 @@ public class BelowSimpleAverageBot extends BaseBot {
         System.out.println(getAverageClose(close, 0, 3));
         System.out.println(getAverageClose(close, 1, 3));
         System.out.println(getAverageClose(close, 2, 3));
+    }
+
+    @Override
+    public void runLoop() {
+        // TODO Auto-generated method stub
+        
     }
 }

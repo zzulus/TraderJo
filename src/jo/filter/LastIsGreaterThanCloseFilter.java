@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
@@ -7,7 +7,7 @@ import gnu.trove.list.array.TDoubleArrayList;
 import jo.app.IApp;
 import jo.model.MarketData;
 
-public class LastIsGreaterThanCloseRestriction implements Signal {
+public class LastIsGreaterThanCloseFilter implements Filter {
     private TDoubleArrayList open;
     private TDoubleArrayList close;
 

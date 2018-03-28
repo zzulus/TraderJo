@@ -16,7 +16,8 @@ public class StartBotsCommand implements AppCommand {
     @Override
     public void execute(IBroker ib, IApp app) {
         for (Bot bot : bots) {
-            bot.start(ib, app);
+            bot.init(ib, app);
+            bot.start();
         }
     }
 }

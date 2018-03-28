@@ -12,32 +12,32 @@ import com.ib.client.Types.Action;
 
 import jo.app.IApp;
 import jo.controller.IBroker;
-import jo.signal.AllSignals;
-import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.LastTradesNotNegativeRestriction;
-import jo.signal.NasdaqRegularHoursRestriction;
-import jo.signal.NotCloseToDailyHighRestriction;
-import jo.signal.RandomSignal;
-import jo.signal.Signal;
+import jo.filter.AllFilters;
+import jo.filter.Filter;
+import jo.filter.HasAtLeastNBarsFilter;
+import jo.filter.LastTradesNotNegativeFilter;
+import jo.filter.NasdaqRegularHoursFilter;
+import jo.filter.NotCloseToDailyHighFilter;
+import jo.filter.RandomFilter;
 import jo.util.SyncSignal;
 
 public class ChaseTrendBot extends BaseBot {
     private double profitTarget = 0.30d;
-    private Signal startSignal;
+    private Filter startSignal;
 
     public ChaseTrendBot(Contract contract, int totalQuantity, double profitTarget) {
         super(contract, totalQuantity);
         this.profitTarget = profitTarget;
 
-        List<Signal> positionSignals = new ArrayList<>();
-        positionSignals.add(new NasdaqRegularHoursRestriction(15));
+        List<Filter> positionSignals = new ArrayList<>();
+        positionSignals.add(new NasdaqRegularHoursFilter(15));
 
-        positionSignal = new AllSignals(positionSignals);
-        startSignal = new HasAtLeastNBarsSignal(6);
+        positionFilter = new AllFilters(positionSignals);
+        startSignal = new HasAtLeastNBarsFilter(6);
     }
 
     @Override
-    public void start(IBroker ib, IApp app) {
+    public void init(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
         md = app.getMarketData(contract.symbol());
         SyncSignal marketDataSignal = md.getUpdateSignal();
@@ -65,7 +65,7 @@ public class ChaseTrendBot extends BaseBot {
                         openPrice = fixPriceVariance(openPrice);
                         profitPrice = fixPriceVariance(profitPrice);
 
-                        if (positionSignal.isActive(app, contract, md)) {
+                        if (positionFilter.isActive(app, contract, md)) {
                             if (!takeProfitOrderIsActive) {
                                 openOrder = new Order();
                                 openOrder.orderId(ib.getNextOrderId());
@@ -104,5 +104,11 @@ public class ChaseTrendBot extends BaseBot {
 
     protected void takeProfitOrderFilled() {
         super.takeProfitOrderFilled();
+    }
+
+    @Override
+    public void runLoop() {
+        // TODO Auto-generated method stub
+        
     }
 }

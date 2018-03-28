@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
@@ -8,12 +8,12 @@ import jo.app.IApp;
 import jo.model.Bars;
 import jo.model.MarketData;
 
-public class BelowSimpleAverageSignal implements Signal {
+public class BelowSimpleAverageFilter implements Filter {
     private int period;
     private double delta;
     private Bars bars;
 
-    public BelowSimpleAverageSignal(int smaSize, double delta) {
+    public BelowSimpleAverageFilter(int smaSize, double delta) {
         this.period = smaSize;
         this.delta = delta;
     }

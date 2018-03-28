@@ -10,26 +10,26 @@ import com.ib.client.Types.Action;
 
 import jo.app.IApp;
 import jo.controller.IBroker;
-import jo.signal.AllSignals;
-import jo.signal.BelowSimpleAverageSignal;
-import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.NotCloseToDailyHighRestriction;
-import jo.signal.Signal;
+import jo.filter.AllFilters;
+import jo.filter.BelowSimpleAverageFilter;
+import jo.filter.Filter;
+import jo.filter.HasAtLeastNBarsFilter;
+import jo.filter.NotCloseToDailyHighFilter;
 
 public class MA15MinBot extends BaseBot {
     public MA15MinBot(Contract contract, int totalQuantity) {
         super(contract, totalQuantity);
 
-        List<Signal> signals = new ArrayList<>();
-        signals.add(new HasAtLeastNBarsSignal(180));
-        signals.add(new NotCloseToDailyHighRestriction(0.2d));
-        signals.add(new BelowSimpleAverageSignal(900 / 5, 0.20d)); // 15 min
+        List<Filter> filters = new ArrayList<>();
+        filters.add(new HasAtLeastNBarsFilter(180));
+        filters.add(new NotCloseToDailyHighFilter(0.2d));
+        filters.add(new BelowSimpleAverageFilter(900 / 5, 0.20d)); // 15 min
 
-        positionSignal = new AllSignals(signals);
+        positionFilter = new AllFilters(filters);
     }
 
     @Override
-    public void start(IBroker ib, IApp app) {
+    public void init(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
         md = app.getMarketData(contract.symbol());
 
@@ -43,7 +43,7 @@ public class MA15MinBot extends BaseBot {
                             continue;
                         }
 
-                        if (positionSignal.isActive(app, contract, md)) {
+                        if (positionFilter.isActive(app, contract, md)) {
                             log.info("Signal is active " + md.getLastPrice());
 
                             final double lastPrice = md.getLastPrice();
@@ -77,5 +77,11 @@ public class MA15MinBot extends BaseBot {
                 }
             }
         }.start();
+    }
+
+    @Override
+    public void runLoop() {
+        // TODO Auto-generated method stub
+        
     }
 }

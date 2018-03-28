@@ -11,14 +11,14 @@ import com.ib.client.Types.BarSize;
 
 import jo.app.IApp;
 import jo.controller.IBroker;
+import jo.filter.AllFilters;
+import jo.filter.BelowSimpleAverageFilter;
+import jo.filter.Filter;
+import jo.filter.HasAtLeastNBarsFilter;
+import jo.filter.NasdaqRegularHoursFilter;
+import jo.filter.NotCloseToDailyHighFilter;
+import jo.filter.TwoMAFilter;
 import jo.model.Bars;
-import jo.signal.AllSignals;
-import jo.signal.BelowSimpleAverageSignal;
-import jo.signal.HasAtLeastNBarsSignal;
-import jo.signal.NasdaqRegularHoursRestriction;
-import jo.signal.NotCloseToDailyHighRestriction;
-import jo.signal.Signal;
-import jo.signal.TwoMASignal;
 import jo.util.SyncSignal;
 
 public class MA90SecBot extends BaseBot {
@@ -34,7 +34,7 @@ public class MA90SecBot extends BaseBot {
     public MA90SecBot(Contract contract, int totalQuantity) {
         super(contract, totalQuantity);
 
-        List<Signal> signals = new ArrayList<>();
+        List<Filter> signals = new ArrayList<>();
         //signals.add(new HasAtLeastNBarsSignal(90 / 5)); // 90 seconds
         //signals.add(new NasdaqRegularHoursRestriction(0));
         //signals.add(new NotCloseToDailyHighRestriction(0.2d));
@@ -42,13 +42,13 @@ public class MA90SecBot extends BaseBot {
         // signals.add(new BelowSimpleAverageSignal((5 * 60) / 5, 0.03d));
         
         int n = 5;
-        signals.add(new TwoMASignal(n, 2 * n + 1));
+        signals.add(new TwoMAFilter(n, 2 * n + 1));
 
-        positionSignal = new AllSignals(signals);
+        positionFilter = new AllFilters(signals);
     }
 
     @Override
-    public void start(IBroker ib, IApp app) {
+    public void init(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
         md = app.getMarketData(contract.symbol());
         Bars bars = md.getBars(BarSize._5_secs);
@@ -71,7 +71,7 @@ public class MA90SecBot extends BaseBot {
                         //double lastPrice = marketData.getLastPrice();
                         double basePrice = md.getAskPrice();
 
-                        if (positionSignal.isActive(app, contract, md)) {
+                        if (positionFilter.isActive(app, contract, md)) {
                             // log.info("Signal is active " + marketData.getLastPrice());
 
                             // final double lastPrice = marketData.getLastPrice();
@@ -108,5 +108,11 @@ public class MA90SecBot extends BaseBot {
             }
         };
         thread.start();
+    }
+
+    @Override
+    public void runLoop() {
+        // TODO Auto-generated method stub
+        
     }
 }

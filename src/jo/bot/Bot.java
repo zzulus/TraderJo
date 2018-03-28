@@ -4,5 +4,11 @@ import jo.app.IApp;
 import jo.controller.IBroker;
 
 public interface Bot {
-    void start(IBroker ib, IApp app);
+    void init(IBroker ib, IApp app);
+
+    void runLoop();
+
+    default void start() {
+
+    }
 }

@@ -1,13 +1,13 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 
 import jo.app.IApp;
 import jo.model.MarketData;
 
-public class AskIsGreaterThanLastRestriction implements Signal {
+public class AskIsGreaterThanLastFilter implements Filter {
 
-    public AskIsGreaterThanLastRestriction() {
+    public AskIsGreaterThanLastFilter() {
     }
 
     @Override

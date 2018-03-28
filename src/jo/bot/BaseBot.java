@@ -12,9 +12,9 @@ import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 
 import jo.controller.IBroker;
+import jo.filter.Filter;
 import jo.handler.IOrderHandler;
 import jo.model.MarketData;
-import jo.signal.Signal;
 
 public abstract class BaseBot implements Bot {
     protected final Logger log = LogManager.getLogger(this.getClass());
@@ -22,12 +22,15 @@ public abstract class BaseBot implements Bot {
     protected final int totalQuantity;
     protected MarketData md;
 
-    protected Signal positionSignal;
+    protected Filter positionFilter;
     protected volatile boolean openOrderIsActive = false;
     protected volatile boolean takeProfitOrderIsActive = false;
+    protected volatile boolean stopLossOrderIsActive = false; // TODO make this shit better
 
     protected Order openOrder;
     protected Order takeProfitOrder;
+    protected Order stopLossOrder;
+    protected Order mocOrder;
 
     protected Thread thread;
 
@@ -37,6 +40,54 @@ public abstract class BaseBot implements Bot {
 
         this.contract = contract;
         this.totalQuantity = totalQuantity;
+    }
+
+    protected void placeOrders(IBroker ib, Order... orders) {
+        for (Order order : orders) {
+            log.info("Placing order: {} {}", order.action(), order.lmtPrice());
+
+            ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
+            ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+            ib.placeOrModifyOrder(contract, stopLossOrder, new StopLossOrderHandler());
+
+            openOrder.transmit(true);
+            takeProfitOrder.transmit(true);
+            stopLossOrder.transmit(true);
+        }
+    }
+
+    protected void placeTrioBracketOrder(IBroker ib) {
+        log.info("Placing order: Open at {} {}, close at {} {}, stop loss ",
+                openOrder.action(), openOrder.lmtPrice(),
+                takeProfitOrder.action(), takeProfitOrder.lmtPrice(),
+                stopLossOrder.action(), stopLossOrder.auxPrice());
+
+        openOrderIsActive = true;
+        takeProfitOrderIsActive = true;
+        stopLossOrderIsActive = true;
+
+        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
+        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+        ib.placeOrModifyOrder(contract, stopLossOrder, new StopLossOrderHandler());
+
+        openOrder.transmit(true);
+        takeProfitOrder.transmit(true);
+        stopLossOrder.transmit(true);
+    }
+    
+    protected void placeDuoBracketOrder(IBroker ib) {
+        log.info("Placing order: Open at {} {}, close at {} {}, stop loss ",
+                openOrder.action(), openOrder.lmtPrice(),
+                takeProfitOrder.action(), takeProfitOrder.lmtPrice());
+
+        openOrderIsActive = true;
+        takeProfitOrderIsActive = true;
+
+        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
+        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+
+        openOrder.transmit(true);
+        takeProfitOrder.transmit(true);
     }
 
     protected void placeOrders(IBroker ib) {
@@ -175,8 +226,22 @@ public abstract class BaseBot implements Bot {
         takeProfitOrderIsActive = false;
     }
 
+    protected void takeProfitOrderCancelled() {
+        takeProfitOrderIsActive = false;
+    }
+
+    protected void stopLossOrderFilled() {
+        stopLossOrderIsActive = false;
+    }
+
+    protected void stopLossOrderCancelled() {
+        stopLossOrderIsActive = false;
+    }
+
     public void shutdown() {
-        thread.interrupt();
+        if (thread != null) {
+            thread.interrupt();
+        }
     }
 
     protected class OpenPositionOrderHandler implements IOrderHandler {
@@ -186,16 +251,18 @@ public abstract class BaseBot implements Bot {
         @Override
         public void orderState(OrderState orderState) {
             String status = orderState.getStatus();
-            log.info("orderState: {}", status);
-            if (isActive && "Filled".equals(status)) {
-                isActive = false;
-                openPositionOrderFilled();
-            }
+            log.info("OpenPosition: OrderState: {}", status);
         }
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("orderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+            log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+
+            if (isActive && OrderStatus.Filled == status && remaining < 0.1) {
+                isActive = false;
+                openPositionOrderFilled();
+            }
+
         }
 
         @Override
@@ -212,16 +279,54 @@ public abstract class BaseBot implements Bot {
         @Override
         public void orderState(OrderState orderState) {
             String status = orderState.getStatus();
-            log.info("orderState: {}", status);
-            if (isActive && "Filled".equals(status)) {
-                isActive = false;
-                takeProfitOrderFilled();
-            }
+            log.info("TakeProfit: OrderState: {}", status);
         }
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("orderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+            log.info("TakeProfit: OderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+
+            if (isActive && OrderStatus.Filled == status && remaining < 0.1) {
+                isActive = false;
+                takeProfitOrderFilled();
+            }
+
+            if (isActive && OrderStatus.Cancelled == status && remaining < 0.1) {
+                isActive = false;
+                takeProfitOrderCancelled();
+            }
+        }
+
+        @Override
+        public void handle(int errorCode, String errorMsg) {
+            log.error("Error: {} - {}", errorCode, errorMsg);
+        }
+    }
+
+    protected class StopLossOrderHandler implements IOrderHandler {
+        private final Logger log = LogManager.getLogger(StopLossOrderHandler.class);
+        private boolean isActive = true;
+
+        @Override
+        public void orderState(OrderState orderState) {
+            String status = orderState.getStatus();
+            log.info("StopLoss: OrderState: {}", status);
+
+        }
+
+        @Override
+        public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+            log.info("StopLoss: OderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+
+            if (isActive && OrderStatus.Filled == status && remaining < 0.1) {
+                isActive = false;
+                stopLossOrderFilled();
+            }
+
+            if (isActive && OrderStatus.Cancelled == status && remaining < 0.1) {
+                isActive = false;
+                stopLossOrderCancelled();
+            }
         }
 
         @Override

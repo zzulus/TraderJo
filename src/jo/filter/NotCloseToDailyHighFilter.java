@@ -1,14 +1,14 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 
 import jo.app.IApp;
 import jo.model.MarketData;
 
-public class NotCloseToDailyHighRestriction implements Signal {
+public class NotCloseToDailyHighFilter implements Filter {
     private double delta;
 
-    public NotCloseToDailyHighRestriction(double delta) {
+    public NotCloseToDailyHighFilter(double delta) {
         this.delta = delta;
     }
 

@@ -1,14 +1,14 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 
 import jo.app.IApp;
 import jo.model.MarketData;
 
-public class OpenAfterTimeRestriction implements Signal {
+public class OpenAfterTimeFilter implements Filter {
     private long openAfterTimeMillis = 0;
 
-    public OpenAfterTimeRestriction(long openAfterTimeMillis) {
+    public OpenAfterTimeFilter(long openAfterTimeMillis) {
         this.openAfterTimeMillis = openAfterTimeMillis;
     }
 
@@ -23,6 +23,6 @@ public class OpenAfterTimeRestriction implements Signal {
 
     @Override
     public String getName() {
-        return "Not close to daily high";
+        return "";
     };
 }

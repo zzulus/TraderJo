@@ -15,7 +15,7 @@ import jo.recording.Recorder;
 import jo.recording.TradeRecorder;
 
 public class MarketRecorderApp {
-    private static final Logger log = LogManager.getLogger(TraderApp.class);
+    private static final Logger log = LogManager.getLogger(MarketRecorderApp.class);
     private IBroker ib;
 
     public static void main(String[] args) {

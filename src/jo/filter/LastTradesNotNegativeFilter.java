@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
@@ -8,10 +8,10 @@ import jo.app.IApp;
 import jo.model.MarketData;
 import jo.model.MarketDataTrade;
 
-public class LastTradesNotNegativeRestriction implements Signal {
+public class LastTradesNotNegativeFilter implements Filter {
     private int len;
 
-    public LastTradesNotNegativeRestriction(int len) {
+    public LastTradesNotNegativeFilter(int len) {
         this.len = len;
     }
 

@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
@@ -7,11 +7,11 @@ import jo.app.IApp;
 import jo.model.Bars;
 import jo.model.MarketData;
 
-public class HasAtLeastNBarsSignal implements Signal {
+public class HasAtLeastNBarsFilter implements Filter {
     private int cnt;
     private Bars bars;
 
-    public HasAtLeastNBarsSignal(int cnt) {
+    public HasAtLeastNBarsFilter(int cnt) {
         this.cnt = cnt;
     }
 

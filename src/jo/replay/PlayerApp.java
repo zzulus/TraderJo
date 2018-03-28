@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -20,6 +21,7 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
 import jo.bot.Bot;
+import jo.bot.DonchianBot;
 import jo.bot.MA90SecBot;
 import jo.bot.RandomBot;
 import jo.constant.Stocks;
@@ -36,30 +38,42 @@ public class PlayerApp {
     private Contract contract;
     private ReplayBroker ib;
     private ReplayApp app;
+    private Bot bot;
 
     public static void main(String[] args) {
         List<File> files = Lists.newArrayList(
                 new File("D:\\autobot\\TraderJo\\log\\2018-03-06\\Market-TQQQ.log"),
                 new File("D:\\autobot\\TraderJo\\log\\2018-03-07\\Market-TQQQ.log"),
                 new File("D:\\autobot\\TraderJo\\log\\2018-03-08\\Market-TQQQ.log"),
-                new File("D:\\autobot\\TraderJo\\log\\2018-03-09\\Market-TQQQ.log"));
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-09\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-13\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-16\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-19\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-20\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-21\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-22\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-23\\Market-TQQQ.log"),
+                new File("D:\\autobot\\TraderJo\\log\\2018-03-26\\Market-TQQQ.log"));
 
-        System.out.print("In\tOut\tTotal Profit");
+        System.out.print("LowerP\tUpperP\tTotal Profit");
         for (int i = 0; i < files.size(); i++) {
-            System.out.print("\tTrades\tPotential Profit");
+            System.out.print(String.format("\tTrades #%1$s\tPotential Profit #%1$s", i + 1));
         }
         System.out.println();
 
-        for (double in = -0.01; in < 0.10; in += 0.02) {
-            for (double out = 0.09; out < 2.0; out += 0.02) {
+        // for (double in = -0.01; in < 0.10; in += 0.02) {
+        // for (double out = 0.09; out < 2.0; out += 0.02) {
+        for (int lowerPeriod = 1; lowerPeriod < 50; lowerPeriod += 1) {
+            for (int upperPeriod = 1; upperPeriod < 50; upperPeriod += 1) {
                 // System.out.println(String.format("in %.2f, out %.2f", in, out));
 
                 double totalProfit = 0;
                 StringBuilder t = new StringBuilder();
 
                 for (File file : files) {
-                    //MA90SecBot bot = new MA90SecBot(Stocks.TQQQ(true), 100, in, out);
-                    RandomBot bot = new RandomBot(Stocks.TQQQ(true), 100, in, out);
+                    DonchianBot bot = new DonchianBot(Stocks.TQQQ(true), 100);
+                    bot.lowerPeriod = lowerPeriod;
+                    bot.upperPeriod = upperPeriod;
                     PlayerApp player = new PlayerApp();
                     Stats stats = player.replay(file, bot);
                     bot.shutdown();
@@ -74,20 +88,22 @@ public class PlayerApp {
                 }
 
                 StringBuilder h = new StringBuilder();
-                h.append(String.format("%.2f\t%.2f\t%.2f", in, out, totalProfit));
+                //h.append(String.format("%.2f\t%.2f\t%.2f", lowerPeriod, upperPeriod, totalProfit));
+                h.append(String.format("%d\t%d\t%.2f", lowerPeriod, upperPeriod, totalProfit));
 
                 // System.out.println(String.format("\t\t\t\t\t\t\t%.2f", totalProfit));
                 System.out.println(h.append(t));
             }
         }
-        
+
         System.exit(0);
     }
 
     public Stats replay(File file, Bot bot) {
         initApp();
 
-        bot.start(ib, app);
+        this.bot = bot;
+        bot.init(ib, app);
 
         readAndPlay(file);
 
@@ -115,6 +131,7 @@ public class PlayerApp {
                 continue;
             }
             app.handleReplayEvent(contract, event);
+            bot.runLoop();
         }
     }
 
@@ -137,6 +154,8 @@ public class PlayerApp {
                     AbstractEvent event = objectMapper.convertValue(json, valueType);
                     events.add(event);
                 }
+            } catch (JsonEOFException eofEx) {
+                // ignore, file was not closed properly
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

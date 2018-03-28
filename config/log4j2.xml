@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
-	<Appenders>
-		<Console name="Console" target="SYSTEM_OUT">
-			<PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
-		</Console>
-	</Appenders>
-	<Loggers>
-		<Root level="INFO">
-			<AppenderRef ref="Console" />
-		</Root>
-	</Loggers>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+        </Console>
+
+        <RollingFile name="File" fileName="log//app/app.log" filePattern="log/app/app-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="File" />
+        </Root>
+    </Loggers>
 </Configuration>

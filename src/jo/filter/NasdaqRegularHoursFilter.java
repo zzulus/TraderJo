@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -9,18 +9,21 @@ import com.ib.client.Contract;
 import jo.app.IApp;
 import jo.model.MarketData;
 
-// nasdaq
+// NASDAQ
 // Pre-Market:     4:00 a.m. to 9:30 a.m.
 // Regular Market: 9:30 a.m. to 4:00 p.m.
 // After Market:   4:00 p.m. to 8:00 p.m.
-public class NasdaqRegularHoursRestriction implements Signal {
+public class NasdaqRegularHoursFilter implements Filter {
     private static final ZoneId EST_ZONE = ZoneId.of("America/New_York");
-    private int endOffsetMinutes;
+    private final int endOffsetMinutes;
 
-    public NasdaqRegularHoursRestriction(int endOffsetMinutes) {
+    public NasdaqRegularHoursFilter(int endOffsetMinutes) {
         this.endOffsetMinutes = endOffsetMinutes;
     }
 
+    /*
+     * @return true if NASDAQ is open
+     */
     @Override
     public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         // TODO switch to epochTime and precomputed ranges
@@ -35,11 +38,12 @@ public class NasdaqRegularHoursRestriction implements Signal {
                 longTime >= 930 && longTime <= 1600 - endOffsetMinutes;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see jo.filter.Filter#getName()
+     */
     public String getName() {
-        return "NasdaqRegularHoursSignal";
-    }
-
-    public void setEndOffsetMinutes(int endOffsetMinutes) {
-        this.endOffsetMinutes = endOffsetMinutes;
+        return "NasdaqRegularHoursFilter";
     }
 }

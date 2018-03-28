@@ -77,6 +77,7 @@ public class ReplayOrderManager {
                 sellPrice = e.getPrice();
             }
 
+            // TODO Add support of trail limit and stop loss
             if (orderType == OrderType.LMT) {
                 if (action == Action.BUY && order.lmtPrice() >= buyPrice) {
                     executeOrder(replayOrder, order.lmtPrice()); // should be bid/ask price, but in fact it is always lmt price
@@ -94,10 +95,18 @@ public class ReplayOrderManager {
                 }
 
                 executeOrder(replayOrder, executePrice);
+            } else if (orderType == OrderType.STP) {
+                if (action == Action.BUY && order.lmtPrice() >= buyPrice) {
+                    executeOrder(replayOrder, buyPrice);
+                }
+                if (action == Action.SELL && order.lmtPrice() <= sellPrice) {
+                    executeOrder(replayOrder, sellPrice);
+                } // TODO Cancel other part of bracket order
             } else {
                 throw new IllegalArgumentException("Not supported yet order type " + order.orderType());
             }
         }
+
     }
 
     private void executeOrder(ReplayOrder replayOrder, double executePrice) {

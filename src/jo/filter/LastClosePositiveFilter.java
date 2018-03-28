@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
@@ -8,11 +8,11 @@ import jo.app.IApp;
 import jo.model.Bars;
 import jo.model.MarketData;
 
-public class LastClosePositiveRestriction implements Signal {
+public class LastClosePositiveFilter implements Filter {
     private int len;
     private Bars bars;
 
-    public LastClosePositiveRestriction(int len) {
+    public LastClosePositiveFilter(int len) {
         this.len = len;
     }
 

@@ -15,6 +15,7 @@ import jo.controller.IBroker;
 import jo.handler.ITopMktDataHandler;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
+import jo.recording.event.ErrorEvent;
 import jo.recording.event.MarketDepthEvent;
 import jo.recording.event.RealTimeBarEvent;
 import jo.recording.event.TickPriceEvent;
@@ -77,6 +78,8 @@ public class ReplayApp implements IApp {
             // TODO Add support of deep book
             // topMktDataHandler.tickString(typedEvent.getTickType(), typedEvent.getValue());
 
+        } else if (event instanceof ErrorEvent) {
+            // TODO skip for now, needed for deep book reset
         } else {
             throw new RuntimeException("Unsupported event: " + ToStringBuilder.reflectionToString(event));
         }

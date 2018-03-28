@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import java.util.List;
 
@@ -8,18 +8,18 @@ import com.ib.client.Contract;
 import jo.app.IApp;
 import jo.model.MarketData;
 
-public class AnySignal implements Signal {
-    private List<Signal> signals;
+public class AnyFilter implements Filter {
+    private List<Filter> signals;
 
-    public AnySignal(List<Signal> signals) {
-        Preconditions.checkNotNull(signals, "signals is null");
-        Preconditions.checkArgument(!signals.isEmpty(), "signals is empty");
-        this.signals = signals;
+    public AnyFilter(List<Filter> filters) {
+        Preconditions.checkNotNull(filters, "filters is null");
+        Preconditions.checkArgument(!filters.isEmpty(), "signals is empty");
+        this.signals = filters;
     }
 
     @Override
     public boolean isActive(IApp app, Contract contract, MarketData marketData) {
-        for (Signal signal : signals) {
+        for (Filter signal : signals) {
             if (signal.isActive(app, contract, marketData)) {
                 return true;
             }

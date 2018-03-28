@@ -1,4 +1,4 @@
-package jo.signal;
+package jo.filter;
 
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
@@ -7,11 +7,11 @@ import gnu.trove.list.array.TDoubleArrayList;
 import jo.app.IApp;
 import jo.model.MarketData;
 
-public class TrendDownMASignal implements Signal {
+public class TrendDownMAFilter implements Filter {
     private int period;
     private TDoubleArrayList close;
 
-    public TrendDownMASignal(int period) {
+    public TrendDownMAFilter(int period) {
         this.period = period;
     }
 

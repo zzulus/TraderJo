@@ -66,7 +66,9 @@ public class MarketRecorder implements Recorder {
 
     @Override
     public void stop() {
-        ps.close();
+        if (ps != null) {
+            ps.close();
+        }
     }
 
     private void addBarEvent(Bar bar) {
@@ -82,13 +84,20 @@ public class MarketRecorder implements Recorder {
             while (true) {
                 Object event = q.take();
                 String str = objectMapper.writeValueAsString(event); // wtf, writeValue(stream) closes the stream
-                ps.println(str);
+                write(str);
             }
         } catch (InterruptedException e) {
             // terminated
         } catch (Exception e) {
             log.error(e, e);
         }
+    }
+
+    private void write(String str) {
+        if (ps == null) {
+            openFile();
+        }
+        ps.println(str);
     }
 
     private void openFile() {
