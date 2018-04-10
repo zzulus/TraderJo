@@ -33,11 +33,11 @@ public class TraderApp implements IApp {
     }
 
     public TraderApp() {
-        Bot bot1 = new DonchianBot(Stocks.TQQQ(true), 50);
+        Bot bot1 = new DonchianBot(Stocks.SPY(true), 25);
         List<Bot> bots = Lists.newArrayList(bot1);
 
         postConnectCommands = Lists.newArrayList(
-                new InitStockDataCommand(Stocks.TQQQ(true)),
+                new InitStockDataCommand(Stocks.SPY(true)),
                 //new InitStockDataCommand(Stocks.SPY(true)),
                 //new InitStockDataCommand(Stocks.SQQQ(true)),
                 new StartBotsCommand(bots));

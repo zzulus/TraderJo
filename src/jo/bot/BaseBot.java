@@ -10,8 +10,8 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
+import com.ib.client.Types.Action;
 
-import jo.controller.IBroker;
 import jo.filter.Filter;
 import jo.handler.IOrderHandler;
 import jo.model.MarketData;
@@ -23,14 +23,14 @@ public abstract class BaseBot implements Bot {
     protected MarketData md;
 
     protected Filter positionFilter;
-    protected volatile boolean openOrderIsActive = false;
-    protected volatile boolean takeProfitOrderIsActive = false;
-    protected volatile boolean stopLossOrderIsActive = false; // TODO make this shit better
 
     protected Order openOrder;
     protected Order takeProfitOrder;
     protected Order stopLossOrder;
     protected Order mocOrder;
+
+    protected OrderStatus openOrderStatus = null;
+    protected OrderStatus takeProfitOrderStatus = null;
 
     protected Thread thread;
 
@@ -42,200 +42,79 @@ public abstract class BaseBot implements Bot {
         this.totalQuantity = totalQuantity;
     }
 
-    protected void placeOrders(IBroker ib, Order... orders) {
-        for (Order order : orders) {
-            log.info("Placing order: {} {}", order.action(), order.lmtPrice());
-
-            ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-            ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-            ib.placeOrModifyOrder(contract, stopLossOrder, new StopLossOrderHandler());
-
-            openOrder.transmit(true);
-            takeProfitOrder.transmit(true);
-            stopLossOrder.transmit(true);
-        }
-    }
-
-    protected void placeTrioBracketOrder(IBroker ib) {
-        log.info("Placing order: Open at {} {}, close at {} {}, stop loss ",
-                openOrder.action(), openOrder.lmtPrice(),
-                takeProfitOrder.action(), takeProfitOrder.lmtPrice(),
-                stopLossOrder.action(), stopLossOrder.auxPrice());
-
-        openOrderIsActive = true;
-        takeProfitOrderIsActive = true;
-        stopLossOrderIsActive = true;
-
-        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-        ib.placeOrModifyOrder(contract, stopLossOrder, new StopLossOrderHandler());
-
-        openOrder.transmit(true);
-        takeProfitOrder.transmit(true);
-        stopLossOrder.transmit(true);
-    }
-    
-    protected void placeDuoBracketOrder(IBroker ib) {
-        log.info("Placing order: Open at {} {}, close at {} {}, stop loss ",
-                openOrder.action(), openOrder.lmtPrice(),
-                takeProfitOrder.action(), takeProfitOrder.lmtPrice());
-
-        openOrderIsActive = true;
-        takeProfitOrderIsActive = true;
-
-        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-
-        openOrder.transmit(true);
-        takeProfitOrder.transmit(true);
-    }
-
-    protected void placeOrders(IBroker ib) {
-        log.info("Placing long order: Open at {} {}, close at {} {}",
-                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
-
-        if (openOrderIsActive) {
-            throw new IllegalStateException("openOrder is active");
-        }
-
-        if (takeProfitOrderIsActive) {
-            throw new IllegalStateException("takeProfitOrder is active");
-        }
-
-        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
-            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule, "
-                    + "open " + openOrder.lmtPrice() + ", take profit " + takeProfitOrder.lmtPrice());
-        }
-
-        if (takeProfitOrder.lmtPrice() - openOrder.lmtPrice() < 0.05) {
-            String msg = String.format("open/close price doesn't conform to min 0.05 diff rule, open %.2f, close %.2f", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
-            throw new IllegalStateException(msg);
-        }
-        openOrderIsActive = true;
-        takeProfitOrderIsActive = true;
-
-        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-    }
-
-    protected void modifyOrders(IBroker ib) {
-        log.info("Modify long order: Open at {} {}, close at {} {}",
-                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
-
-        if (!openOrderIsActive) {
-            // throw new IllegalStateException("openOrder is not active");
-            return;
-        }
-
-        if (takeProfitOrderIsActive) {
-            // throw new IllegalStateException("takeProfitOrder is not active");
-            return;
-        }
-
-        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
-            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule");
-        }
-
-        if (takeProfitOrder.lmtPrice() - openOrder.lmtPrice() < 0.05) {
-            throw new IllegalStateException("open/close price doesn't conform to min 0.05 diff rule");
-        }
-
-        // TODO Use existing handlers?
-        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-    }
-
-    protected void placeShortOrders(IBroker ib) {
-        log.info("Placing short order: Open at {} {}, close at {} {}",
-                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
-
-        if (openOrderIsActive) {
-            throw new IllegalStateException("openOrder is active");
-        }
-
-        if (takeProfitOrderIsActive) {
-            throw new IllegalStateException("takeProfitOrder is active");
-        }
-
-        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
-            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule, "
-                    + "open " + openOrder.lmtPrice() + ", take profit " + takeProfitOrder.lmtPrice());
-        }
-
-        if (openOrder.lmtPrice() - takeProfitOrder.lmtPrice() < 0.02) {
-            String msg = String.format("open/close price doesn't conform to min 0.04 diff rule, open %.2f, close %.2f", openOrder.lmtPrice(), takeProfitOrder.lmtPrice());
-            throw new IllegalStateException(msg);
-        }
-        openOrderIsActive = true;
-        takeProfitOrderIsActive = true;
-
-        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-    }
-
-    protected void modifyShortOrders(IBroker ib) {
-        log.info("Modify short order: Open at {} {}, close at {} {}",
-                openOrder.action(), openOrder.lmtPrice(), takeProfitOrder.action(), takeProfitOrder.lmtPrice());
-
-        if (!openOrderIsActive) {
-            // throw new IllegalStateException("openOrder is not active");
-            return;
-        }
-
-        if (takeProfitOrderIsActive) {
-            // throw new IllegalStateException("takeProfitOrder is not active");
-            return;
-        }
-
-        if (takeProfitOrder.lmtPrice() < 5 || openOrder.lmtPrice() < 5) {
-            throw new IllegalStateException("open/close price doesn't conform to min $5 price rule");
-        }
-
-        if (openOrder.lmtPrice() - takeProfitOrder.lmtPrice() < 0.02) {
-            throw new IllegalStateException("open/close price doesn't conform to min 0.04 diff rule");
-        }
-
-        // TODO Use existing handlers?
-        ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-    }
-
-    protected void stopLossOrder(IBroker ib) {
-        log.info("Stop loss order  at {}", takeProfitOrder.lmtPrice());
-
-        if (!takeProfitOrderIsActive) {
-            // throw new IllegalStateException("takeProfitOrder is not active");
-            return;
-        }
-
-        // TODO Use existing handlers?
-        ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-    }
-
+    // TODO Move out
     protected static double fixPriceVariance(double price) {
         double minTick = 0.01;
         int d = (int) (price / minTick);
         return d * minTick;
     }
 
-    protected void openPositionOrderFilled() {
-        openOrderIsActive = false;
+    protected void openPositionOrderSubmitted() {
+
     }
 
-    protected void takeProfitOrderFilled() {
-        takeProfitOrderIsActive = false;
+    protected void openPositionOrderFilled(double avgFillPrice) {
+
+    }
+
+    protected void openPositionOrderCancelled() {
+    }
+
+    protected void takeProfitOrderSubmitted() {
+
+    }
+
+    protected void takeProfitOrderFilled(double takeProfitOrderAvgFillPrice) {
+        double priceDiff = takeProfitOrderAvgFillPrice - openOrderAvgFillPrice;
+        double longPnL = openOrder.totalQuantity() * priceDiff;
+        if (openOrder.action() == Action.BUY) {
+            log.info(String.format("P&L %.2f", longPnL));
+        } else {
+            log.info(String.format("P&L %.2f", -longPnL));
+        }
     }
 
     protected void takeProfitOrderCancelled() {
-        takeProfitOrderIsActive = false;
     }
 
-    protected void stopLossOrderFilled() {
-        stopLossOrderIsActive = false;
-    }
+    /*
+     * Actinable states:
+     * Open Order: 
+     *  Unknown, Canceled -> Can open position
+     *  Filled -> Check TakeProfit order 
+     *  PreSubmitted -> Waiting 
+     *  Submitted -> Wait or Cancel&Return
+     * 
+     * Take Profit Order:
+     *  Unknown, Filled, Canceled -> Can open position 
+     *  PreSubmitted -> Do Nothing 
+     *  Submitted -> Wait or cancel 
+     *  Filled, Canceled -> Can open position
+     * 
+     */
+    protected BotState getBotState() {
+        if (openOrderStatus == null)
+            return BotState.READY_TO_OPEN;
 
-    protected void stopLossOrderCancelled() {
-        stopLossOrderIsActive = false;
+        if (openOrderStatus == OrderStatus.PendingSubmit)
+            return BotState.PENDING;
+
+        if (openOrderStatus == OrderStatus.PreSubmitted || openOrderStatus == OrderStatus.Submitted)
+            return BotState.OPENNING_POSITION;
+
+        if (openOrderStatus == OrderStatus.Cancelled)
+            return BotState.READY_TO_OPEN;
+
+        if (openOrderStatus == OrderStatus.Filled && (takeProfitOrderStatus == OrderStatus.PreSubmitted || takeProfitOrderStatus == OrderStatus.Submitted))
+            return BotState.PROFIT_WAITING;
+
+        if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Filled)
+            return BotState.READY_TO_OPEN;
+
+        if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Cancelled)
+            return BotState.READY_TO_OPEN;
+
+        throw new IllegalStateException("Unsupported combo of states: openOrderStatus=" + openOrderStatus + ", takeProfitOrderStatus=" + takeProfitOrderStatus);
     }
 
     public void shutdown() {
@@ -244,9 +123,11 @@ public abstract class BaseBot implements Bot {
         }
     }
 
+    protected double openOrderAvgFillPrice;
+    protected double takeProfitOrderAvgFillPrice;
+
     protected class OpenPositionOrderHandler implements IOrderHandler {
         private final Logger log = LogManager.getLogger(OpenPositionOrderHandler.class);
-        private boolean isActive = true;
 
         @Override
         public void orderState(OrderState orderState) {
@@ -256,13 +137,37 @@ public abstract class BaseBot implements Bot {
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+            log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
 
-            if (isActive && OrderStatus.Filled == status && remaining < 0.1) {
-                isActive = false;
-                openPositionOrderFilled();
+            if (openOrderStatus == status) {
+                return;
             }
 
+            if (status == OrderStatus.Submitted) {
+                openPositionOrderSubmitted();
+            }
+
+            if (status == OrderStatus.Filled && remaining < 0.01) {
+                openOrderAvgFillPrice = avgFillPrice;
+                openPositionOrderFilled(avgFillPrice);
+            }
+
+            // remap ApiCancelled to Canceled
+            if (status == OrderStatus.ApiCancelled) {
+                status = OrderStatus.Cancelled;
+            }
+
+            if (status == OrderStatus.Cancelled) {
+                openPositionOrderCancelled();
+            }
+
+            // finally assign status
+            if (status == OrderStatus.Filled
+                    || status == OrderStatus.Cancelled
+                    || status == OrderStatus.PreSubmitted
+                    || status == OrderStatus.Submitted) {
+                openOrderStatus = status;
+            }
         }
 
         @Override
@@ -274,7 +179,6 @@ public abstract class BaseBot implements Bot {
 
     protected class TakeProfitOrderHandler implements IOrderHandler {
         private final Logger log = LogManager.getLogger(TakeProfitOrderHandler.class);
-        private boolean isActive = true;
 
         @Override
         public void orderState(OrderState orderState) {
@@ -284,16 +188,36 @@ public abstract class BaseBot implements Bot {
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("TakeProfit: OderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
+            log.info("TakeProfit: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
 
-            if (isActive && OrderStatus.Filled == status && remaining < 0.1) {
-                isActive = false;
-                takeProfitOrderFilled();
+            if (takeProfitOrderStatus == status) {
+                return;
             }
 
-            if (isActive && OrderStatus.Cancelled == status && remaining < 0.1) {
-                isActive = false;
+            if (status == OrderStatus.Submitted) {
+                takeProfitOrderSubmitted();
+            }
+
+            if (status == OrderStatus.Filled && remaining < 0.01) {
+                takeProfitOrderAvgFillPrice = avgFillPrice;
+                takeProfitOrderFilled(avgFillPrice);
+            }
+
+            // remap ApiCancelled to Canceled
+            if (status == OrderStatus.ApiCancelled) {
+                status = OrderStatus.Cancelled;
+            }
+
+            if (status == OrderStatus.Cancelled) {
                 takeProfitOrderCancelled();
+            }
+
+            // finally assign status
+            if (status == OrderStatus.Filled
+                    || status == OrderStatus.Cancelled
+                    || status == OrderStatus.PreSubmitted
+                    || status == OrderStatus.Submitted) {
+                takeProfitOrderStatus = status;
             }
         }
 
@@ -303,35 +227,21 @@ public abstract class BaseBot implements Bot {
         }
     }
 
-    protected class StopLossOrderHandler implements IOrderHandler {
-        private final Logger log = LogManager.getLogger(StopLossOrderHandler.class);
-        private boolean isActive = true;
-
+    protected class MocOrderHandler implements IOrderHandler {
         @Override
         public void orderState(OrderState orderState) {
-            String status = orderState.getStatus();
-            log.info("StopLoss: OrderState: {}", status);
-
         }
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("StopLoss: OderStatus: status {}, filled {}, remaining {}", status, filled, remaining);
-
-            if (isActive && OrderStatus.Filled == status && remaining < 0.1) {
-                isActive = false;
-                stopLossOrderFilled();
-            }
-
-            if (isActive && OrderStatus.Cancelled == status && remaining < 0.1) {
-                isActive = false;
-                stopLossOrderCancelled();
+            if (status == OrderStatus.Filled && remaining < 0.01) {
+                takeProfitOrderAvgFillPrice = avgFillPrice;
+                takeProfitOrderFilled(avgFillPrice);
             }
         }
 
         @Override
         public void handle(int errorCode, String errorMsg) {
-            log.error("Error: {} - {}", errorCode, errorMsg);
         }
     }
 }

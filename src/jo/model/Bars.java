@@ -114,4 +114,45 @@ public class Bars {
     public int getSize() {
         return size;
     }
+
+    public TDoubleArrayList getDoubleSeries(BarType type) {
+        TDoubleArrayList arr;
+        switch (type) {
+        case OPEN:
+            arr = open;
+            break;
+
+        case LOW:
+            arr = low;
+            break;
+
+        case HIGH:
+            arr = high;
+            break;
+
+        case CLOSE:
+            arr = close;
+            break;
+
+        case WAP:
+            arr = wap;
+            break;
+
+        default:
+            throw new IllegalArgumentException("Unsupported BarType");
+        }
+
+        return arr;
+    }
+
+    public double getLastBar(BarType type) {
+        return getLastBar(type, 0);
+    }
+
+    public double getLastBar(BarType type, int shift) {
+        TDoubleArrayList series = getDoubleSeries(type);
+        int offset = size - 1 - shift;
+        return series.get(offset);
+    }
+
 }

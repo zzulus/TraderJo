@@ -4,10 +4,7 @@ apply plugin: 'application'
 apply plugin: 'eclipse'
 apply plugin: 'findbugs'
 
-
-mainClassName = "jo.cmd.MainCmd"
 applicationDefaultJvmArgs = ["-Xmx2g"]
-
 
 sourceSets {
     main {

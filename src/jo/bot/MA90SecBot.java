@@ -65,9 +65,9 @@ public class MA90SecBot extends BaseBot {
                     try {
                         marketDataSignal.waitForSignal();
 
-                        if (takeProfitOrderIsActive) {
-                            continue;
-                        }
+//                        if (takeProfitOrderIsActive) {
+//                            continue;
+//                        }
                         //double lastPrice = marketData.getLastPrice();
                         double basePrice = md.getAskPrice();
 
@@ -99,7 +99,7 @@ public class MA90SecBot extends BaseBot {
                             takeProfitOrder.parentId(openOrder.orderId());
                             takeProfitOrder.transmit(true);
 
-                            placeOrders(ib);
+//                            placeOrders(ib);
                         }
                     } catch (Exception e) {
                         log.error("Error in bot", e);

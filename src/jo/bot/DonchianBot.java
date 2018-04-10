@@ -2,6 +2,7 @@ package jo.bot;
 
 import com.ib.client.Contract;
 import com.ib.client.Order;
+import com.ib.client.OrderStatus;
 import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
@@ -10,21 +11,27 @@ import jo.app.IApp;
 import jo.controller.IBroker;
 import jo.filter.Filter;
 import jo.filter.NasdaqRegularHoursFilter;
+import jo.model.BarType;
 import jo.model.Bars;
 import jo.tech.Channel;
 import jo.tech.DonchianChannel;
+import jo.tech.SMA;
 import jo.util.AsyncExec;
 import jo.util.SyncSignal;
 
 public class DonchianBot extends BaseBot {
     private SyncSignal sig;
     private DonchianChannel donchian;
-    public int lowerPeriod = 51;
-    public int upperPeriod = 51;
-    private double grabProfit = 0.5;
+    private DonchianChannel donchianPrev;
+    private SMA fastMovAvg;
+    public int lowerPeriod = 90;
+    public int upperPeriod = 90;
+    public int fastMovAvgPeriod = 12;
+    private double grabProfit = 0.25;
     private IBroker ib;
     private IApp app;
-    private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);    
+    private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
+    private Bars bars;
 
     public DonchianBot(Contract contract, int totalQuantity) {
         super(contract, totalQuantity);
@@ -37,9 +44,12 @@ public class DonchianBot extends BaseBot {
         this.app = app;
 
         this.md = app.getMarketData(contract.symbol());
-        this.sig = md.getUpdateSignal();        
-        Bars bars = md.getBars(BarSize._5_secs);
-        this.donchian = new DonchianChannel(bars, lowerPeriod, upperPeriod);
+        this.sig = md.getBarSignal();
+        bars = md.getBars(BarSize._5_secs);
+        this.donchian = new DonchianChannel(bars, BarType.WAP, BarType.WAP, lowerPeriod, upperPeriod);
+        this.donchianPrev = new DonchianChannel(bars, BarType.WAP, BarType.WAP, lowerPeriod, upperPeriod);
+        this.donchianPrev.setOffset(1);
+        this.fastMovAvg = new SMA(bars, BarType.CLOSE, fastMovAvgPeriod, 0);
     }
 
     @Override
@@ -50,21 +60,56 @@ public class DonchianBot extends BaseBot {
 
     @Override
     public void runLoop() {
-        if (takeProfitOrderIsActive || nasdaqIsOpen.isActive(app, contract, md))
+        BotState botState = getBotState();
+        log.info("BotState: " + botState);
+
+        if (botState == BotState.PENDING) {
             return;
+        }
+
+        if (botState == BotState.OPENNING_POSITION) {
+            log.info("Too slow, cancelling open order");
+            ib.cancelOrder(openOrder.orderId());
+            return;
+        }
 
         Channel ch = donchian.get();
-        if (ch == null)
+        Channel prevCh = donchianPrev.get();
+        if (ch == null || prevCh == null)
             return;
 
-        double lastPrice = md.getLastPrice();
+        log.info("Ch - Prev: " + String.format("%.2f / %.2f / %.2f", prevCh.getLower(), prevCh.getMiddle(), prevCh.getUpper()));
+        log.info("Ch - Curr: " + String.format("%.2f / %.2f / %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
+        log.info("");
 
-        if (lastPrice > ch.getUpper()) {
-            log.info(String.format("Last %.2f, Bid/Ask %.2f / %.2f", lastPrice, md.getBidPrice(), md.getAskPrice()));
-            log.info("Ch:" + String.format("%.2f / %.2f / %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
-            final double openPrice = lastPrice;
-            final double profitPrice = openPrice + grabProfit;
-            final double stopLossPrice = openPrice - grabProfit;
+        // TODO
+        // Cancel order if not filled and timing or trend changed
+        // Update stop loss point until get positive
+        // Add confirmation of price penetration
+        // Tight stop loss on entry, normal after time or positive
+
+        if (botState == BotState.READY_TO_OPEN) {
+            mayBeOpenPosition(ch, prevCh);
+        }
+        
+        if (botState == BotState.PROFIT_WAITING) {
+            mayBeUpdateProfitTaker();
+        }
+    }
+
+    private void mayBeUpdateProfitTaker() {
+        
+    }
+
+    private void mayBeOpenPosition(Channel ch, Channel prevCh) {
+        if (ch.getUpper() > prevCh.getUpper()) {
+            final double openPrice = bars.getLastBar(BarType.WAP);
+            final double stopLossMax = openPrice - grabProfit;
+            final double stopLossPrevLow = bars.getLastBar(BarType.LOW);
+            final double stopLossMin = openPrice - 0.1;
+            final double stopLossPrice = Math.max(stopLossMax, Math.min(stopLossMin, stopLossPrevLow));
+
+            log.info("Go Long: open " + String.format("%.2f", openPrice) + ", stop loss " + String.format("%.2f", stopLossPrice));
 
             openOrder = new Order();
             openOrder.orderId(ib.getNextOrderId());
@@ -84,15 +129,6 @@ public class DonchianBot extends BaseBot {
             takeProfitOrder.trailStopPrice(stopLossPrice);
             takeProfitOrder.transmit(false);
 
-            // stopLossOrder = new Order();
-            // stopLossOrder.orderId(ib.getNextOrderId());
-            // stopLossOrder.action(Action.SELL);
-            // stopLossOrder.orderType(OrderType.STP);
-            // stopLossOrder.totalQuantity(totalQuantity);
-            // stopLossOrder.auxPrice(stopLossPrice);
-            // stopLossOrder.parentId(openOrder.orderId());
-            // stopLossOrder.transmit(true);
-
             mocOrder = new Order();
             mocOrder.orderId(ib.getNextOrderId());
             mocOrder.action(Action.SELL);
@@ -101,19 +137,21 @@ public class DonchianBot extends BaseBot {
             mocOrder.parentId(openOrder.orderId());
             mocOrder.transmit(true);
 
-            openOrderIsActive = true;
-            takeProfitOrderIsActive = true;
+            openOrderStatus = OrderStatus.PendingSubmit;
+            takeProfitOrderStatus = OrderStatus.PendingSubmit;
 
             ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
             ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-            ib.placeOrModifyOrder(contract, mocOrder, new TakeProfitOrderHandler());
+            ib.placeOrModifyOrder(contract, mocOrder, new MocOrderHandler());
 
-        } else if (lastPrice < ch.getLower()) {
-            log.info(String.format("Last %.2f, Bid/Ask %.2f / %.2f", lastPrice, md.getBidPrice(), md.getAskPrice()));
-            log.info("Ch:" + String.format("%.2f / %.2f / %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
-            final double openPrice = lastPrice;
-            final double profitPrice = openPrice - grabProfit;
-            final double stopLossPrice = openPrice + grabProfit;
+        } else if (ch.getLower() < prevCh.getLower()) {
+            final double openPrice = bars.getLastBar(BarType.WAP);
+            final double stopLossMax = openPrice + grabProfit;
+            final double stopLossPrevHigh = bars.getLastBar(BarType.HIGH);
+            final double stopLossMin = openPrice + 0.1;
+            final double stopLossPrice = Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
+
+            log.info("Go Short: open " + String.format("%.2f", openPrice) + ", stop loss " + String.format("%.2f", stopLossPrice));
 
             openOrder = new Order();
             openOrder.orderId(ib.getNextOrderId());
@@ -133,15 +171,6 @@ public class DonchianBot extends BaseBot {
             takeProfitOrder.trailStopPrice(stopLossPrice);
             takeProfitOrder.transmit(false);
 
-            // stopLossOrder = new Order();
-            // stopLossOrder.orderId(ib.getNextOrderId());
-            // stopLossOrder.action(Action.BUY);
-            // stopLossOrder.orderType(OrderType.STP);
-            // stopLossOrder.totalQuantity(totalQuantity);
-            // stopLossOrder.auxPrice(stopLossPrice);
-            // stopLossOrder.parentId(openOrder.orderId());
-            // stopLossOrder.transmit(true);
-
             mocOrder = new Order();
             mocOrder.orderId(ib.getNextOrderId());
             mocOrder.action(Action.BUY);
@@ -150,14 +179,13 @@ public class DonchianBot extends BaseBot {
             mocOrder.parentId(openOrder.orderId());
             mocOrder.transmit(true);
 
-            openOrderIsActive = true;
-            takeProfitOrderIsActive = true;
+            openOrderStatus = OrderStatus.PendingSubmit;
+            takeProfitOrderStatus = OrderStatus.PendingSubmit;
 
             ib.placeOrModifyOrder(contract, openOrder, new OpenPositionOrderHandler());
             ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
-            ib.placeOrModifyOrder(contract, mocOrder, new TakeProfitOrderHandler());
+            ib.placeOrModifyOrder(contract, mocOrder, new MocOrderHandler());
         }
-
     }
 
     public void run() {
@@ -168,7 +196,9 @@ public class DonchianBot extends BaseBot {
                     return;
                 }
 
-                runLoop();
+                if (nasdaqIsOpen.isActive(app, contract, md)) {
+                    runLoop();
+                }
             }
         } catch (Exception e) {
             log.error("Error in bot", e);
