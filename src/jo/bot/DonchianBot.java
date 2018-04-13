@@ -23,18 +23,19 @@ public class DonchianBot extends BaseBot {
     private SyncSignal sig;
     private DonchianChannel donchian;
     private DonchianChannel donchianPrev;
-    private SMA fastMovAvg;
-    public int lowerPeriod = 90;
-    public int upperPeriod = 90;
-    public int fastMovAvgPeriod = 12;
-    private double grabProfit = 0.25;
+    private SMA fastSMA;
+    public int fastSMAPeriod = 9;
+    public int lowerPeriod = 60;
+    public int upperPeriod = 60;
+    private double grabProfit;
     private IBroker ib;
     private IApp app;
     private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
     private Bars bars;
 
-    public DonchianBot(Contract contract, int totalQuantity) {
+    public DonchianBot(Contract contract, int totalQuantity, double grabProfit) {
         super(contract, totalQuantity);
+        this.grabProfit = grabProfit;
     }
 
     @Override
@@ -46,10 +47,10 @@ public class DonchianBot extends BaseBot {
         this.md = app.getMarketData(contract.symbol());
         this.sig = md.getBarSignal();
         bars = md.getBars(BarSize._5_secs);
-        this.donchian = new DonchianChannel(bars, BarType.WAP, BarType.WAP, lowerPeriod, upperPeriod);
-        this.donchianPrev = new DonchianChannel(bars, BarType.WAP, BarType.WAP, lowerPeriod, upperPeriod);
+        this.donchian = new DonchianChannel(bars, BarType.LOW, BarType.HIGH, lowerPeriod, upperPeriod);
+        this.donchianPrev = new DonchianChannel(bars, BarType.LOW, BarType.HIGH, lowerPeriod, upperPeriod);
         this.donchianPrev.setOffset(1);
-        this.fastMovAvg = new SMA(bars, BarType.CLOSE, fastMovAvgPeriod, 0);
+        this.fastSMA = new SMA(bars, BarType.CLOSE, fastSMAPeriod, 0);
     }
 
     @Override
@@ -58,10 +59,15 @@ public class DonchianBot extends BaseBot {
         this.thread = AsyncExec.startThread(threadName, this::run);
     }
 
+    private BotState botStatePrev;
+
     @Override
     public void runLoop() {
         BotState botState = getBotState();
-        log.info("BotState: " + botState);
+        if (botStatePrev != botState) {
+            log.info("BotState: " + botState);
+            botStatePrev = botState;
+        }
 
         if (botState == BotState.PENDING) {
             return;
@@ -73,6 +79,45 @@ public class DonchianBot extends BaseBot {
             return;
         }
 
+        // TODO
+        // Cancel order if not filled and timing or trend changed
+        // Update stop loss point until get positive
+        // Add confirmation of price penetration
+        // Tight stop loss on entry, normal after time or positive
+
+        if (botState == BotState.READY_TO_OPEN) {
+            mayBeOpenPosition();
+        }
+
+        if (botState == BotState.PROFIT_WAITING) {
+            mayBeUpdateProfitTaker();
+        }
+    }
+
+    private void mayBeUpdateProfitTaker() {
+        double smaVal = fixPriceVariance(fastSMA.get());
+        double barClose = bars.getLastBar(BarType.CLOSE);
+        boolean update = false;
+
+        // long
+        if (takeProfitOrder.action() == Action.SELL && barClose < smaVal) {
+            takeProfitOrder.trailStopPrice(smaVal);
+            update = true;
+        }
+
+        // short
+        if (takeProfitOrder.action() == Action.BUY && barClose > smaVal) {
+            takeProfitOrder.trailStopPrice(smaVal);
+            update = true;
+        }
+
+        if (update) {
+            takeProfitOrder.transmit(true);
+            ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
+        }
+    }
+
+    private void mayBeOpenPosition() {
         Channel ch = donchian.get();
         Channel prevCh = donchianPrev.get();
         if (ch == null || prevCh == null)
@@ -82,32 +127,21 @@ public class DonchianBot extends BaseBot {
         log.info("Ch - Curr: " + String.format("%.2f / %.2f / %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
         log.info("");
 
-        // TODO
-        // Cancel order if not filled and timing or trend changed
-        // Update stop loss point until get positive
-        // Add confirmation of price penetration
-        // Tight stop loss on entry, normal after time or positive
+        double barOpen = bars.getLastBar(BarType.OPEN);
+        double barClose = bars.getLastBar(BarType.CLOSE);
+        double lastPrice = md.getLastPrice();
 
-        if (botState == BotState.READY_TO_OPEN) {
-            mayBeOpenPosition(ch, prevCh);
-        }
-        
-        if (botState == BotState.PROFIT_WAITING) {
-            mayBeUpdateProfitTaker();
-        }
-    }
+        double smaVal = fastSMA.get();
 
-    private void mayBeUpdateProfitTaker() {
-        
-    }
-
-    private void mayBeOpenPosition(Channel ch, Channel prevCh) {
-        if (ch.getUpper() > prevCh.getUpper()) {
-            final double openPrice = bars.getLastBar(BarType.WAP);
+        if (lastPrice > ch.getUpper()
+                && barClose > smaVal
+                && ch.getUpper() > prevCh.getUpper()
+                && barOpen < barClose) {
+            final double openPrice = lastPrice;// bars.getLastBar(BarType.WAP);
             final double stopLossMax = openPrice - grabProfit;
-            final double stopLossPrevLow = bars.getLastBar(BarType.LOW);
-            final double stopLossMin = openPrice - 0.1;
-            final double stopLossPrice = Math.max(stopLossMax, Math.min(stopLossMin, stopLossPrevLow));
+            final double prevBarClose = bars.getLastBar(BarType.CLOSE);
+            final double stopLossMin = openPrice - 0.05; //TODO % of GrabProfit
+            final double stopLossPrice = stopLossMin; //Math.max(stopLossMin, prevBarClose);
 
             log.info("Go Long: open " + String.format("%.2f", openPrice) + ", stop loss " + String.format("%.2f", stopLossPrice));
 
@@ -144,12 +178,15 @@ public class DonchianBot extends BaseBot {
             ib.placeOrModifyOrder(contract, takeProfitOrder, new TakeProfitOrderHandler());
             ib.placeOrModifyOrder(contract, mocOrder, new MocOrderHandler());
 
-        } else if (ch.getLower() < prevCh.getLower()) {
-            final double openPrice = bars.getLastBar(BarType.WAP);
+        } else if (lastPrice < ch.getLower()
+                && barClose < smaVal
+                && ch.getLower() < prevCh.getLower()
+                && barOpen > barClose) {
+            final double openPrice = lastPrice;//bars.getLastBar(BarType.WAP);
             final double stopLossMax = openPrice + grabProfit;
-            final double stopLossPrevHigh = bars.getLastBar(BarType.HIGH);
-            final double stopLossMin = openPrice + 0.1;
-            final double stopLossPrice = Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
+            final double prevBar = bars.getLastBar(BarType.CLOSE);
+            final double stopLossMin = openPrice + 0.05; //TODO % of GrabProfit
+            final double stopLossPrice = stopLossMin; // Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
 
             log.info("Go Short: open " + String.format("%.2f", openPrice) + ", stop loss " + String.format("%.2f", stopLossPrice));
 

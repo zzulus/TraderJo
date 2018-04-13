@@ -5,7 +5,7 @@
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
         </Console>
 
-        <RollingFile name="File" fileName="log//app/app.log" filePattern="log/app/app-%d{yyyy-MM-dd}-%i.log">
+        <RollingFile name="File" filePattern="log/app/app-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />

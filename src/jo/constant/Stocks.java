@@ -24,7 +24,7 @@ public class Stocks {
         contract.primaryExch("NASDAQ");
         return contract;
     }
-    
+
     public static Contract QQQ(boolean smart) {
         Contract contract = new Contract();
         contract.symbol("QQQ");
@@ -54,7 +54,7 @@ public class Stocks {
         contract.primaryExch("ISLAND");
         return contract;
     }
-    
+
     public static Contract of(String name, boolean smart) {
         Contract contract = new Contract();
         contract.symbol(name);
@@ -63,6 +63,10 @@ public class Stocks {
         contract.exchange(smart ? "SMART" : "ISLAND");
         contract.primaryExch("ISLAND");
         return contract;
+    }
+
+    public static Contract smartOf(String name) {
+        return of(name, true);
     }
 
     public static Contract AAPL(boolean smart) {

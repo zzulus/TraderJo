@@ -70,7 +70,7 @@ public class PlayerApp {
                 StringBuilder t = new StringBuilder();
 
                 for (File file : files) {
-                    DonchianBot bot = new DonchianBot(Stocks.TQQQ(true), 100);
+                    DonchianBot bot = new DonchianBot(Stocks.TQQQ(true), 100, 0.7);
                     bot.lowerPeriod = lowerPeriod;
                     bot.upperPeriod = upperPeriod;
                     PlayerApp player = new PlayerApp();

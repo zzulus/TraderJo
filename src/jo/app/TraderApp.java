@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
+import com.ib.client.Contract;
 
 import jo.bot.Bot;
 import jo.bot.DonchianBot;
@@ -32,14 +33,31 @@ public class TraderApp implements IApp {
         new TraderApp().start();
     }
 
-    public TraderApp() {
-        Bot bot1 = new DonchianBot(Stocks.SPY(true), 25);
-        List<Bot> bots = Lists.newArrayList(bot1);
+    public TraderApp() {               
+        Contract spy = Stocks.smartOf("SPY");
+        Contract xle = Stocks.smartOf("XLE");
+        Contract xlb = Stocks.smartOf("XLB");
+        Contract ibb = Stocks.smartOf("IBB");
+        Contract xlu = Stocks.smartOf("XLU");
+        
+        Bot spyBot = new DonchianBot(spy, 25, 0.27);
+        Bot xleBot = new DonchianBot(xle , 50, 0.12);
+        Bot xlbBot = new DonchianBot(xlb , 50, 0.12);
+        Bot ibbBot = new DonchianBot(ibb , 25, 0.2);
+        Bot xluBot = new DonchianBot(xlu , 50, 0.13);
+        
+        List<Bot> bots = Lists.newArrayList(spyBot/*,
+         xleBot, 
+         xlbBot, 
+         ibbBot, 
+         xluBot*/);
 
         postConnectCommands = Lists.newArrayList(
-                new InitStockDataCommand(Stocks.SPY(true)),
-                //new InitStockDataCommand(Stocks.SPY(true)),
-                //new InitStockDataCommand(Stocks.SQQQ(true)),
+                new InitStockDataCommand(spy),
+                new InitStockDataCommand(xle),
+                new InitStockDataCommand(xlb),
+                new InitStockDataCommand(ibb),
+                new InitStockDataCommand(xlu),                
                 new StartBotsCommand(bots));
     }
 
@@ -108,3 +126,4 @@ public class TraderApp implements IApp {
         this.postConnectCommands = postConnectCommands;
     }
 }
+
