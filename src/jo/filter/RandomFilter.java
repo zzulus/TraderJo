@@ -18,7 +18,7 @@ public class RandomFilter implements Filter {
     public boolean isActive(IApp app, Contract contract, MarketData marketData) {
         return Math.random() <= weight;
     }
-    
+
     public String getName() {
         return "RandomSignal";
     }

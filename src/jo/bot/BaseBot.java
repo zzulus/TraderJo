@@ -130,7 +130,7 @@ public abstract class BaseBot implements Bot {
         private final Logger log = LogManager.getLogger(OpenPositionOrderHandler.class);
 
         @Override
-        public void orderState(OrderState orderState) {
+        public void orderState(Order order, OrderState orderState) {
             String status = orderState.getStatus();
             log.info("OpenPosition: OrderState: {}", status);
         }
@@ -181,7 +181,7 @@ public abstract class BaseBot implements Bot {
         private final Logger log = LogManager.getLogger(TakeProfitOrderHandler.class);
 
         @Override
-        public void orderState(OrderState orderState) {
+        public void orderState(Order order, OrderState orderState) {
             String status = orderState.getStatus();
             log.info("TakeProfit: OrderState: {}", status);
         }
@@ -229,7 +229,7 @@ public abstract class BaseBot implements Bot {
 
     protected class MocOrderHandler implements IOrderHandler {
         @Override
-        public void orderState(OrderState orderState) {
+        public void orderState(Order order, OrderState orderState) {
         }
 
         @Override

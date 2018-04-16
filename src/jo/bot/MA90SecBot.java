@@ -12,11 +12,7 @@ import com.ib.client.Types.BarSize;
 import jo.app.IApp;
 import jo.controller.IBroker;
 import jo.filter.AllFilters;
-import jo.filter.BelowSimpleAverageFilter;
 import jo.filter.Filter;
-import jo.filter.HasAtLeastNBarsFilter;
-import jo.filter.NasdaqRegularHoursFilter;
-import jo.filter.NotCloseToDailyHighFilter;
 import jo.filter.TwoMAFilter;
 import jo.model.Bars;
 import jo.util.SyncSignal;
@@ -40,7 +36,7 @@ public class MA90SecBot extends BaseBot {
         //signals.add(new NotCloseToDailyHighRestriction(0.2d));
         // signals.add(new BelowSimpleAverageSignal(90 / 5, 0.03d));
         // signals.add(new BelowSimpleAverageSignal((5 * 60) / 5, 0.03d));
-        
+
         int n = 5;
         signals.add(new TwoMAFilter(n, 2 * n + 1));
 
@@ -65,9 +61,9 @@ public class MA90SecBot extends BaseBot {
                     try {
                         marketDataSignal.waitForSignal();
 
-//                        if (takeProfitOrderIsActive) {
-//                            continue;
-//                        }
+                        //                        if (takeProfitOrderIsActive) {
+                        //                            continue;
+                        //                        }
                         //double lastPrice = marketData.getLastPrice();
                         double basePrice = md.getAskPrice();
 
@@ -99,7 +95,7 @@ public class MA90SecBot extends BaseBot {
                             takeProfitOrder.parentId(openOrder.orderId());
                             takeProfitOrder.transmit(true);
 
-//                            placeOrders(ib);
+                            //                            placeOrders(ib);
                         }
                     } catch (Exception e) {
                         log.error("Error in bot", e);
@@ -113,6 +109,6 @@ public class MA90SecBot extends BaseBot {
     @Override
     public void runLoop() {
         // TODO Auto-generated method stub
-        
+
     }
 }

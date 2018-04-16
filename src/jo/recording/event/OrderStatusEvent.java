@@ -14,7 +14,7 @@ public class OrderStatusEvent extends AbstractEvent {
     private double lastFillPrice;
     private int clientId;
     private String whyHeld;
-    
+
     public OrderStatusEvent() {
         super(TYPE);
     }

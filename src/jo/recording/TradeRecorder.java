@@ -28,8 +28,8 @@ import jo.handler.ILiveOrderHandler;
 import jo.handler.ITradeReportHandler;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.CommissionReportEvent;
-import jo.recording.event.OpenOrderEvent;
 import jo.recording.event.ErrorEvent;
+import jo.recording.event.OpenOrderEvent;
 import jo.recording.event.OrderStatusEvent;
 import jo.recording.event.TradeReportEvent;
 
@@ -134,7 +134,7 @@ public class TradeRecorder implements Recorder {
 
     @Override
     public void error(int id, int errorCode, String errorMsg) {
-        q.add(new ErrorEvent(id, errorCode, errorMsg));        
+        q.add(new ErrorEvent(id, errorCode, errorMsg));
     }
 
 }

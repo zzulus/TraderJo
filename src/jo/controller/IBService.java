@@ -294,9 +294,8 @@ public class IBService implements IBroker {
             }
 
             @Override
-            public void orderState(OrderState orderState) {
+            public void orderState(Order order, OrderState orderState) {
                 // TODO Auto-generated method stub
-
             }
 
             @Override
@@ -1062,7 +1061,7 @@ public class IBService implements IBroker {
         public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
             IOrderHandler handler = orderHandlers.get(orderId);
             if (handler != null) {
-                handler.orderState(orderState);
+                handler.orderState(order, orderState);
             }
 
             if (!order.whatIf()) {

@@ -1,12 +1,10 @@
 package jo.command;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.collect.Lists;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.WhatToShow;
@@ -17,7 +15,6 @@ import jo.model.MarketData;
 
 public class InitStockDataCommand implements AppCommand {
     private static final Logger log = LogManager.getLogger(InitStockDataCommand.class);
-    private List<BarSize> barSizes = Lists.newArrayList(BarSize._5_secs, BarSize._15_secs, BarSize._1_min, BarSize._2_mins, BarSize._5_mins);
     private Contract contract;
 
     public InitStockDataCommand(Contract contract) {
@@ -32,10 +29,6 @@ public class InitStockDataCommand implements AppCommand {
 
         MarketData marketData = new MarketData();
         stockMarketDataMap.put(contract.symbol(), marketData);
-
-        for (BarSize barSize : barSizes) {
-            marketData.initBars(barSize);
-        }
 
         // IB supports only 5 sec realtime bars
         // https://interactivebrokers.github.io/tws-api/realtime_bars.html#gsc.tab=0

@@ -31,7 +31,7 @@ public class GatherStatisticsApp {
         ib.connectLocalhostLive(new ConnectionHandlerAdapter() {
             @Override
             public void connected() {
-                
+
                 ib.reqHistoricalData(contract, "20180226 23:59:59 GMT", 90, DurationUnit.DAY, BarSize._30_secs, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
                     final Bars bars = new Bars();
 

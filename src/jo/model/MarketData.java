@@ -1,5 +1,7 @@
 package jo.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,10 +15,12 @@ import com.ib.client.Types.BarSize;
 import com.ib.client.Types.MktDataType;
 
 import jo.handler.ITopMktDataHandler;
+import jo.model.calc.RealtimeBarAggregator;
+import jo.util.BarSizeUtils;
 import jo.util.SyncSignal;
 
 public class MarketData {
-    private static final Logger log = LogManager.getLogger(MarketData.class);
+    private static final Logger LOG = LogManager.getLogger(MarketData.class);
 
     private Map<BarSize, Bars> barsMap = new ConcurrentHashMap<>();
     private CircularFifoQueue<MarketDataTrade> trades = new CircularFifoQueue<>(4 * 4096);
@@ -43,15 +47,20 @@ public class MarketData {
 
     private ITopMktDataHandler topMktDataHandler = new TopMktDataHandler();
     private final SyncSignal updateSignal = new SyncSignal();
-    private final SyncSignal barSignal = new SyncSignal();
+    private List<SyncSignal> barSignals = new ArrayList<>();
+
+    private final List<RealtimeBarAggregator> realtimeBarAggregators = new ArrayList<>();
 
     public MarketData() {
-        initBars(BarSize._5_secs);
-        initBars(BarSize._1_min);
-        initBars(BarSize._2_mins);
-        initBars(BarSize._15_mins);
-        initBars(BarSize._30_mins);
-        initBars(BarSize._1_hour);
+        Bars realtimeBars = initBars(BarSize._5_secs);
+
+        for (int i = BarSize._10_secs.ordinal(); i < BarSize._1_day.ordinal(); i++) {
+            BarSize barSize = BarSize.values()[i];
+            initBars(barSize);
+
+            RealtimeBarAggregator agg = new RealtimeBarAggregator(this, realtimeBars, barSize);
+            realtimeBarAggregators.add(agg);
+        }
     }
 
     public void addTrade(MarketDataTrade trade) {
@@ -88,22 +97,30 @@ public class MarketData {
     }
 
     public synchronized void addBar(BarSize barSize, Bar bar) {
-        Bars bars = barsMap.computeIfAbsent(barSize, (k) -> new Bars());
+        Bars bars = initBars(barSize);
         bars.addBar(bar);
-        updateSignal.signalAll();
-        barSignal.signalAll();
+
+        if (barSize == BarSizeUtils.REALTIME_BAR_SIZE) {
+            for (RealtimeBarAggregator agg : realtimeBarAggregators) {
+                agg.update();
+            }
+            // only update on a realtime bar, other bars will cascade from the realtime bar
+            updateSignal.signalAll();
+        }
+
+        bars.getSignal().signalAll();
     }
 
     public Bars getBars(BarSize barSize) {
         return barsMap.get(barSize);
     }
 
-    public Bars initBars(BarSize barSize) {
-        return barsMap.computeIfAbsent(barSize, (k) -> new Bars());
-    }
-
-    public Map<BarSize, Bars> getBarsMap() {
-        return barsMap;
+    public synchronized Bars initBars(BarSize barSize) {
+        return barsMap.computeIfAbsent(barSize, (k) -> {
+            Bars bars = new Bars();
+            barSignals.add(bars.getSignal());
+            return bars;
+        });
     }
 
     public CircularFifoQueue<MarketDataTrade> getTrades() {
@@ -169,11 +186,6 @@ public class MarketData {
     public SyncSignal getUpdateSignal() {
         return updateSignal;
     }
-    
-    public SyncSignal getBarSignal() {
-        return barSignal;
-    }
-
 
     // TODO Extract
     private class TopMktDataHandler implements ITopMktDataHandler {
@@ -181,7 +193,7 @@ public class MarketData {
         @Override
         public void tickPrice(TickType tickType, double price, int canAutoExecute) {
             // log.info("tickPrice: {} {}", tickType, price);
-            if (price < 0) {
+            if (price <= 0) {
                 return;
             }
 

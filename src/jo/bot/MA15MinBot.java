@@ -39,9 +39,9 @@ public class MA15MinBot extends BaseBot {
                 while (true) {
                     try {
                         Thread.sleep(200);
-//                        if (takeProfitOrderIsActive) {
-//                            continue;
-//                        }
+                        //                        if (takeProfitOrderIsActive) {
+                        //                            continue;
+                        //                        }
 
                         if (positionFilter.isActive(app, contract, md)) {
                             log.info("Signal is active " + md.getLastPrice());
@@ -69,7 +69,7 @@ public class MA15MinBot extends BaseBot {
                             takeProfitOrder.parentId(openOrder.orderId());
                             takeProfitOrder.transmit(true);
 
-//                            placeOrders(ib);
+                            //                            placeOrders(ib);
                         }
                     } catch (Exception e) {
                         log.error("Error in bot", e);
@@ -82,6 +82,6 @@ public class MA15MinBot extends BaseBot {
     @Override
     public void runLoop() {
         // TODO Auto-generated method stub
-        
+
     }
 }

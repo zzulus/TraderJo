@@ -15,7 +15,7 @@ public class EventTypeRegistry {
             .put(TickPriceEvent.TYPE, TickPriceEvent.class)
             .put(TickSizeEvent.TYPE, TickSizeEvent.class)
             .put(TickStringEvent.TYPE, TickStringEvent.class)
-            .put(TradeReportEvent.TYPE, TradeReportEvent.class)            
+            .put(TradeReportEvent.TYPE, TradeReportEvent.class)
             .build();
 
     public static Class<? extends AbstractEvent> getByType(String type) {

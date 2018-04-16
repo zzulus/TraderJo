@@ -86,4 +86,9 @@ public class ReplayApp implements IApp {
 
         ib.handleReplayEvent(contract, event);
     }
+
+    @Override
+    public void initMarketData(Contract contract) {
+        // TODO Auto-generated method stub       
+    }
 }

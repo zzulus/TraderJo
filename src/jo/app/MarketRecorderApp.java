@@ -32,7 +32,7 @@ public class MarketRecorderApp {
         for (String stock : MarketRecorderStocks.TICKS_ONLY_ETFS) {
             records.add(new MarketRecorder(Stocks.of(stock, true)).withDeepBook(false));
         }
-        
+
         for (String stock : MarketRecorderStocks.TICKS_ONLY_STOCKS) {
             records.add(new MarketRecorder(Stocks.of(stock, true)).withDeepBook(false));
         }

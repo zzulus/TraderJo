@@ -42,7 +42,7 @@ public class TwoMAFilter implements Filter {
                 accLong = accLong + close.get(i);
             }
             double longAvg = accLong / longPeriod;
-            
+
             return shortAvg > longAvg;
         } catch (Exception e) {
             e.printStackTrace();

@@ -20,7 +20,7 @@ import jo.util.AsyncExec;
 import jo.util.SyncSignal;
 
 public class DonchianBot extends BaseBot {
-    private SyncSignal sig;
+    private SyncSignal barSig;
     private DonchianChannel donchian;
     private DonchianChannel donchianPrev;
     private SMA fastSMA;
@@ -41,12 +41,16 @@ public class DonchianBot extends BaseBot {
     @Override
     public void init(IBroker ib, IApp app) {
         log.info("Start bot for {}", contract.symbol());
+
         this.ib = ib;
         this.app = app;
 
+        this.app.initMarketData(contract);
+
         this.md = app.getMarketData(contract.symbol());
-        this.sig = md.getBarSignal();
-        bars = md.getBars(BarSize._5_secs);
+        this.bars = md.getBars(BarSize._5_secs);
+        this.barSig = bars.getSignal();
+
         this.donchian = new DonchianChannel(bars, BarType.LOW, BarType.HIGH, lowerPeriod, upperPeriod);
         this.donchianPrev = new DonchianChannel(bars, BarType.LOW, BarType.HIGH, lowerPeriod, upperPeriod);
         this.donchianPrev.setOffset(1);
@@ -227,7 +231,7 @@ public class DonchianBot extends BaseBot {
 
     public void run() {
         try {
-            while (sig.waitForSignal()) {
+            while (barSig.waitForSignal()) {
 
                 if (Thread.interrupted()) {
                     return;

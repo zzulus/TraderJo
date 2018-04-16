@@ -3,11 +3,11 @@ package jo.handler;
 import java.util.Set;
 
 public interface ISecDefOptParamsReqHandler {
-    void securityDefinitionOptionalParameter(String exchange, 
-            int underlyingConId, 
+    void securityDefinitionOptionalParameter(String exchange,
+            int underlyingConId,
             String tradingClass,
-            String multiplier, 
-            Set<String> expirations, 
+            String multiplier,
+            Set<String> expirations,
             Set<Double> strikes);
 
     void securityDefinitionOptionalParameterEnd(int reqId);

@@ -41,7 +41,7 @@ import jo.handler.ITopMktDataHandler;
 import jo.handler.ITradeReportHandler;
 
 public interface IBroker {
-    
+
     int getNextOrderId();
 
     void reqSoftDollarTiers(ISoftDollarTiersReqHandler handler);

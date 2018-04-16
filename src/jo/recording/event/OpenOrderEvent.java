@@ -13,7 +13,7 @@ public class OpenOrderEvent extends AbstractEvent {
     public OpenOrderEvent() {
         super(TYPE);
     }
-    
+
     public OpenOrderEvent(Contract contract, Order order, OrderState orderState) {
         super(TYPE);
         this.contract = contract;

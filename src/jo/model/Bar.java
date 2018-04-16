@@ -98,7 +98,7 @@ public class Bar {
     public void setCount(int count) {
         this.count = count;
     }
-    
+
     public String formattedTime() {
         return Formats.fmtDate(this.time * 1000);
     }

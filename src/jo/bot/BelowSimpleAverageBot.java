@@ -3,23 +3,14 @@
  */
 package jo.bot;
 
-import static java.lang.Math.abs;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import org.apache.logging.log4j.LogManager;
-
-import com.google.common.base.Joiner;
 import com.ib.client.Contract;
-import com.ib.client.Order;
-import com.ib.client.OrderType;
-import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
 import gnu.trove.list.array.TDoubleArrayList;
@@ -239,6 +230,6 @@ public class BelowSimpleAverageBot extends BaseBot {
     @Override
     public void runLoop() {
         // TODO Auto-generated method stub
-        
+
     }
 }

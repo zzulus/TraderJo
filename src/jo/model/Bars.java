@@ -10,11 +10,12 @@ import com.google.common.base.Preconditions;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import jo.util.SyncSignal;
 
 public class Bars {
     private static final Logger log = LogManager.getLogger(Bars.class);
-
     private int size = 0;
+    private final SyncSignal signal = new SyncSignal();
 
     private final TLongArrayList time = new TLongArrayList();
     private final TDoubleArrayList high = new TDoubleArrayList();
@@ -113,6 +114,10 @@ public class Bars {
 
     public int getSize() {
         return size;
+    }
+
+    public SyncSignal getSignal() {
+        return signal;
     }
 
     public TDoubleArrayList getDoubleSeries(BarType type) {

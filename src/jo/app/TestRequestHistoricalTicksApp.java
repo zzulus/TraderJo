@@ -10,7 +10,6 @@ import com.ib.client.Types.WhatToShow;
 import gnu.trove.list.array.TDoubleArrayList;
 import jo.constant.Stocks;
 import jo.controller.IBService;
-import jo.controller.IBroker;
 import jo.handler.ConnectionHandlerAdapter;
 import jo.handler.IHistoricalDataHandler;
 import jo.model.Bar;
@@ -26,7 +25,7 @@ public class TestRequestHistoricalTicksApp {
 
         ib.connectLocalhostLive(new ConnectionHandlerAdapter() {
             @Override
-            public void connected() {                
+            public void connected() {
                 ib.reqHistoricalData(contract, "20180226 23:59:59 GMT", 90, DurationUnit.DAY, BarSize._30_secs, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
                     final Bars bars = new Bars();
 

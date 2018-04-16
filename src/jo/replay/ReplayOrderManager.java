@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
@@ -136,7 +135,7 @@ public class ReplayOrderManager {
 
         OrderState orderState = newOrderState(OrderStatus.Filled.name());
         IOrderHandler handler = replayOrder.getHandler();
-        handler.orderState(orderState);
+        handler.orderState(null, orderState); // TODO
         handler.orderStatus(OrderStatus.Filled, order.totalQuantity(), 0, executePrice, -1, order.parentId(), executePrice, -1, null);
     }
 
