@@ -55,8 +55,7 @@ public class TraderApp implements IApp {
                                                   ibbBot, 
                                                   xluBot*/);
 
-        postConnectCommands = Lists.newArrayList(
-                new StartBotsCommand(bots));
+        postConnectCommands = Lists.newArrayList(new StartBotsCommand(bots));
     }
 
     public void start() {

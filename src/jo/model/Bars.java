@@ -63,6 +63,8 @@ public class Bars {
         count.add(bar.getCount());
 
         size++;
+
+        signal.signalAll();
     }
 
     @Nullable

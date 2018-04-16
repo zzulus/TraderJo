@@ -104,11 +104,10 @@ public class MarketData {
             for (RealtimeBarAggregator agg : realtimeBarAggregators) {
                 agg.update();
             }
+
             // only update on a realtime bar, other bars will cascade from the realtime bar
             updateSignal.signalAll();
         }
-
-        bars.getSignal().signalAll();
     }
 
     public Bars getBars(BarSize barSize) {
