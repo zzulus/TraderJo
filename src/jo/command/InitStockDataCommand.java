@@ -9,8 +9,8 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.WhatToShow;
 
-import jo.app.IApp;
 import jo.controller.IBroker;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class InitStockDataCommand implements AppCommand {

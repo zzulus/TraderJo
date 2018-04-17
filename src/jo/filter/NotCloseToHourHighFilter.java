@@ -3,14 +3,14 @@ package jo.filter;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
-import gnu.trove.list.array.TDoubleArrayList;
-import jo.app.IApp;
+import gnu.trove.list.TDoubleList;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class NotCloseToHourHighFilter implements Filter {
     private static final int BARS_IN_HOUR = (60 * 60) / 5; // number of 5 sec bars in 1 hour
     private double delta;
-    private TDoubleArrayList highs;
+    private TDoubleList highs;
 
     public NotCloseToHourHighFilter(double delta) {
         this.delta = delta;

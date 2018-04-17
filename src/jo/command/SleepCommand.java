@@ -1,7 +1,7 @@
 package jo.command;
 
-import jo.app.IApp;
 import jo.controller.IBroker;
+import jo.model.IApp;
 
 public class SleepCommand implements AppCommand {
     private long sleepMs;

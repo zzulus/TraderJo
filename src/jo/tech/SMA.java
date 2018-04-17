@@ -6,13 +6,13 @@ import com.tictactec.ta.lib.Core;
 import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 
-import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.TDoubleList;
 import jo.model.BarType;
 import jo.model.Bars;
 
 public class SMA {
     private final int period;
-    private final TDoubleArrayList series;
+    private final TDoubleList series;
     private int prevSize = -1;
     private int offset = 0;
     private Double value;

@@ -7,6 +7,7 @@ import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
 
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import jo.constant.Stocks;
 import jo.controller.IBService;
@@ -51,15 +52,15 @@ public class TestRequestHistoricalTicksApp {
     }
 
     static void calcDays(Contract contract, Bars bars) {
-        TDoubleArrayList open = bars.getOpen();
-        TDoubleArrayList close = bars.getClose();
-        TDoubleArrayList low = bars.getLow();
-        TDoubleArrayList high = bars.getHigh();
+        TDoubleList open = bars.getOpen();
+        TDoubleList close = bars.getClose();
+        TDoubleList low = bars.getLow();
+        TDoubleList high = bars.getHigh();
 
         int size = open.size();
 
-        TDoubleArrayList hiLoDiffs = new TDoubleArrayList();
-        TDoubleArrayList openCloseDiffs = new TDoubleArrayList();
+        TDoubleList hiLoDiffs = new TDoubleArrayList();
+        TDoubleList openCloseDiffs = new TDoubleArrayList();
 
         for (int i = 0; i < size; i++) {
             double hiLoDiff = high.get(i) - low.get(i);

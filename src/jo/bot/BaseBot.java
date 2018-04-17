@@ -24,6 +24,10 @@ public abstract class BaseBot implements Bot {
 
     protected Filter positionFilter;
 
+    protected double openOrderAvgFillPrice;
+    protected double takeProfitOrderAvgFillPrice;
+    protected int currentPosition = 0;
+
     protected Order openOrder;
     protected Order takeProfitOrder;
     protected Order stopLossOrder;
@@ -31,6 +35,7 @@ public abstract class BaseBot implements Bot {
 
     protected OrderStatus openOrderStatus = null;
     protected OrderStatus takeProfitOrderStatus = null;
+    protected OrderStatus stopLossOrderStatus = null;
 
     protected Thread thread;
 
@@ -42,12 +47,6 @@ public abstract class BaseBot implements Bot {
         this.totalQuantity = totalQuantity;
     }
 
-    // TODO Move out
-    protected static double fixPriceVariance(double price) {
-        double minTick = 0.01;
-        int d = (int) (price / minTick);
-        return d * minTick;
-    }
 
     protected void openPositionOrderSubmitted() {
 
@@ -105,14 +104,16 @@ public abstract class BaseBot implements Bot {
         if (openOrderStatus == OrderStatus.Cancelled)
             return BotState.READY_TO_OPEN;
 
-        if (openOrderStatus == OrderStatus.Filled && (takeProfitOrderStatus == OrderStatus.PreSubmitted || takeProfitOrderStatus == OrderStatus.Submitted))
+        //if (openOrderStatus == OrderStatus.Filled && (takeProfitOrderStatus == OrderStatus.PreSubmitted || takeProfitOrderStatus == OrderStatus.Submitted))
+        if (openOrderStatus == OrderStatus.Filled && currentPosition > 0)
             return BotState.PROFIT_WAITING;
 
-        if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Filled)
+        //if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Filled)
+        if (openOrderStatus == OrderStatus.Filled && currentPosition == 0)
             return BotState.READY_TO_OPEN;
 
-        if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Cancelled)
-            return BotState.READY_TO_OPEN;
+        //if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Cancelled)
+        //    return BotState.READY_TO_OPEN;
 
         throw new IllegalStateException("Unsupported combo of states: openOrderStatus=" + openOrderStatus + ", takeProfitOrderStatus=" + takeProfitOrderStatus);
     }
@@ -122,9 +123,6 @@ public abstract class BaseBot implements Bot {
             thread.interrupt();
         }
     }
-
-    protected double openOrderAvgFillPrice;
-    protected double takeProfitOrderAvgFillPrice;
 
     protected class OpenPositionOrderHandler implements IOrderHandler {
         private final Logger log = LogManager.getLogger(OpenPositionOrderHandler.class);
@@ -149,6 +147,7 @@ public abstract class BaseBot implements Bot {
 
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 openOrderAvgFillPrice = avgFillPrice;
+                currentPosition += filled;
                 openPositionOrderFilled(avgFillPrice);
             }
 
@@ -200,6 +199,7 @@ public abstract class BaseBot implements Bot {
 
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 takeProfitOrderAvgFillPrice = avgFillPrice;
+                currentPosition -= filled;
                 takeProfitOrderFilled(avgFillPrice);
             }
 
@@ -227,6 +227,57 @@ public abstract class BaseBot implements Bot {
         }
     }
 
+    protected class StopLossOrderHandler implements IOrderHandler {
+        private final Logger log = LogManager.getLogger(StopLossOrderHandler.class);
+
+        @Override
+        public void orderState(Order order, OrderState orderState) {
+            String status = orderState.getStatus();
+            log.info("StopLoss: OrderState: {}", status);
+        }
+
+        @Override
+        public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+            log.info("StopLoss: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
+
+            if (stopLossOrderStatus == status) {
+                return;
+            }
+
+            if (status == OrderStatus.Submitted) {
+                //takeProfitOrderSubmitted();
+            }
+
+            if (status == OrderStatus.Filled && remaining < 0.01) {
+                takeProfitOrderAvgFillPrice = avgFillPrice;
+                currentPosition -= filled;
+                takeProfitOrderFilled(avgFillPrice);
+            }
+
+            // remap ApiCancelled to Canceled
+            if (status == OrderStatus.ApiCancelled) {
+                status = OrderStatus.Cancelled;
+            }
+
+            if (status == OrderStatus.Cancelled) {
+                takeProfitOrderCancelled();
+            }
+
+            // finally assign status
+            if (status == OrderStatus.Filled
+                    || status == OrderStatus.Cancelled
+                    || status == OrderStatus.PreSubmitted
+                    || status == OrderStatus.Submitted) {
+                stopLossOrderStatus = status;
+            }
+        }
+
+        @Override
+        public void handle(int errorCode, String errorMsg) {
+            log.error("Error: {} - {}", errorCode, errorMsg);
+        }
+    }
+
     protected class MocOrderHandler implements IOrderHandler {
         @Override
         public void orderState(Order order, OrderState orderState) {
@@ -236,6 +287,7 @@ public abstract class BaseBot implements Bot {
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 takeProfitOrderAvgFillPrice = avgFillPrice;
+                currentPosition -= filled;
                 takeProfitOrderFilled(avgFillPrice);
             }
         }

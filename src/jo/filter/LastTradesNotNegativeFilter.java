@@ -4,7 +4,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import com.ib.client.Contract;
 
-import jo.app.IApp;
+import jo.model.IApp;
 import jo.model.MarketData;
 import jo.model.MarketDataTrade;
 

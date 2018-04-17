@@ -23,6 +23,7 @@ import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class TraderApp implements IApp {
@@ -43,7 +44,7 @@ public class TraderApp implements IApp {
         Contract ibb = Stocks.smartOf("IBB");
         Contract xlu = Stocks.smartOf("XLU");
 
-        Bot spyBot = new DonchianBot(spy, 25, 0.27);
+        Bot spyBot = new DonchianBot(spy, 25, 0.25);
         Bot xleBot = new DonchianBot(xle, 50, 0.12);
         Bot xlbBot = new DonchianBot(xlb, 50, 0.12);
         Bot ibbBot = new DonchianBot(ibb, 25, 0.2);

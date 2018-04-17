@@ -3,13 +3,13 @@ package jo.filter;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
-import gnu.trove.list.array.TDoubleArrayList;
-import jo.app.IApp;
+import gnu.trove.list.TDoubleList;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class TrendDownMAFilter implements Filter {
     private int period;
-    private TDoubleArrayList close;
+    private TDoubleList close;
 
     public TrendDownMAFilter(int period) {
         this.period = period;

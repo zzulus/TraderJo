@@ -9,12 +9,12 @@ import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
-import jo.app.IApp;
 import jo.controller.IBroker;
 import jo.filter.AllFilters;
 import jo.filter.Filter;
 import jo.filter.TwoMAFilter;
 import jo.model.Bars;
+import jo.model.IApp;
 import jo.util.SyncSignal;
 
 public class MA90SecBot extends BaseBot {

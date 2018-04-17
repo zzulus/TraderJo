@@ -1,12 +1,13 @@
 package jo.model;
 
-import javax.annotation.Nullable;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -17,14 +18,14 @@ public class Bars {
     private int size = 0;
     private final SyncSignal signal = new SyncSignal();
 
-    private final TLongArrayList time = new TLongArrayList();
-    private final TDoubleArrayList high = new TDoubleArrayList();
-    private final TDoubleArrayList low = new TDoubleArrayList();
-    private final TDoubleArrayList open = new TDoubleArrayList();
-    private final TDoubleArrayList close = new TDoubleArrayList();
-    private final TDoubleArrayList wap = new TDoubleArrayList();
-    private final TLongArrayList volume = new TLongArrayList();
-    private final TIntArrayList count = new TIntArrayList();
+    private final TLongList time = new TLongArrayList();
+    private final TDoubleList high = new TDoubleArrayList();
+    private final TDoubleList low = new TDoubleArrayList();
+    private final TDoubleList open = new TDoubleArrayList();
+    private final TDoubleList close = new TDoubleArrayList();
+    private final TDoubleList wap = new TDoubleArrayList();
+    private final TLongList volume = new TLongArrayList();
+    private final TIntList count = new TIntArrayList();
 
     public Bar getLastBar() {
         Preconditions.checkArgument(size > 0, "No data yet");
@@ -67,50 +68,35 @@ public class Bars {
         signal.signalAll();
     }
 
-    @Nullable
-    public Double getAverageClose(int period) {
-        int size = close.size();
-        if (size < period) {
-            return null;
-        }
-
-        double acc = 0;
-        for (int i = 0; i < period; i++) {
-            acc = acc + close.get(size - i);
-        }
-
-        return acc / period;
-    }
-
-    public TLongArrayList getTime() {
+    public TLongList getTime() {
         return time;
     }
 
-    public TDoubleArrayList getHigh() {
+    public TDoubleList getHigh() {
         return high;
     }
 
-    public TDoubleArrayList getLow() {
+    public TDoubleList getLow() {
         return low;
     }
 
-    public TDoubleArrayList getOpen() {
+    public TDoubleList getOpen() {
         return open;
     }
 
-    public TDoubleArrayList getClose() {
+    public TDoubleList getClose() {
         return close;
     }
 
-    public TDoubleArrayList getWap() {
+    public TDoubleList getWap() {
         return wap;
     }
 
-    public TLongArrayList getVolume() {
+    public TLongList getVolume() {
         return volume;
     }
 
-    public TIntArrayList getCount() {
+    public TIntList getCount() {
         return count;
     }
 
@@ -122,34 +108,25 @@ public class Bars {
         return signal;
     }
 
-    public TDoubleArrayList getDoubleSeries(BarType type) {
-        TDoubleArrayList arr;
+    public TDoubleList getDoubleSeries(BarType type) {
         switch (type) {
         case OPEN:
-            arr = open;
-            break;
+            return open;
 
         case LOW:
-            arr = low;
-            break;
+            return low;
 
         case HIGH:
-            arr = high;
-            break;
+            return high;
 
         case CLOSE:
-            arr = close;
-            break;
+            return close;
 
         case WAP:
-            arr = wap;
-            break;
-
-        default:
-            throw new IllegalArgumentException("Unsupported BarType");
+            return wap;
         }
 
-        return arr;
+        throw new IllegalArgumentException("Unsupported BarType " + type);
     }
 
     public double getLastBar(BarType type) {
@@ -157,7 +134,7 @@ public class Bars {
     }
 
     public double getLastBar(BarType type, int shift) {
-        TDoubleArrayList series = getDoubleSeries(type);
+        TDoubleList series = getDoubleSeries(type);
         int offset = size - 1 - shift;
         return series.get(offset);
     }

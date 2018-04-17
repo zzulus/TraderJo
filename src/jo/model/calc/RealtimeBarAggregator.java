@@ -12,7 +12,6 @@ import jo.util.BarSizeUtils;
 
 public class RealtimeBarAggregator {
     private static final Logger LOG = LogManager.getLogger(RealtimeBarAggregator.class);
-
     private final MarketData md;
     private final Bars srcBars;
     private final int targetBarSizeRatio;
@@ -61,8 +60,6 @@ public class RealtimeBarAggregator {
             bar.setCount(count);
 
             md.addBar(barSize, bar);
-
-            LOG.info("Calculated a bar of size {}: {}", barSize, bar);
         }
     }
 

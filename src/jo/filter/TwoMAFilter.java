@@ -3,9 +3,9 @@ package jo.filter;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
-import gnu.trove.list.array.TDoubleArrayList;
-import jo.app.IApp;
+import gnu.trove.list.TDoubleList;
 import jo.model.Bars;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class TwoMAFilter implements Filter {
@@ -25,7 +25,7 @@ public class TwoMAFilter implements Filter {
         }
 
         try {
-            TDoubleArrayList close = bars.getClose();
+            TDoubleList close = bars.getClose();
             int size = close.size();
             if (size < longPeriod) {
                 return false;

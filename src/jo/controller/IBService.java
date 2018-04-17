@@ -469,6 +469,17 @@ public class IBService implements IBroker {
             order.orderId(getNextOrderId());
         }
 
+        log.info("placeOrModifyOrder: orderId {}, parent order id {}, symbol {}, order type {}, action {}, totalQuantity {}, lmtPrice {}, auxPrice {}, trailStopPrice {}",
+                order.orderId(),
+                order.parentId(),
+                contract.symbol(),
+                order.getOrderType(),
+                order.action(),
+                order.totalQuantity(),
+                order.lmtPrice(),
+                order.auxPrice(),
+                order.trailStopPrice());
+
         if (handler != null) {
             orderHandlers.put(order.orderId(), handler);
         }

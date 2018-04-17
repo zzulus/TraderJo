@@ -3,8 +3,8 @@ package jo.filter;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
-import jo.app.IApp;
 import jo.model.Bars;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class HasAtLeastNBarsFilter implements Filter {

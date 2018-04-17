@@ -3,7 +3,7 @@ package jo.filter;
 import com.google.common.base.Preconditions;
 import com.ib.client.Contract;
 
-import jo.app.IApp;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class RandomFilter implements Filter {

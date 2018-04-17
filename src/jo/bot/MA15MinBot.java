@@ -8,13 +8,13 @@ import com.ib.client.Order;
 import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 
-import jo.app.IApp;
 import jo.controller.IBroker;
 import jo.filter.AllFilters;
 import jo.filter.BelowSimpleAverageFilter;
 import jo.filter.Filter;
 import jo.filter.HasAtLeastNBarsFilter;
 import jo.filter.NotCloseToDailyHighFilter;
+import jo.model.IApp;
 
 public class MA15MinBot extends BaseBot {
     public MA15MinBot(Contract contract, int totalQuantity) {

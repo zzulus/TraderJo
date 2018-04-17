@@ -1,11 +1,10 @@
-package jo.app;
+package jo.model;
 
 import java.util.Map;
 
 import com.ib.client.Contract;
 
 import jo.controller.IBroker;
-import jo.model.MarketData;
 
 public interface IApp {
 

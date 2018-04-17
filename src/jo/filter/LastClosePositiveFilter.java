@@ -3,9 +3,9 @@ package jo.filter;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
-import gnu.trove.list.array.TDoubleArrayList;
-import jo.app.IApp;
+import gnu.trove.list.TDoubleList;
 import jo.model.Bars;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class LastClosePositiveFilter implements Filter {
@@ -21,7 +21,7 @@ public class LastClosePositiveFilter implements Filter {
         if (bars == null) {
             bars = marketData.getBars(BarSize._5_secs);
         }
-        TDoubleArrayList close = bars.getClose(); // close or positive bars?
+        TDoubleList close = bars.getClose(); // close or positive bars?
 
         int size = close.size();
         boolean isActive = true;

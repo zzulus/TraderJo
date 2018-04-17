@@ -2,9 +2,9 @@ package jo.command;
 
 import java.util.List;
 
-import jo.app.IApp;
 import jo.bot.Bot;
 import jo.controller.IBroker;
+import jo.model.IApp;
 
 public class StartBotsCommand implements AppCommand {
     private List<Bot> bots;

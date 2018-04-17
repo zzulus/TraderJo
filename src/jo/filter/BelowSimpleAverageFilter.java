@@ -3,9 +3,9 @@ package jo.filter;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
-import gnu.trove.list.array.TDoubleArrayList;
-import jo.app.IApp;
+import gnu.trove.list.TDoubleList;
 import jo.model.Bars;
+import jo.model.IApp;
 import jo.model.MarketData;
 
 public class BelowSimpleAverageFilter implements Filter {
@@ -24,7 +24,7 @@ public class BelowSimpleAverageFilter implements Filter {
             bars = marketData.getBars(BarSize._5_secs);
         }
 
-        TDoubleArrayList close = bars.getClose();
+        TDoubleList close = bars.getClose();
         int size = close.size();
         if (size < period) {
             return false;
