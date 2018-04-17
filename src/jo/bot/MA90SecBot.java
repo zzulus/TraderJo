@@ -86,14 +86,14 @@ public class MA90SecBot extends BaseBot {
                             openOrder.lmtPrice(openPrice);
                             openOrder.transmit(false);
 
-                            takeProfitOrder = new Order();
-                            takeProfitOrder.orderId(ib.getNextOrderId());
-                            takeProfitOrder.action(Action.SELL);
-                            takeProfitOrder.orderType(OrderType.LMT);
-                            takeProfitOrder.totalQuantity(totalQuantity);
-                            takeProfitOrder.lmtPrice(profitPrice);
-                            takeProfitOrder.parentId(openOrder.orderId());
-                            takeProfitOrder.transmit(true);
+                            closeOrder = new Order();
+                            closeOrder.orderId(ib.getNextOrderId());
+                            closeOrder.action(Action.SELL);
+                            closeOrder.orderType(OrderType.LMT);
+                            closeOrder.totalQuantity(totalQuantity);
+                            closeOrder.lmtPrice(profitPrice);
+                            closeOrder.parentId(openOrder.orderId());
+                            closeOrder.transmit(true);
 
                             //                            placeOrders(ib);
                         }

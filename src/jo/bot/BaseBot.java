@@ -8,12 +8,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.ib.client.Contract;
 import com.ib.client.Order;
-import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 import com.ib.client.Types.Action;
 
 import jo.filter.Filter;
-import jo.handler.IOrderHandler;
+import jo.handler.OrderHandlerAdapter;
 import jo.model.MarketData;
 
 public abstract class BaseBot implements Bot {
@@ -29,12 +28,11 @@ public abstract class BaseBot implements Bot {
     protected int currentPosition = 0;
 
     protected Order openOrder;
-    protected Order takeProfitOrder;
-    protected Order stopLossOrder;
+    protected Order closeOrder;    
     protected Order mocOrder;
 
     protected OrderStatus openOrderStatus = null;
-    protected OrderStatus takeProfitOrderStatus = null;
+    protected OrderStatus closeOrderStatus = null;
     protected OrderStatus stopLossOrderStatus = null;
 
     protected Thread thread;
@@ -46,7 +44,6 @@ public abstract class BaseBot implements Bot {
         this.contract = contract;
         this.totalQuantity = totalQuantity;
     }
-
 
     protected void openPositionOrderSubmitted() {
 
@@ -63,7 +60,7 @@ public abstract class BaseBot implements Bot {
 
     }
 
-    protected void takeProfitOrderFilled(double takeProfitOrderAvgFillPrice) {
+    protected void closePositionOrderFilled(double takeProfitOrderAvgFillPrice) {
         double priceDiff = takeProfitOrderAvgFillPrice - openOrderAvgFillPrice;
         double longPnL = openOrder.totalQuantity() * priceDiff;
         if (openOrder.action() == Action.BUY) {
@@ -73,7 +70,7 @@ public abstract class BaseBot implements Bot {
         }
     }
 
-    protected void takeProfitOrderCancelled() {
+    protected void closePositionOrderCancelled() {
     }
 
     /*
@@ -115,7 +112,7 @@ public abstract class BaseBot implements Bot {
         //if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Cancelled)
         //    return BotState.READY_TO_OPEN;
 
-        throw new IllegalStateException("Unsupported combo of states: openOrderStatus=" + openOrderStatus + ", takeProfitOrderStatus=" + takeProfitOrderStatus);
+        throw new IllegalStateException("Unsupported combo of states: openOrderStatus=" + openOrderStatus + ", takeProfitOrderStatus=" + closeOrderStatus);
     }
 
     public void shutdown() {
@@ -124,18 +121,13 @@ public abstract class BaseBot implements Bot {
         }
     }
 
-    protected class OpenPositionOrderHandler implements IOrderHandler {
+    protected class OpenPositionOrderHandler extends OrderHandlerAdapter {
         private final Logger log = LogManager.getLogger(OpenPositionOrderHandler.class);
 
         @Override
-        public void orderState(Order order, OrderState orderState) {
-            String status = orderState.getStatus();
-            log.info("OpenPosition: OrderState: {}", status);
-        }
-
-        @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
+            log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}, avgFillPrice {}, whyHeld {}",
+                    status, filled, remaining, avgFillPrice, whyHeld);
 
             if (openOrderStatus == status) {
                 return;
@@ -169,27 +161,17 @@ public abstract class BaseBot implements Bot {
             }
         }
 
-        @Override
-        public void handle(int errorCode, String errorMsg) {
-            log.error("Error: {} - {}", errorCode, errorMsg);
-        }
-
     }
 
-    protected class TakeProfitOrderHandler implements IOrderHandler {
-        private final Logger log = LogManager.getLogger(TakeProfitOrderHandler.class);
-
-        @Override
-        public void orderState(Order order, OrderState orderState) {
-            String status = orderState.getStatus();
-            log.info("TakeProfit: OrderState: {}", status);
-        }
+    protected class ClosePositionOrderHandler extends OrderHandlerAdapter {
+        private final Logger log = LogManager.getLogger(ClosePositionOrderHandler.class);
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            log.info("TakeProfit: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
+            log.info("ClosePosition: OderStatus: status {}, filled {}, remaining {}, avgFillPrice {}, whyHeld {}",
+                    status, filled, remaining, avgFillPrice, whyHeld);
 
-            if (takeProfitOrderStatus == status) {
+            if (closeOrderStatus == status) {
                 return;
             }
 
@@ -200,7 +182,7 @@ public abstract class BaseBot implements Bot {
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 takeProfitOrderAvgFillPrice = avgFillPrice;
                 currentPosition -= filled;
-                takeProfitOrderFilled(avgFillPrice);
+                closePositionOrderFilled(avgFillPrice);
             }
 
             // remap ApiCancelled to Canceled
@@ -209,7 +191,7 @@ public abstract class BaseBot implements Bot {
             }
 
             if (status == OrderStatus.Cancelled) {
-                takeProfitOrderCancelled();
+                closePositionOrderCancelled();
             }
 
             // finally assign status
@@ -217,24 +199,13 @@ public abstract class BaseBot implements Bot {
                     || status == OrderStatus.Cancelled
                     || status == OrderStatus.PreSubmitted
                     || status == OrderStatus.Submitted) {
-                takeProfitOrderStatus = status;
+                closeOrderStatus = status;
             }
-        }
-
-        @Override
-        public void handle(int errorCode, String errorMsg) {
-            log.error("Error: {} - {}", errorCode, errorMsg);
         }
     }
 
-    protected class StopLossOrderHandler implements IOrderHandler {
+    protected class StopLossOrderHandler extends OrderHandlerAdapter {
         private final Logger log = LogManager.getLogger(StopLossOrderHandler.class);
-
-        @Override
-        public void orderState(Order order, OrderState orderState) {
-            String status = orderState.getStatus();
-            log.info("StopLoss: OrderState: {}", status);
-        }
 
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
@@ -251,7 +222,7 @@ public abstract class BaseBot implements Bot {
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 takeProfitOrderAvgFillPrice = avgFillPrice;
                 currentPosition -= filled;
-                takeProfitOrderFilled(avgFillPrice);
+                closePositionOrderFilled(avgFillPrice);
             }
 
             // remap ApiCancelled to Canceled
@@ -260,7 +231,7 @@ public abstract class BaseBot implements Bot {
             }
 
             if (status == OrderStatus.Cancelled) {
-                takeProfitOrderCancelled();
+                closePositionOrderCancelled();
             }
 
             // finally assign status
@@ -271,29 +242,16 @@ public abstract class BaseBot implements Bot {
                 stopLossOrderStatus = status;
             }
         }
-
-        @Override
-        public void handle(int errorCode, String errorMsg) {
-            log.error("Error: {} - {}", errorCode, errorMsg);
-        }
     }
 
-    protected class MocOrderHandler implements IOrderHandler {
-        @Override
-        public void orderState(Order order, OrderState orderState) {
-        }
-
+    protected class MocOrderHandler extends OrderHandlerAdapter {
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 takeProfitOrderAvgFillPrice = avgFillPrice;
                 currentPosition -= filled;
-                takeProfitOrderFilled(avgFillPrice);
+                closePositionOrderFilled(avgFillPrice);
             }
-        }
-
-        @Override
-        public void handle(int errorCode, String errorMsg) {
         }
     }
 }
