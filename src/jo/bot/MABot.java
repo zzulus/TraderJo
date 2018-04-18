@@ -24,23 +24,24 @@ import jo.tech.StopTrail;
 import jo.util.AsyncExec;
 import jo.util.SyncSignal;
 
-public class DonchianBot extends BaseBot {
+public class MABot extends BaseBot {
     private SyncSignal signal;
     private SyncSignal barSignal;
     private SyncSignal priceSignal;
 
-    private DonchianChannel donchian;
     private SMA fastSMA;
     public int fastSMAPeriod = 9;
     public int lowerPeriod = 120;
     public int upperPeriod = 120;
     private double trailAmount;
+
     private IBroker ib;
     private IApp app;
     private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
     private Bars bars;
     private BotState botStatePrev;
     private StopTrail stopTrail;
+
     private long cancelOpenOrderWaitInterval = TimeUnit.SECONDS.toMillis(10);
     private long cancelOpenOrderAfter;
 
@@ -48,7 +49,7 @@ public class DonchianBot extends BaseBot {
     private MocOrderHandler mocOrderHandler = new MocOrderHandler();
     private ClosePositionOrderHandler closePositionOrderHandler = new ClosePositionOrderHandler();
 
-    public DonchianBot(Contract contract, int totalQuantity, double trailAmount) {
+    public MABot(Contract contract, int totalQuantity, double trailAmount) {
         super(contract, totalQuantity);
         this.trailAmount = trailAmount;
     }
@@ -69,13 +70,12 @@ public class DonchianBot extends BaseBot {
         this.priceSignal = md.getUpdateSignal();
         this.signal = priceSignal;
 
-        this.donchian = new DonchianChannel(bars, BarType.LOW, BarType.HIGH, lowerPeriod, upperPeriod);
         this.fastSMA = new SMA(bars, BarType.CLOSE, fastSMAPeriod, 0);
     }
 
     @Override
     public void start() {
-        String threadName = "DonchianBot#" + contract.symbol();
+        String threadName = "MABot#" + contract.symbol();
         this.thread = AsyncExec.startThread(threadName, this::run);
     }
 
@@ -153,30 +153,26 @@ public class DonchianBot extends BaseBot {
     }
 
     private void mayBeOpenPosition() {
-        Channel ch = donchian.get();
-        if (ch == null)
-            return;
-
         double barOpen = bars.getLastBar(BarType.OPEN);
         double barClose = bars.getLastBar(BarType.CLOSE);
         double lastPrice = md.getLastPrice();
 
         double smaVal = fastSMA.get();
 
-        log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
+        //log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
         log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
         System.out.println();
 
         boolean placeOrders = false;
 
-        if (lastPrice > ch.getUpper() && barClose > smaVal) {
+        if (barClose > smaVal) {
             final double openPrice = lastPrice;// bars.getLastBar(BarType.WAP);
             final double stopLossMax = openPrice - trailAmount;
             final double prevBarClose = bars.getLastBar(BarType.CLOSE);
             final double stopLossMin = openPrice - 0.15; //TODO % of GrabProfit
             final double stopLossPrice = fixPriceVariance(stopLossMin); //Math.max(stopLossMin, prevBarClose);
 
-            log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
+            //log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
             log.info("Go Long: open " + String.format("%.2f", openPrice) + ", stop loss " + String.format("%.2f", stopLossPrice));
 
@@ -207,14 +203,14 @@ public class DonchianBot extends BaseBot {
 
             placeOrders = true;
 
-        } else if (lastPrice < ch.getLower() && barClose < smaVal) {
+        } else if (barClose < smaVal) {
             final double openPrice = lastPrice;//bars.getLastBar(BarType.WAP);
             final double stopLossMax = openPrice + trailAmount;
             final double prevBar = bars.getLastBar(BarType.CLOSE);
             final double stopLossMin = openPrice + 0.15; //TODO % of GrabProfit
             final double stopLossPrice = fixPriceVariance(stopLossMin); // Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
 
-            log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
+            //log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
             log.info("Go Short: open " + String.format("%.2f", openPrice) + ", stop loss " + String.format("%.2f", stopLossPrice));
 

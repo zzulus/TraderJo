@@ -8,9 +8,9 @@ import com.google.common.base.Preconditions;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.TLongList;
-import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import jo.collection.TDoubleNakedArrayList;
 import jo.util.SyncSignal;
 
 public class Bars {
@@ -19,11 +19,11 @@ public class Bars {
     private final SyncSignal signal = new SyncSignal();
 
     private final TLongList time = new TLongArrayList();
-    private final TDoubleList high = new TDoubleArrayList();
-    private final TDoubleList low = new TDoubleArrayList();
-    private final TDoubleList open = new TDoubleArrayList();
-    private final TDoubleList close = new TDoubleArrayList();
-    private final TDoubleList wap = new TDoubleArrayList();
+    private final TDoubleNakedArrayList high = new TDoubleNakedArrayList();
+    private final TDoubleNakedArrayList low = new TDoubleNakedArrayList();
+    private final TDoubleNakedArrayList open = new TDoubleNakedArrayList();
+    private final TDoubleNakedArrayList close = new TDoubleNakedArrayList();
+    private final TDoubleNakedArrayList wap = new TDoubleNakedArrayList();
     private final TLongList volume = new TLongArrayList();
     private final TIntList count = new TIntArrayList();
 
@@ -108,7 +108,7 @@ public class Bars {
         return signal;
     }
 
-    public TDoubleList getDoubleSeries(BarType type) {
+    public TDoubleNakedArrayList getDoubleSeries(BarType type) {
         switch (type) {
         case OPEN:
             return open;

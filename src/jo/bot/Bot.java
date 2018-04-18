@@ -8,7 +8,5 @@ public interface Bot {
 
     void runLoop();
 
-    default void start() {
-
-    }
+    void start();
 }
