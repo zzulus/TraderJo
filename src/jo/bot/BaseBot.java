@@ -9,26 +9,27 @@ import org.apache.logging.log4j.Logger;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
-import com.ib.client.Types.Action;
 
 import jo.filter.Filter;
 import jo.handler.OrderHandlerAdapter;
 import jo.model.MarketData;
+import jo.util.PnLLogger;
 
 public abstract class BaseBot implements Bot {
     protected final Logger log = LogManager.getLogger(this.getClass());
+    protected final Logger pnlLog = LogManager.getLogger("PNL");
     protected final Contract contract;
     protected final int totalQuantity;
     protected MarketData md;
 
     protected Filter positionFilter;
 
-    protected double openOrderAvgFillPrice;
+    protected double openAvgFillPrice;
     protected double takeProfitOrderAvgFillPrice;
     protected int currentPosition = 0;
 
     protected Order openOrder;
-    protected Order closeOrder;    
+    protected Order closeOrder;
     protected Order mocOrder;
 
     protected OrderStatus openOrderStatus = null;
@@ -60,14 +61,8 @@ public abstract class BaseBot implements Bot {
 
     }
 
-    protected void closePositionOrderFilled(double takeProfitOrderAvgFillPrice) {
-        double priceDiff = takeProfitOrderAvgFillPrice - openOrderAvgFillPrice;
-        double longPnL = openOrder.totalQuantity() * priceDiff;
-        if (openOrder.action() == Action.BUY) {
-            log.info(String.format("P&L %.2f", longPnL));
-        } else {
-            log.info(String.format("P&L %.2f", -longPnL));
-        }
+    protected void closePositionOrderFilled(double closeAvgFillPrice) {
+        PnLLogger.log(contract, openOrder.action(), openOrder.totalQuantity(), openAvgFillPrice, closeAvgFillPrice);
     }
 
     protected void closePositionOrderCancelled() {
@@ -101,16 +96,16 @@ public abstract class BaseBot implements Bot {
         if (openOrderStatus == OrderStatus.Cancelled)
             return BotState.READY_TO_OPEN;
 
-        //if (openOrderStatus == OrderStatus.Filled && (takeProfitOrderStatus == OrderStatus.PreSubmitted || takeProfitOrderStatus == OrderStatus.Submitted))
-        if (openOrderStatus == OrderStatus.Filled && currentPosition > 0)
+        if (openOrderStatus == OrderStatus.Filled && (closeOrderStatus == OrderStatus.PreSubmitted || closeOrderStatus == OrderStatus.Submitted))
+            //if (openOrderStatus == OrderStatus.Filled && currentPosition > 0)
             return BotState.PROFIT_WAITING;
 
-        //if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Filled)
-        if (openOrderStatus == OrderStatus.Filled && currentPosition == 0)
+        if (openOrderStatus == OrderStatus.Filled && closeOrderStatus == OrderStatus.Filled)
+            //if (openOrderStatus == OrderStatus.Filled && currentPosition == 0)
             return BotState.READY_TO_OPEN;
 
-        //if (openOrderStatus == OrderStatus.Filled && takeProfitOrderStatus == OrderStatus.Cancelled)
-        //    return BotState.READY_TO_OPEN;
+        if (openOrderStatus == OrderStatus.Filled && closeOrderStatus == OrderStatus.Cancelled)
+            return BotState.READY_TO_OPEN;
 
         throw new IllegalStateException("Unsupported combo of states: openOrderStatus=" + openOrderStatus + ", takeProfitOrderStatus=" + closeOrderStatus);
     }
@@ -138,8 +133,8 @@ public abstract class BaseBot implements Bot {
             }
 
             if (status == OrderStatus.Filled && remaining < 0.01) {
-                openOrderAvgFillPrice = avgFillPrice;
-                currentPosition += filled;
+                openAvgFillPrice = avgFillPrice;
+                currentPosition = (int) filled; // TODO Deal with partially filled orders 
                 openPositionOrderFilled(avgFillPrice);
             }
 

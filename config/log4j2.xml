@@ -11,11 +11,22 @@
                 <TimeBasedTriggeringPolicy />
             </Policies>
         </RollingFile>
+
+        <RollingFile name="PNL" filePattern="log/app/pnl-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+        </RollingFile>
+
     </Appenders>
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="Console" />
             <AppenderRef ref="File" />
         </Root>
+        <Logger name="PNL" level="INFO">
+            <AppenderRef ref="PNL" />
+        </Logger>
     </Loggers>
 </Configuration>

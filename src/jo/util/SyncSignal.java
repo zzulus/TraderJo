@@ -1,6 +1,11 @@
 package jo.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class SyncSignal {
+    private final Logger log = LogManager.getLogger(SyncSignal.class);
+
     private final Object monitor = new Object();
     private boolean active = true;
 
@@ -16,7 +21,7 @@ public class SyncSignal {
                 try {
                     monitor.wait();
                 } catch (InterruptedException e) {
-                    stop();
+                    return false;
                 }
             }
         }
@@ -24,6 +29,7 @@ public class SyncSignal {
     }
 
     public void stop() {
+        log.error("Stop Called");
         active = false;
         signalAll();
     }

@@ -22,6 +22,7 @@ import jo.tech.DonchianChannel;
 import jo.tech.SMA;
 import jo.tech.StopTrail;
 import jo.util.AsyncExec;
+import jo.util.PriceUtils;
 import jo.util.SyncSignal;
 
 public class DonchianBot extends BaseBot {
@@ -32,8 +33,8 @@ public class DonchianBot extends BaseBot {
     private DonchianChannel donchian;
     private SMA fastSMA;
     public int fastSMAPeriod = 9;
-    public int lowerPeriod = 60;
-    public int upperPeriod = 60;
+    public int lowerPeriod = 120;
+    public int upperPeriod = 120;
     private double trailAmount;
     private IBroker ib;
     private IApp app;
@@ -41,7 +42,7 @@ public class DonchianBot extends BaseBot {
     private Bars bars;
     private BotState botStatePrev;
     private StopTrail stopTrail;
-    private long cancelOpenOrderWaitInterval = TimeUnit.SECONDS.toMillis(5);
+    private long cancelOpenOrderWaitInterval = TimeUnit.SECONDS.toMillis(10);
     private long cancelOpenOrderAfter;
 
     private OpenPositionOrderHandler openPositionOrderHandler = new OpenPositionOrderHandler();
@@ -165,15 +166,16 @@ public class DonchianBot extends BaseBot {
 
         log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
         log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
+        System.out.println();
 
         boolean placeOrders = false;
 
-        if (lastPrice > ch.getUpper() && barClose > smaVal && barOpen < barClose) {
+        if (lastPrice > ch.getUpper() && barClose > smaVal) {
             final double openPrice = lastPrice;// bars.getLastBar(BarType.WAP);
             final double stopLossMax = openPrice - trailAmount;
             final double prevBarClose = bars.getLastBar(BarType.CLOSE);
-            final double stopLossMin = openPrice - 0.05; //TODO % of GrabProfit
-            final double stopLossPrice = stopLossMin; //Math.max(stopLossMin, prevBarClose);
+            final double stopLossMin = openPrice - 0.15; //TODO % of GrabProfit
+            final double stopLossPrice = fixPriceVariance(stopLossMin); //Math.max(stopLossMin, prevBarClose);
 
             log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
@@ -206,14 +208,12 @@ public class DonchianBot extends BaseBot {
 
             placeOrders = true;
 
-        } else if (lastPrice < ch.getLower()
-                && barClose < smaVal
-                && barOpen > barClose) {
+        } else if (lastPrice < ch.getLower() && barClose < smaVal) {
             final double openPrice = lastPrice;//bars.getLastBar(BarType.WAP);
             final double stopLossMax = openPrice + trailAmount;
             final double prevBar = bars.getLastBar(BarType.CLOSE);
-            final double stopLossMin = openPrice + 0.05; //TODO % of GrabProfit
-            final double stopLossPrice = stopLossMin; // Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
+            final double stopLossMin = openPrice + 0.15; //TODO % of GrabProfit
+            final double stopLossPrice = fixPriceVariance(stopLossMin); // Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
 
             log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
@@ -290,6 +290,7 @@ public class DonchianBot extends BaseBot {
         try {
             while (signal.waitForSignal()) {
                 if (Thread.interrupted()) {
+                    log.info("Thread Interrupted EXIT");
                     return;
                 }
 
@@ -297,6 +298,7 @@ public class DonchianBot extends BaseBot {
                     runLoop();
                 }
             }
+            log.info("Exit");
         } catch (Exception e) {
             log.error("Error in bot", e);
         }

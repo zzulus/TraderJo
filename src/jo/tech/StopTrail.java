@@ -34,7 +34,7 @@ public class StopTrail {
 
     public void start() {
         log.info("Starting StopTrail thread");
-        thread = AsyncExec.startDaemonThread("StopTrail#" + contract.symbol(), this::run);
+        thread = AsyncExec.startThread("StopTrail#" + contract.symbol(), this::run);
     }
 
     public void stop() {
@@ -46,14 +46,15 @@ public class StopTrail {
     }
 
     private void run() {
+        log.info("StopTrail run");
         SyncSignal signal = md.getUpdateSignal();
         boolean isLongPosition = (order.action() == Action.SELL);
 
-        while (!stop && !signal.waitForSignal()) {
+        while (!stop && signal.waitForSignal() && !stop) {
             double lastPrice = md.getLastPrice();
             double orderPrice = order.auxPrice();
             double adjustedPrice = lastPrice - trailAmount;
-            
+
             log.info("Check: stop price {}, adjusted price {}, trail amount {}, last price {}",
                     orderPrice, adjustedPrice, trailAmount, lastPrice);
 
@@ -73,6 +74,8 @@ public class StopTrail {
                 ib.placeOrModifyOrder(contract, order, null);
             }
         }
+
+        System.out.println("StopTrail EXIT");
     }
 
 }
