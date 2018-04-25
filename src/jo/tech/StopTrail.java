@@ -10,6 +10,7 @@ import com.ib.client.Types.Action;
 import jo.controller.IBroker;
 import jo.model.MarketData;
 import jo.util.AsyncExec;
+import jo.util.PriceUtils;
 import jo.util.SyncSignal;
 
 public class StopTrail {
@@ -47,13 +48,13 @@ public class StopTrail {
 
     private void run() {
         log.info("Run");
-        SyncSignal signal = md.getUpdateSignal();
+        SyncSignal signal = md.getSignal();
         boolean isLongPosition = (order.action() == Action.SELL);
 
         while (!stop && signal.waitForSignal() && !stop) {
             double lastPrice = md.getLastPrice();
-            double orderPrice = order.auxPrice();
-            double adjustedPrice = lastPrice - trailAmount;
+            double orderPrice = PriceUtils.fixPriceVariance(order.auxPrice());
+            double adjustedPrice = PriceUtils.fixPriceVariance(lastPrice - trailAmount);
 
             log.info("Check: stop price {}, adjusted price {}, trail amount {}, last price {}",
                     orderPrice, adjustedPrice, trailAmount, lastPrice);

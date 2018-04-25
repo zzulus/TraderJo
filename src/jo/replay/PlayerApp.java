@@ -61,38 +61,38 @@ public class PlayerApp {
 
         // for (double in = -0.01; in < 0.10; in += 0.02) {
         // for (double out = 0.09; out < 2.0; out += 0.02) {
-        for (int lowerPeriod = 1; lowerPeriod < 50; lowerPeriod += 1) {
-            for (int upperPeriod = 1; upperPeriod < 50; upperPeriod += 1) {
-                // System.out.println(String.format("in %.2f, out %.2f", in, out));
-
-                double totalProfit = 0;
-                StringBuilder t = new StringBuilder();
-
-                for (File file : files) {
-                    DonchianBot bot = new DonchianBot(Stocks.TQQQ(true), 100, 0.7);
-                    bot.lowerPeriod = lowerPeriod;
-                    bot.upperPeriod = upperPeriod;
-                    PlayerApp player = new PlayerApp();
-                    Stats stats = player.replay(file, bot);
-                    bot.shutdown();
-
-                    player.app.getMarketDataMap().values().forEach(md -> md.getUpdateSignal().signalAll());
-
-                    t.append(String.format("\t%d\t%.2f",
-                            stats.getFilledOrders().size(),
-                            stats.getPotentialPnl() - stats.getCommissions()));
-                    totalProfit += stats.getPotentialPnl() - stats.getCommissions();
-                    // System.out.println(stats);
-                }
-
-                StringBuilder h = new StringBuilder();
-                //h.append(String.format("%.2f\t%.2f\t%.2f", lowerPeriod, upperPeriod, totalProfit));
-                h.append(String.format("%d\t%d\t%.2f", lowerPeriod, upperPeriod, totalProfit));
-
-                // System.out.println(String.format("\t\t\t\t\t\t\t%.2f", totalProfit));
-                System.out.println(h.append(t));
-            }
-        }
+//        for (int lowerPeriod = 1; lowerPeriod < 50; lowerPeriod += 1) {
+//            for (int upperPeriod = 1; upperPeriod < 50; upperPeriod += 1) {
+//                // System.out.println(String.format("in %.2f, out %.2f", in, out));
+//
+//                double totalProfit = 0;
+//                StringBuilder t = new StringBuilder();
+//
+//                for (File file : files) {
+//                    DonchianBot bot = new DonchianBot(Stocks.TQQQ(true), 100, 0.7);
+//                    bot.lowerPeriod = lowerPeriod;
+//                    bot.upperPeriod = upperPeriod;
+//                    PlayerApp player = new PlayerApp();
+//                    Stats stats = player.replay(file, bot);
+//                    bot.shutdown();
+//
+//                    player.app.getMarketDataMap().values().forEach(md -> md.getSignal().signalAll());
+//
+//                    t.append(String.format("\t%d\t%.2f",
+//                            stats.getFilledOrders().size(),
+//                            stats.getPotentialPnl() - stats.getCommissions()));
+//                    totalProfit += stats.getPotentialPnl() - stats.getCommissions();
+//                    // System.out.println(stats);
+//                }
+//
+//                StringBuilder h = new StringBuilder();
+//                //h.append(String.format("%.2f\t%.2f\t%.2f", lowerPeriod, upperPeriod, totalProfit));
+//                h.append(String.format("%d\t%d\t%.2f", lowerPeriod, upperPeriod, totalProfit));
+//
+//                // System.out.println(String.format("\t\t\t\t\t\t\t%.2f", totalProfit));
+//                System.out.println(h.append(t));
+//            }
+//        }
 
         System.exit(0);
     }

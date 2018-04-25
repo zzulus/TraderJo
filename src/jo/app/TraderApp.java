@@ -17,6 +17,7 @@ import com.ib.client.Types.WhatToShow;
 
 import jo.bot.Bot;
 import jo.bot.DonchianBot;
+import jo.bot.MovingAverageHLBot;
 import jo.command.AppCommand;
 import jo.command.StartBotsCommand;
 import jo.constant.Stocks;
@@ -25,6 +26,12 @@ import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
 import jo.model.IApp;
 import jo.model.MarketData;
+import jo.position.DollarValuePositionSizeStrategy;
+import jo.position.DollarValueTrailAmountStrategy;
+import jo.position.HighLowAvgTrailAmountStrategy;
+import jo.position.HistoricalHighLowAvgTrailAmountStrategy;
+import jo.position.PositionSizeStrategy;
+import jo.position.TrailAmountStrategy;
 
 public class TraderApp implements IApp {
     private static final Logger log = LogManager.getLogger(TraderApp.class);
@@ -44,17 +51,40 @@ public class TraderApp implements IApp {
         Contract ibb = Stocks.smartOf("IBB");
         Contract xlu = Stocks.smartOf("XLU");
 
-        Bot spyBot = new DonchianBot(spy, 25, 0.25);
-        Bot xleBot = new DonchianBot(xle, 50, 0.12);
-        Bot xlbBot = new DonchianBot(xlb, 50, 0.12);
-        Bot ibbBot = new DonchianBot(ibb, 25, 0.2);
-        Bot xluBot = new DonchianBot(xlu, 50, 0.13);
+        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(6650);
 
-        List<Bot> bots = Lists.newArrayList(spyBot/*,
-                                                  xleBot, 
-                                                  xlbBot, 
-                                                  ibbBot, 
-                                                  xluBot*/);
+        List<String> stockSymbols = Lists.newArrayList(
+                "AAPL",
+                "MSFT",
+                "TSLA",
+                "FB",
+                "BABA",
+                "NFLX",
+                "NVDA",
+                "CAT",
+                "INTC",
+                "WFC",
+                "XLE",
+                "PG",
+                "C",
+                "JPM",
+                "SMH",
+                "XOM",
+                "MO",
+                "MMM",
+                "XLB",
+                "V",
+                "PYPL"
+
+        );
+
+        List<Bot> bots = new ArrayList<>();
+        for (String stockSymbol : stockSymbols) {
+            Contract contract = Stocks.smartOf(stockSymbol);
+            TrailAmountStrategy trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
+            MovingAverageHLBot bot = new MovingAverageHLBot(contract, positionSizeStrategy, trailAmountStrategy);
+            bots.add(bot);
+        }
 
         postConnectCommands = Lists.newArrayList(new StartBotsCommand(bots));
     }

@@ -1,6 +1,5 @@
 package jo.bot;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,13 +12,14 @@ import com.ib.client.OrderStatus;
 import jo.filter.Filter;
 import jo.handler.OrderHandlerAdapter;
 import jo.model.MarketData;
+import jo.position.PositionSizeStrategy;
 import jo.util.PnLLogger;
 
 public abstract class BaseBot implements Bot {
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final Logger pnlLog = LogManager.getLogger("PNL");
     protected final Contract contract;
-    protected final int totalQuantity;
+    protected final PositionSizeStrategy positionSize;
     protected MarketData md;
 
     protected Filter positionFilter;
@@ -38,12 +38,11 @@ public abstract class BaseBot implements Bot {
 
     protected Thread thread;
 
-    public BaseBot(Contract contract, int totalQuantity) {
-        checkArgument(totalQuantity > 0);
+    public BaseBot(Contract contract, PositionSizeStrategy positionSize) {
         checkNotNull(contract);
-
+        checkNotNull(positionSize);
         this.contract = contract;
-        this.totalQuantity = totalQuantity;
+        this.positionSize = positionSize;
     }
 
     protected void openPositionOrderSubmitted() {

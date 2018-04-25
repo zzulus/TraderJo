@@ -2,6 +2,9 @@ package jo.app;
 
 import java.util.concurrent.SynchronousQueue;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
@@ -18,6 +21,8 @@ import jo.model.Bars;
 
 // http://etfdb.com/type/equity/all/leveraged/#etfs&sort_name=three_month_average_volume&sort_order=desc&page=1
 public class GatherStatisticsApp {
+    protected final static Logger log = LogManager.getLogger(GatherStatisticsApp.class);
+
     public static void main(String[] args) throws InterruptedException {
         final IBroker ib = new IBService();
         Contract contract = new Contract();
@@ -38,13 +43,13 @@ public class GatherStatisticsApp {
 
                     @Override
                     public void historicalDataEnd() {
-                        // log.info("End");
+                        log.info("End");
                         q.offer(bars);
                     }
 
                     @Override
                     public void historicalData(Bar bar, boolean hasGaps) {
-                        // log.info("Bar: {} / {}", bar.getLow(), bar.getHigh());
+                        log.info("Bar: {} / {}", bar.getLow(), bar.getHigh());
                         bars.addBar(bar);
                     }
                 });

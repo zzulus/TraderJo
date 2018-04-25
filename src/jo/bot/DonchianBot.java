@@ -17,6 +17,7 @@ import jo.filter.NasdaqRegularHoursFilter;
 import jo.model.BarType;
 import jo.model.Bars;
 import jo.model.IApp;
+import jo.position.PositionSizeStrategy;
 import jo.tech.Channel;
 import jo.tech.DonchianChannel;
 import jo.tech.SMA;
@@ -48,8 +49,8 @@ public class DonchianBot extends BaseBot {
     private MocOrderHandler mocOrderHandler = new MocOrderHandler();
     private ClosePositionOrderHandler closePositionOrderHandler = new ClosePositionOrderHandler();
 
-    public DonchianBot(Contract contract, int totalQuantity, double trailAmount) {
-        super(contract, totalQuantity);
+    public DonchianBot(Contract contract, PositionSizeStrategy positionSize, double trailAmount) {
+        super(contract, positionSize);
         this.trailAmount = trailAmount;
     }
 
@@ -66,7 +67,7 @@ public class DonchianBot extends BaseBot {
         this.bars = md.getBars(BarSize._5_secs);
 
         this.barSignal = bars.getSignal();
-        this.priceSignal = md.getUpdateSignal();
+        this.priceSignal = md.getSignal();
         this.signal = priceSignal;
 
         this.donchian = new DonchianChannel(bars, BarType.LOW, BarType.HIGH, lowerPeriod, upperPeriod);
@@ -175,6 +176,7 @@ public class DonchianBot extends BaseBot {
             final double prevBarClose = bars.getLastBar(BarType.CLOSE);
             final double stopLossMin = openPrice - 0.15; //TODO % of GrabProfit
             final double stopLossPrice = fixPriceVariance(stopLossMin); //Math.max(stopLossMin, prevBarClose);
+            final double totalQuantity = positionSize.getPositionSize(md);
 
             log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
@@ -213,6 +215,7 @@ public class DonchianBot extends BaseBot {
             final double prevBar = bars.getLastBar(BarType.CLOSE);
             final double stopLossMin = openPrice + 0.15; //TODO % of GrabProfit
             final double stopLossPrice = fixPriceVariance(stopLossMin); // Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
+            final double totalQuantity = positionSize.getPositionSize(md);
 
             log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));

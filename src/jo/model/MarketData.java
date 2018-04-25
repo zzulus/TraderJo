@@ -182,7 +182,7 @@ public class MarketData {
         return todayVolume;
     }
 
-    public SyncSignal getUpdateSignal() {
+    public SyncSignal getSignal() {
         return updateSignal;
     }
 
