@@ -1,8 +1,11 @@
 package jo.position;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.util.concurrent.Uninterruptibles;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
@@ -48,26 +51,32 @@ public class HistoricalHighLowAvgTrailAmountStrategy implements TrailAmountStrat
     public void init(IBroker ib, IApp app) {
         AsyncVal<Bars> barsExchange = AsyncVal.create();
         log.info("Calculating historical trailing amount for " + contract.symbol());
-        AsyncExec.execute(() -> ib.reqHistoricalData(contract, "", periodDays, DurationUnit.DAY, barSize, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
-            private final Bars bars = new Bars();
+        //AsyncExec.execute(() -> {
+            ib.reqHistoricalData(contract, "20180425 23:59:59 GMT", periodDays, DurationUnit.DAY, barSize, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
+                private final Bars bars = new Bars();
 
-            @Override
-            public void historicalDataEnd() {
-                log.info("historicalDataEnd");
-                barsExchange.complete(bars);
-            }
+                @Override
+                public void historicalDataEnd() {
+                    log.info("historicalDataEnd " + contract.symbol());
+                    barsExchange.complete(bars);
+                }
 
-            @Override
-            public void historicalData(Bar bar, boolean hasGaps) {
-                bars.addBar(bar);
-            }
-        }));
+                @Override
+                public void historicalData(Bar bar, boolean hasGaps) {
+                    log.info("addBar " + contract.symbol());
+                    bars.addBar(bar);
+                }
+            });
+       // });
 
         Bars bars = barsExchange.get();
 
         TDoubleList low = bars.getLow();
         TDoubleList high = bars.getHigh();
         int size = bars.getSize();
+        if (size == 0) {
+            throw new RuntimeException("reqHistoricalData returned 0 bars");
+        }
 
         log.info("Received {} bars", size);
 

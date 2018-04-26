@@ -1,6 +1,9 @@
 package jo.command;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.util.concurrent.Uninterruptibles;
 
 import jo.bot.Bot;
 import jo.controller.IBroker;
@@ -18,6 +21,7 @@ public class StartBotsCommand implements AppCommand {
         for (Bot bot : bots) {
             bot.init(ib, app);
             bot.start();
+            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
         }
     }
 }

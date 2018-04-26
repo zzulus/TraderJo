@@ -81,7 +81,7 @@ public class MarketRecorderStocks {
             "JPM",
             "JNJ",
             "GOOG",
-            "GOOGL",
+            //"GOOGL",
             "XOM",
             "BAC",
             "WFC",

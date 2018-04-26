@@ -12,6 +12,7 @@ import com.ib.client.Types.WhatToShow;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.controller.IBroker;
 import jo.handler.ConnectionHandlerAdapter;
@@ -26,11 +27,12 @@ public class GatherStatisticsApp {
     public static void main(String[] args) throws InterruptedException {
         final IBroker ib = new IBService();
         Contract contract = new Contract();
-        contract.symbol("TQQQ");
+        contract.symbol("AAPL");
         contract.secType("STK");
         contract.currency("USD");
         contract.exchange("SMART");
         contract.primaryExch("ISLAND");
+        Contract contract2 = Stocks.smartOf("AAPL");
 
         SynchronousQueue<Bars> q = new SynchronousQueue<>();
 
@@ -38,18 +40,18 @@ public class GatherStatisticsApp {
             @Override
             public void connected() {
 
-                ib.reqHistoricalData(contract, "20180226 23:59:59 GMT", 90, DurationUnit.DAY, BarSize._30_secs, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
+                ib.reqHistoricalData(contract2, "20180425 23:59:59 GMT", 1, DurationUnit.DAY, BarSize._1_min, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
                     final Bars bars = new Bars();
 
                     @Override
                     public void historicalDataEnd() {
-                        log.info("End");
+                        System.out.println("End");
                         q.offer(bars);
                     }
 
                     @Override
                     public void historicalData(Bar bar, boolean hasGaps) {
-                        log.info("Bar: {} / {}", bar.getLow(), bar.getHigh());
+                        //System.out.println("Bar: " + bar.getLow() + "/" + bar.getHigh());
                         bars.addBar(bar);
                     }
                 });

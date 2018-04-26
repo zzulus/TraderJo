@@ -14,7 +14,7 @@ import jo.model.MarketData;
 // TODO Use data for previous days
 public class HighLowAvgTrailAmountStrategy implements TrailAmountStrategy {
     private final int period;
-    private final BarSize barSize;
+    private BarSize barSize;
     private Bars bars;
     private int prevBarsSize = -1;
     private Double value;
@@ -28,6 +28,12 @@ public class HighLowAvgTrailAmountStrategy implements TrailAmountStrategy {
     public HighLowAvgTrailAmountStrategy(BarSize barSize, int period, double extra) {
         this.period = period;
         this.barSize = barSize;
+        this.extra = extra;
+    }
+
+    public HighLowAvgTrailAmountStrategy(Bars bars, int period, double extra) {
+        this.period = period;
+        this.bars = bars;
         this.extra = extra;
     }
 
@@ -72,7 +78,7 @@ public class HighLowAvgTrailAmountStrategy implements TrailAmountStrategy {
 
         return value;
     }
-    
+
     @Override
     public void init(IBroker ib, IApp app) {
     }

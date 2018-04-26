@@ -1,8 +1,11 @@
 package jo.app;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -10,9 +13,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
+import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
 
 import jo.bot.Bot;
@@ -24,6 +29,9 @@ import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
+import jo.handler.IHistoricalDataHandler;
+import jo.model.Bar;
+import jo.model.Bars;
 import jo.model.IApp;
 import jo.model.MarketData;
 import jo.position.DollarValuePositionSizeStrategy;
@@ -32,6 +40,8 @@ import jo.position.HighLowAvgTrailAmountStrategy;
 import jo.position.HistoricalHighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
+import jo.util.AsyncExec;
+import jo.util.AsyncVal;
 
 public class TraderApp implements IApp {
     private static final Logger log = LogManager.getLogger(TraderApp.class);
@@ -53,35 +63,36 @@ public class TraderApp implements IApp {
 
         PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(6650);
 
-        List<String> stockSymbols = Lists.newArrayList(
-                "AAPL",
-                "MSFT",
-                "TSLA",
-                "FB",
-                "BABA",
-                "NFLX",
-                "NVDA",
-                "CAT",
-                "INTC",
-                "WFC",
-                "XLE",
-                "PG",
-                "C",
-                "JPM",
-                "SMH",
-                "XOM",
-                "MO",
-                "MMM",
-                "XLB",
-                "V",
-                "PYPL"
+        Set<String> stockSymbols = new LinkedHashSet<>();
+        stockSymbols.add("AAPL");
+        stockSymbols.add("MSFT");
+        stockSymbols.add("TSLA");
+        stockSymbols.add("FB");
+        stockSymbols.add("BABA");
+        stockSymbols.add("NFLX");
+        stockSymbols.add("NVDA");
+        stockSymbols.add("CAT");
+        stockSymbols.add("INTC");
+        stockSymbols.add("WFC");
+        stockSymbols.add("XLE");
+        stockSymbols.add("PG");
+        stockSymbols.add("C");
+        stockSymbols.add("JPM");
+        stockSymbols.add("SMH");
+        stockSymbols.add("XOM");
+        stockSymbols.add("MO");
+        stockSymbols.add("MMM");
+        stockSymbols.add("XLB");
+        stockSymbols.add("V");
+        stockSymbols.add("PYPL");
 
-        );
+        stockSymbols.addAll(MarketRecorderStocks.TICKS_ONLY_STOCKS);
 
         List<Bot> bots = new ArrayList<>();
         for (String stockSymbol : stockSymbols) {
             Contract contract = Stocks.smartOf(stockSymbol);
-            TrailAmountStrategy trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
+            //TrailAmountStrategy trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
+            TrailAmountStrategy trailAmountStrategy = HighLowAvgTrailAmountStrategy.createDefault();
             MovingAverageHLBot bot = new MovingAverageHLBot(contract, positionSizeStrategy, trailAmountStrategy);
             bots.add(bot);
         }
@@ -93,6 +104,7 @@ public class TraderApp implements IApp {
         ib = new IBService();
 
         IConnectionHandler connHandler = new IConnectionHandler() {
+            private boolean initialized = false;
 
             @Override
             public void show(String string) {
@@ -104,6 +116,25 @@ public class TraderApp implements IApp {
                 log.info("message: id {}, errorCode {}, errorMsg {}", id, errorCode, errorMsg);
                 if (errorMsg.contains("Connectivity between IB and Trader Workstation has been lost")) {
                     System.exit(0);
+                }
+
+                // id -1, errorCode 2104, errorMsg Market data farm connection is OK:usfarm.us
+                // id -1, errorCode 2104, errorMsg Market data farm connection is OK:usopt
+                // id -1, errorCode 2104, errorMsg Market data farm connection is OK:usfarm
+                // id -1, errorCode 2106, errorMsg HMDS data farm connection is OK:ushmds.us
+                // id -1, errorCode 2106, errorMsg HMDS data farm connection is OK:ushmds
+                if (id == -1 && errorCode == 2106 && errorMsg.endsWith("OK:ushmds")) {
+                    if (!initialized) {
+                        log.info("Data connection is active, executing post connect commands");
+
+                        AsyncExec.execute(() -> {
+                            for (AppCommand command : postConnectCommands) {
+                                command.execute(ib, TraderApp.this);
+                            }
+                        });
+
+                        initialized = true;
+                    }
                 }
             }
 
@@ -120,11 +151,7 @@ public class TraderApp implements IApp {
 
             @Override
             public void connected() {
-                log.info("connected, executing post connect commands");
-
-                for (AppCommand command : postConnectCommands) {
-                    command.execute(ib, TraderApp.this);
-                }
+                log.info("connected, waiting for data connection status");
             }
 
             @Override
@@ -177,6 +204,5 @@ public class TraderApp implements IApp {
         ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData.getTopMktDataHandler());
 
         Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
-
     }
 }

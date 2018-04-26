@@ -1090,14 +1090,15 @@ public class IBService implements IBroker {
         }
 
         @Override
-        public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+        public void orderStatus(int orderId, String statusVal, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+            OrderStatus status = OrderStatus.valueOf(statusVal);
             IOrderHandler handler = orderHandlers.get(orderId);
-            if (handler != null) {
-                handler.orderStatus(OrderStatus.valueOf(status), filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+            if (handler != null) {                
+                handler.orderStatus(status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
             }
 
             for (ILiveOrderHandler liveOrderHandler : liveOrderHandlers) {
-                liveOrderHandler.orderStatus(orderId, OrderStatus.valueOf(status), filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+                liveOrderHandler.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
             }
         }
 
