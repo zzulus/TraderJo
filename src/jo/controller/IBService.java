@@ -476,9 +476,10 @@ public class IBService implements IBroker {
                 order.getOrderType(),
                 order.action(),
                 order.totalQuantity(),
-                order.lmtPrice(),
-                order.auxPrice(),
-                order.trailStopPrice());
+                order.lmtPrice() == Double.MAX_VALUE ? "*" : order.lmtPrice(),
+                order.auxPrice() == Double.MAX_VALUE ? "*" : order.auxPrice(),
+                order.trailStopPrice() == Double.MAX_VALUE ? "*" : order.trailStopPrice()
+                );
 
         if (handler != null) {
             orderHandlers.put(order.orderId(), handler);
@@ -1093,7 +1094,7 @@ public class IBService implements IBroker {
         public void orderStatus(int orderId, String statusVal, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             OrderStatus status = OrderStatus.valueOf(statusVal);
             IOrderHandler handler = orderHandlers.get(orderId);
-            if (handler != null) {                
+            if (handler != null) {
                 handler.orderStatus(status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
             }
 

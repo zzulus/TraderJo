@@ -203,6 +203,6 @@ public class TraderApp implements IApp {
         // 375 for RT Trade Volume
         ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData.getTopMktDataHandler());
 
-        Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+        Uninterruptibles.sleepUninterruptibly(10, TimeUnit.SECONDS);
     }
 }

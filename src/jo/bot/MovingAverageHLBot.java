@@ -220,6 +220,8 @@ public class MovingAverageHLBot extends BaseBot {
             log.info("Bars HL: {}, {}, {} <- last ", fmt(barHigh2 - barLow2), fmt(barHigh1 - barLow1), fmt(barHigh0 - barLow0));
             log.info("Bar Distance barLow - maH: {}, {}, {} <- last ", fmt(barLow2 - maValH2), fmt(barLow1 - maValH1), fmt(barLow0 - maValH0));
             log.info("Bar Distance barLow - edge: {}, {}, {} <- last ", fmt(barLow2 - maEdgeVal2), fmt(barLow1 - maEdgeVal1), fmt(barLow0 - maEdgeVal0));
+            log.info("Change L%: {}, {}, {} <- last ", fmt(changeL2.getChange() * 100), fmt(changeL1.getChange() * 100), fmt(changeL0.getChange() * 100));
+            log.info("Change H%: {}, {}, {} <- last ", fmt(changeH2.getChange() * 100), fmt(changeH1.getChange() * 100), fmt(changeH0.getChange() * 100));
             log.info("Go Long: open {}, stop loss {}, trail amount {}, edge {}", fmt(openPrice), fmt(stopLossPrice), fmt(trailAmount), fmt(maEdgeVal0));
 
             openOrder = new Order();
@@ -260,6 +262,8 @@ public class MovingAverageHLBot extends BaseBot {
             log.info("Bar Distance maL - barHigh: {}, {}, {} <- last ", fmt(maValL2 - barHigh2), fmt(maValL1 - barHigh1), fmt(maValL0 - barHigh0));
             log.info("Bar Distance edge - barHigh: {}, {}, {} <- last ", fmt(maEdgeVal2 - barHigh2), fmt(maEdgeVal1 - barHigh1), fmt(maEdgeVal0 - barHigh0));
             log.info("Bars HL: {}, {}, {} <- last ", fmt(barHigh2 - barLow2), fmt(barHigh1 - barLow1), fmt(barHigh0 - barLow0));
+            log.info("Change L%: {}, {}, {} <- last ", fmt(changeL2.getChange() * 100), fmt(changeL1.getChange() * 100), fmt(changeL0.getChange() * 100));
+            log.info("Change H%: {}, {}, {} <- last ", fmt(changeH2.getChange() * 100), fmt(changeH1.getChange() * 100), fmt(changeH0.getChange() * 100));
             log.info("Go Short: open {}, stop loss {}, trail amount {}, edge {}", fmt(openPrice), fmt(stopLossPrice), fmt(trailAmount), fmt(maEdgeVal0));
 
             openOrder = new Order();

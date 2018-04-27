@@ -39,6 +39,10 @@ public class Bar {
         return time;
     }
 
+    public Date getTimeAsDate() {
+        return new Date(this.time * 1000);
+    }
+
     public void setTime(long time) {
         this.time = time;
     }
