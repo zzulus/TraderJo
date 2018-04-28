@@ -116,8 +116,6 @@ public abstract class BaseBot implements Bot {
     }
 
     protected class OpenPositionOrderHandler extends OrderHandlerAdapter {
-        private final Logger log = LogManager.getLogger(OpenPositionOrderHandler.class);
-
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}, avgFillPrice {}, whyHeld {}",
@@ -158,8 +156,6 @@ public abstract class BaseBot implements Bot {
     }
 
     protected class ClosePositionOrderHandler extends OrderHandlerAdapter {
-        private final Logger log = LogManager.getLogger(ClosePositionOrderHandler.class);
-
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             log.info("ClosePosition: OderStatus: status {}, filled {}, remaining {}, avgFillPrice {}, whyHeld {}",
@@ -199,8 +195,6 @@ public abstract class BaseBot implements Bot {
     }
 
     protected class StopLossOrderHandler extends OrderHandlerAdapter {
-        private final Logger log = LogManager.getLogger(StopLossOrderHandler.class);
-
         @Override
         public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             log.info("StopLoss: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);

@@ -137,6 +137,8 @@ public class CreateBarChartApp {
     public static JFreeChart createCandlestickChart(String title, String timeAxisLabel, String valueAxisLabel, OHLCDataset dataset, boolean legend) {
         DateAxis timeAxis = new DateAxis(timeAxisLabel);
         timeAxis.setAutoRange(true);
+        timeAxis.setTickLabelsVisible(true);
+        timeAxis.setAutoTickUnitSelection(true);
 
         NumberAxis priceAxis = new NumberAxis(valueAxisLabel);
         priceAxis.setAutoRange(true);        

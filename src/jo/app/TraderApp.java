@@ -61,15 +61,15 @@ public class TraderApp implements IApp {
         Contract ibb = Stocks.smartOf("IBB");
         Contract xlu = Stocks.smartOf("XLU");
 
-        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(6650);
+        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000);
 
         Set<String> stockSymbols = new LinkedHashSet<>();
         stockSymbols.add("AAPL");
         stockSymbols.add("MSFT");
-        stockSymbols.add("TSLA");
+        //stockSymbols.add("TSLA");
         stockSymbols.add("FB");
         stockSymbols.add("BABA");
-        stockSymbols.add("NFLX");
+        // stockSymbols.add("NFLX");
         stockSymbols.add("NVDA");
         stockSymbols.add("CAT");
         stockSymbols.add("INTC");
@@ -203,6 +203,6 @@ public class TraderApp implements IApp {
         // 375 for RT Trade Volume
         ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData.getTopMktDataHandler());
 
-        Uninterruptibles.sleepUninterruptibly(10, TimeUnit.SECONDS);
+        Uninterruptibles.sleepUninterruptibly(2, TimeUnit.SECONDS);
     }
 }

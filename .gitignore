@@ -2,7 +2,10 @@
 /bin/
 /build/
 /log/
+/charts/
 /.classpath
 /.project
 /.settings
 /*.txt
+/*.png
+/*.jpg
