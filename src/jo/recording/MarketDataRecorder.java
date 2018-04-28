@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -21,10 +22,10 @@ import com.ib.client.TickType;
 import com.ib.client.Types.DeepSide;
 import com.ib.client.Types.DeepType;
 import com.ib.client.Types.MktDataType;
-import com.ib.client.Types.WhatToShow;
 
-import jo.constant.Stocks;
-import jo.controller.IBroker;
+import jo.handler.IDeepMktDataHandler;
+import jo.handler.IErrorHandler;
+import jo.handler.IRealTimeBarHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.model.Bar;
 import jo.recording.event.AbstractEvent;
@@ -35,49 +36,31 @@ import jo.recording.event.TickPriceEvent;
 import jo.recording.event.TickSizeEvent;
 import jo.recording.event.TickStringEvent;
 
-public class MarketRecorder implements Recorder {
-    private static final Logger log = LogManager.getLogger(MarketRecorder.class);
-    private boolean recordDeepBook = true;
-    private Contract contract;
+public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandler, IErrorHandler, IDeepMktDataHandler {
+    private static final Logger log = LogManager.getLogger(MarketDataRecorder.class);
     private OutputStream out;
     private PrintWriter ps;
-    private ArrayBlockingQueue<AbstractEvent> q = new ArrayBlockingQueue<>(64000);
+    private BlockingQueue<AbstractEvent> q = new ArrayBlockingQueue<>(64000);
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    public MarketRecorder(Contract contract) {
-        this.contract = contract;
-        objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-    }
+    public MarketDataRecorder(Contract contract) {        
+        this.objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
-    public void start(IBroker ib) {
-        openFile();
+        String symbol = contract.symbol();
+        openFile(symbol);
 
         Thread writerThread = new Thread(this::pollQueue);
         writerThread.setDaemon(true);
-        writerThread.setName("MarketRecorder-" + contract.symbol());
+        writerThread.setName("MarketRecorder#" + contract.symbol());
         writerThread.start();
 
-        ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, (b) -> addBarEvent(b));
-        ib.reqTopMktData(contract, "165,375,295", /* snapshot */false, new TopMktDataHandler());
-
-        if (recordDeepBook) {
-            ib.reqDeepMktData(Stocks.toNasdaq(contract), 40, this::updateMktDepth);
-        }
+        log.info("Recording " + contract.symbol());
     }
 
-    @Override
     public void stop() {
         if (ps != null) {
             ps.close();
         }
-    }
-
-    private void addBarEvent(Bar bar) {
-        q.add(new RealTimeBarEvent(bar));
-    }
-
-    private void updateMktDepth(int position, String marketMaker, DeepType operation, DeepSide side, double price, int size) {
-        q.add(new MarketDepthEvent(position, marketMaker, operation, side, price, size));
     }
 
     public void pollQueue() {
@@ -95,21 +78,18 @@ public class MarketRecorder implements Recorder {
     }
 
     private void write(String str) {
-        if (ps == null) {
-            openFile();
-        }
         ps.println(str);
         ps.flush();
     }
 
-    private void openFile() {
+    private void openFile(String symbol) {
         LocalDateTime now = LocalDateTime.now();
 
         File dir = new File("log/" + now.format(DateTimeFormatter.ISO_LOCAL_DATE));
         dir.mkdir();
 
         String fileName = String.format("Market-%s-%s.log",
-                contract.symbol(),
+                symbol,
                 StringUtils.replace(now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), ":", "-"));
 
         File logFile = new File(dir, fileName);
@@ -123,40 +103,40 @@ public class MarketRecorder implements Recorder {
     }
 
     @Override
+    public void tickPrice(TickType tickType, double price, int canAutoExecute) {
+        q.add(new TickPriceEvent(tickType, price, canAutoExecute));
+    }
+
+    @Override
+    public void tickSize(TickType tickType, int size) {
+        q.add(new TickSizeEvent(tickType, size));
+    }
+
+    @Override
+    public void tickString(TickType tickType, String value) {
+        q.add(new TickStringEvent(tickType, value));
+    }
+
+    @Override
+    public void realtimeBar(Bar bar) {
+        q.add(new RealTimeBarEvent(bar));
+    }
+
+    public void updateMktDepth(int position, String marketMaker, DeepType operation, DeepSide side, double price, int size) {
+        q.add(new MarketDepthEvent(position, marketMaker, operation, side, price, size));
+    }
+
+    @Override
     public void error(int id, int errorCode, String errorMsg) {
         q.add(new ErrorEvent(id, errorCode, errorMsg));
     }
 
-    public MarketRecorder withDeepBook(boolean recordDeepBook) {
-        this.recordDeepBook = recordDeepBook;
-        return this;
+    @Override
+    public void tickSnapshotEnd() {
     }
 
-    private class TopMktDataHandler implements ITopMktDataHandler {
-
-        @Override
-        public void tickPrice(TickType tickType, double price, int canAutoExecute) {
-            q.add(new TickPriceEvent(tickType, price, canAutoExecute));
-        }
-
-        @Override
-        public void tickSize(TickType tickType, int size) {
-            q.add(new TickSizeEvent(tickType, size));
-        }
-
-        @Override
-        public void tickString(TickType tickType, String value) {
-            q.add(new TickStringEvent(tickType, value));
-        }
-
-        @Override
-        public void tickSnapshotEnd() {
-
-        }
-
-        @Override
-        public void marketDataType(MktDataType marketDataType) {
-
-        }
+    @Override
+    public void marketDataType(MktDataType marketDataType) {
     }
+
 }

@@ -77,6 +77,8 @@ import jo.handler.ISoftDollarTiersReqHandler;
 import jo.handler.ITimeHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.handler.ITradeReportHandler;
+import jo.handler.OrderHandlerAdapter;
+import jo.handler.OrderStatusInput;
 import jo.model.Bar;
 import jo.util.AdvisorUtil;
 import jo.util.ConcurrentHashSet;
@@ -87,7 +89,6 @@ public class IBService implements IBroker {
     // TODO WTF is that?
     private interface IInternalContractDetailsHandler {
         void contractDetails(ContractDetails data);
-
         void contractDetailsEnd();
     }
 
@@ -287,28 +288,9 @@ public class IBService implements IBroker {
         int reqId = getNextRequestId();
         contractDetailsMap.put(reqId, processor);
 
-        orderHandlers.put(reqId, new IOrderHandler() {
-
+        orderHandlers.put(reqId, new OrderHandlerAdapter() {
             public void handle(int errorCode, String errorMsg) {
                 processor.contractDetailsEnd();
-            }
-
-            @Override
-            public void orderState(Order order, OrderState orderState) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void orderStatus(OrderStatus status,
-                    double filled,
-                    double remaining,
-                    double avgFillPrice,
-                    long permId,
-                    int parentId,
-                    double lastFillPrice,
-                    int clientId,
-                    String whyHeld) {
-                // TODO Auto-generated method stub
             }
         });
 
@@ -460,7 +442,7 @@ public class IBService implements IBroker {
     }
 
     @Override
-    public void placeOrModifyOrder(Contract contract, final Order order, final IOrderHandler handler) {
+    public void placeOrModifyOrder(Contract contract, Order order, IOrderHandler handler) {
         if (!checkConnection())
             return;
 
@@ -469,7 +451,7 @@ public class IBService implements IBroker {
             order.orderId(getNextOrderId());
         }
 
-        log.info("placeOrModifyOrder: orderId {}, parent order id {}, symbol {}, order type {}, action {}, totalQuantity {}, lmtPrice {}, auxPrice {}, trailStopPrice {}",
+        log.info("placeOrModifyOrder: orderId {}, parentOrderId {}, symbol {}, orderType {}, action {}, totalQuantity {}, lmtPrice {}, auxPrice {}, trailStopPrice {}",
                 order.orderId(),
                 order.parentId(),
                 contract.symbol(),
@@ -478,8 +460,7 @@ public class IBService implements IBroker {
                 order.totalQuantity(),
                 order.lmtPrice() == Double.MAX_VALUE ? "*" : order.lmtPrice(),
                 order.auxPrice() == Double.MAX_VALUE ? "*" : order.auxPrice(),
-                order.trailStopPrice() == Double.MAX_VALUE ? "*" : order.trailStopPrice()
-                );
+                order.trailStopPrice() == Double.MAX_VALUE ? "*" : order.trailStopPrice());
 
         if (handler != null) {
             orderHandlers.put(order.orderId(), handler);
@@ -1094,12 +1075,26 @@ public class IBService implements IBroker {
         public void orderStatus(int orderId, String statusVal, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
             OrderStatus status = OrderStatus.valueOf(statusVal);
             IOrderHandler handler = orderHandlers.get(orderId);
+            
+            OrderStatusInput input = new OrderStatusInput();
+            input.setOrderId(orderId);
+            input.setStatus(status);
+            input.setFilled(filled);
+            input.setRemaining(remaining);
+            input.setAvgFillPrice(avgFillPrice);
+            input.setPermId(permId);
+            input.setParentId(parentId);
+            input.setLastFillPrice(lastFillPrice);
+            input.setClientId(clientId);
+            input.setWhyHeld(whyHeld);
+
+            
             if (handler != null) {
-                handler.orderStatus(status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+                handler.orderStatus(input);
             }
 
             for (ILiveOrderHandler liveOrderHandler : liveOrderHandlers) {
-                liveOrderHandler.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+                liveOrderHandler.orderStatus(input);
             }
         }
 

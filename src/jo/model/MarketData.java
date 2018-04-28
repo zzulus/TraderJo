@@ -7,23 +7,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
+import com.ib.client.Contract;
 import com.ib.client.TickType;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.MktDataType;
 
+import jo.handler.IRealTimeBarHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.model.calc.RealtimeBarAggregator;
+import jo.recording.MarketDataRecorder;
 import jo.util.BarSizeUtils;
 import jo.util.SyncSignal;
 
-public class MarketData {
-    private static final Logger LOG = LogManager.getLogger(MarketData.class);
-
+public class MarketData implements IRealTimeBarHandler, ITopMktDataHandler {
     private Map<BarSize, Bars> barsMap = new ConcurrentHashMap<>();
     private CircularFifoQueue<MarketDataTrade> trades = new CircularFifoQueue<>(4 * 4096);
+    private Contract contract;
+    private boolean isRecording;
+    private MarketDataRecorder recorder;
+
     private volatile double todayOpenPrice;
     private volatile double prevDayClosePrice;
     private volatile double todayLowPrice;
@@ -45,13 +48,18 @@ public class MarketData {
     private volatile int averageVolume;
     private volatile int todayVolume;
 
-    private ITopMktDataHandler topMktDataHandler = new TopMktDataHandler();
     private final SyncSignal updateSignal = new SyncSignal();
     private List<SyncSignal> barSignals = new ArrayList<>();
 
     private final List<RealtimeBarAggregator> realtimeBarAggregators = new ArrayList<>();
 
     public MarketData() {
+        this(null);
+    }
+
+    public MarketData(Contract contract) {
+        this.contract = contract;
+
         Bars realtimeBars = initBars(BarSize._5_secs);
 
         for (int i = BarSize._10_secs.ordinal(); i < BarSize._1_day.ordinal(); i++) {
@@ -61,6 +69,11 @@ public class MarketData {
             RealtimeBarAggregator agg = new RealtimeBarAggregator(this, realtimeBars, barSize);
             realtimeBarAggregators.add(agg);
         }
+    }
+
+    public void startRecording() {
+        this.isRecording = true;
+        this.recorder = new MarketDataRecorder(contract);
     }
 
     public void addTrade(MarketDataTrade trade) {
@@ -92,8 +105,25 @@ public class MarketData {
         return todayHighPrice;
     }
 
-    public ITopMktDataHandler getTopMktDataHandler() {
-        return topMktDataHandler;
+    public Bars getBars(BarSize barSize) {
+        return barsMap.get(barSize);
+    }
+
+    public synchronized Bars initBars(BarSize barSize) {
+        return barsMap.computeIfAbsent(barSize, (k) -> {
+            Bars bars = new Bars();
+            barSignals.add(bars.getSignal());
+            return bars;
+        });
+    }
+
+    @Override
+    public void realtimeBar(Bar bar) {
+        if (isRecording) {
+            recorder.realtimeBar(bar);
+        }
+
+        addBar(BarSize._5_secs, bar);
     }
 
     public synchronized void addBar(BarSize barSize, Bar bar) {
@@ -110,16 +140,146 @@ public class MarketData {
         }
     }
 
-    public Bars getBars(BarSize barSize) {
-        return barsMap.get(barSize);
+    @Override
+    public void tickPrice(TickType tickType, double price, int canAutoExecute) {
+        if (price <= 0) {
+            return;
+        }
+
+        if (isRecording) {
+            recorder.tickPrice(tickType, price, canAutoExecute);
+        }
+
+        switch (tickType) {
+        case ASK:
+            askPrice = price;
+            break;
+        case BID:
+            bidPrice = price;
+            break;
+        case LAST:
+            lastPrice = price;
+            // log.info("Last: {}", price);
+            break;
+        case HIGH:
+            todayHighPrice = price;
+            // log.info("TodayHighPrice: {}", price);
+            break;
+        case LOW:
+            todayLowPrice = price;
+            break;
+        case CLOSE:
+            prevDayClosePrice = price;
+            break;
+        case OPEN:
+            todayOpenPrice = price;
+            break;
+        case HIGH_13_WEEK:
+            high13Price = price;
+            break;
+        case HIGH_26_WEEK:
+            high26Price = price;
+            break;
+        case HIGH_52_WEEK:
+            high52Price = price;
+            break;
+        case LOW_13_WEEK:
+            low13Price = price;
+            break;
+        case LOW_26_WEEK:
+            low26Price = price;
+            break;
+        case LOW_52_WEEK:
+            low52Price = price;
+            break;
+        default:
+            break;
+        }
+
+        updateSignal.signalAll();
     }
 
-    public synchronized Bars initBars(BarSize barSize) {
-        return barsMap.computeIfAbsent(barSize, (k) -> {
-            Bars bars = new Bars();
-            barSignals.add(bars.getSignal());
-            return bars;
-        });
+    @Override
+    public void tickSize(TickType tickType, int size) {
+        if (size < 0) {
+            return;
+        }
+
+        if (isRecording) {
+            recorder.tickSize(tickType, size);
+        }
+
+        switch (tickType) {
+        case ASK_SIZE:
+            askSize = size;
+            break;
+        case BID_SIZE:
+            bidSize = size;
+            break;
+        case LAST_SIZE:
+            lastSize = size;
+            break;
+        case AVG_VOLUME:
+            averageVolume = size;
+            break;
+        case VOLUME:
+            todayVolume = size;
+            break;
+        default:
+            break;
+        }
+
+        updateSignal.signalAll();
+    }
+
+    @Override
+    public void tickString(TickType tickType, String value) {
+        if (isRecording) {
+            recorder.tickString(tickType, value);
+        }
+
+        switch (tickType) {
+        case RT_TRD_VOLUME:
+            // log.info("tickString: {} {}", tickType, value);
+            processRTVolume(value);
+            updateSignal.signalAll();
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    private void processRTVolume(String value) {
+        // 0 last trade's price,
+        // 1 size
+        // 2 time
+        // 3 current day's total traded volume,
+        // 4 Volume Weighted Average Price (VWAP)
+        // 5 whether or not the trade was filled by a single market maker
+
+        // Ex: ;0;1519636841808;21;170.83991182;true
+
+        String[] split = StringUtils.splitPreserveAllTokens(value, ';');
+        if (split.length == 6) {
+            String priceStr = split[0];
+            String sizeStr = split[1];
+            String timeStr = split[2];
+            String todayVolumeStr = split[3];
+            String vwapStr = split[4];
+
+            if (!priceStr.isEmpty() && !sizeStr.isEmpty() && !timeStr.isEmpty() && !todayVolumeStr.isEmpty() && !vwapStr.isEmpty()) {
+                double price = Double.parseDouble(priceStr);
+                int size = Integer.parseInt(sizeStr);
+                long time = Long.parseLong(timeStr);
+                int dayTotalVolume = Integer.parseInt(todayVolumeStr);
+                double vwap = Double.parseDouble(vwapStr);
+
+                MarketDataTrade trade = new MarketDataTrade(price, size, time, dayTotalVolume, vwap);
+                // log.info("processRTVolume: {}", ToStringBuilder.reflectionToString(trade));
+                addTrade(trade);
+            }
+        }
     }
 
     public CircularFifoQueue<MarketDataTrade> getTrades() {
@@ -186,148 +346,17 @@ public class MarketData {
         return updateSignal;
     }
 
-    // TODO Extract
-    private class TopMktDataHandler implements ITopMktDataHandler {
+    public Contract getContract() {
+        return contract;
+    }
 
-        @Override
-        public void tickPrice(TickType tickType, double price, int canAutoExecute) {
-            // log.info("tickPrice: {} {}", tickType, price);
-            if (price <= 0) {
-                return;
-            }
+    @Override
+    public void tickSnapshotEnd() {
+        // do nothing for now
+    }
 
-            switch (tickType) {
-            case ASK:
-                askPrice = price;
-                break;
-            case BID:
-                bidPrice = price;
-                break;
-            case LAST:
-                lastPrice = price;
-                // log.info("Last: {}", price);
-                break;
-            case HIGH:
-                todayHighPrice = price;
-                // log.info("TodayHighPrice: {}", price);
-                break;
-            case LOW:
-                todayLowPrice = price;
-                break;
-            case CLOSE:
-                prevDayClosePrice = price;
-                break;
-            case OPEN:
-                todayOpenPrice = price;
-                break;
-            case HIGH_13_WEEK:
-                high13Price = price;
-                break;
-            case HIGH_26_WEEK:
-                high26Price = price;
-                break;
-            case HIGH_52_WEEK:
-                high52Price = price;
-                break;
-            case LOW_13_WEEK:
-                low13Price = price;
-                break;
-            case LOW_26_WEEK:
-                low26Price = price;
-                break;
-            case LOW_52_WEEK:
-                low52Price = price;
-                break;
-            default:
-                break;
-            }
-
-            updateSignal.signalAll();
-        }
-
-        @Override
-        public void tickSize(TickType tickType, int size) {
-            if (size < 0) {
-                return;
-            }
-
-            switch (tickType) {
-            case ASK_SIZE:
-                askSize = size;
-                break;
-            case BID_SIZE:
-                bidSize = size;
-                break;
-            case LAST_SIZE:
-                lastSize = size;
-                break;
-            case AVG_VOLUME:
-                averageVolume = size;
-                break;
-            case VOLUME:
-                todayVolume = size;
-                break;
-            default:
-                break;
-            }
-
-            updateSignal.signalAll();
-        }
-
-        @Override
-        public void tickString(TickType tickType, String value) {
-            switch (tickType) {
-            case RT_TRD_VOLUME:
-                // log.info("tickString: {} {}", tickType, value);
-                processRTVolume(value);
-                updateSignal.signalAll();
-                break;
-
-            default:
-                break;
-            }
-        }
-
-        private void processRTVolume(String value) {
-            // 0 last trade's price,
-            // 1 size
-            // 2 time
-            // 3 current day's total traded volume,
-            // 4 Volume Weighted Average Price (VWAP)
-            // 5 whether or not the trade was filled by a single market maker
-
-            // Ex: ;0;1519636841808;21;170.83991182;true
-
-            String[] split = StringUtils.splitPreserveAllTokens(value, ';');
-            if (split.length == 6) {
-                String priceStr = split[0];
-                String sizeStr = split[1];
-                String timeStr = split[2];
-                String todayVolumeStr = split[3];
-                String vwapStr = split[4];
-
-                if (!priceStr.isEmpty() && !sizeStr.isEmpty() && !timeStr.isEmpty() && !todayVolumeStr.isEmpty() && !vwapStr.isEmpty()) {
-                    double price = Double.parseDouble(priceStr);
-                    int size = Integer.parseInt(sizeStr);
-                    long time = Long.parseLong(timeStr);
-                    int dayTotalVolume = Integer.parseInt(todayVolumeStr);
-                    double vwap = Double.parseDouble(vwapStr);
-
-                    MarketDataTrade trade = new MarketDataTrade(price, size, time, dayTotalVolume, vwap);
-                    // log.info("processRTVolume: {}", ToStringBuilder.reflectionToString(trade));
-                    addTrade(trade);
-                }
-            }
-        }
-
-        @Override
-        public void tickSnapshotEnd() {
-
-        }
-
-        @Override
-        public void marketDataType(MktDataType marketDataType) {
-
-        }
+    @Override
+    public void marketDataType(MktDataType marketDataType) {
+        // do nothing for now
     }
 }

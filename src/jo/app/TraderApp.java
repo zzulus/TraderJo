@@ -5,7 +5,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -13,15 +12,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.ib.client.Contract;
-import com.ib.client.Types.BarSize;
-import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
 
 import jo.bot.Bot;
-import jo.bot.DonchianBot;
 import jo.bot.MovingAverageHLBot;
 import jo.command.AppCommand;
 import jo.command.StartBotsCommand;
@@ -29,24 +24,18 @@ import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
-import jo.handler.IHistoricalDataHandler;
-import jo.model.Bar;
-import jo.model.Bars;
 import jo.model.IApp;
 import jo.model.MarketData;
 import jo.position.DollarValuePositionSizeStrategy;
-import jo.position.DollarValueTrailAmountStrategy;
 import jo.position.HighLowAvgTrailAmountStrategy;
-import jo.position.HistoricalHighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
 import jo.util.AsyncExec;
-import jo.util.AsyncVal;
 
 public class TraderApp implements IApp {
     private static final Logger log = LogManager.getLogger(TraderApp.class);
     private List<AppCommand> postConnectCommands = new ArrayList<>();
-    private IBroker ib;
+    private IBService ib;
     // Key - Stock name, e.g. SPY
     private Map<String, MarketData> stockMarketDataMap = new ConcurrentHashMap<>();
 
@@ -191,17 +180,19 @@ public class TraderApp implements IApp {
             return;
         }
 
-        MarketData marketData = new MarketData();
+        MarketData marketData = new MarketData(contract);
+        marketData.startRecording();
+        
         stockMarketDataMap.put(contract.symbol(), marketData);
 
         // IB supports only 5 sec realtime bars
         // https://interactivebrokers.github.io/tws-api/realtime_bars.html#gsc.tab=0
-        ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, (bar) -> marketData.addBar(BarSize._5_secs, bar));
+        ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, marketData);
 
         // 165 for Average Volume and Low/High XXX Weeks
         // 233 for RT Volume (Time & Sales) https://interactivebrokers.github.io/tws-api/tick_types.html#rt_volume&gsc.tab=0
         // 375 for RT Trade Volume
-        ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData.getTopMktDataHandler());
+        ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData);
 
         Uninterruptibles.sleepUninterruptibly(2, TimeUnit.SECONDS);
     }

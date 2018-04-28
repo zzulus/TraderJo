@@ -1,5 +1,7 @@
 package jo.tech;
 
+import static jo.util.Formats.fmt;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,6 +12,7 @@ import com.ib.client.Types.Action;
 import jo.controller.IBroker;
 import jo.model.MarketData;
 import jo.util.AsyncExec;
+import jo.util.Formats;
 import jo.util.PriceUtils;
 import jo.util.SyncSignal;
 
@@ -57,11 +60,11 @@ public class StopTrail {
             double adjustedPrice = PriceUtils.fixPriceVariance(lastPrice - trailAmount);
 
             log.info("Check: stop price {}, adjusted price {}, trail amount {}, last price {}",
-                    orderPrice, adjustedPrice, trailAmount, lastPrice);
+                    fmt(orderPrice), fmt(adjustedPrice), fmt(trailAmount), fmt(lastPrice));
 
             if (isLongPosition && adjustedPrice > orderPrice) {
                 log.info("Adjusting long stop price from {} to {} using trail amount {} and last price {}",
-                        orderPrice, adjustedPrice, trailAmount, lastPrice);
+                        fmt(orderPrice), fmt(adjustedPrice), fmt(trailAmount), fmt(lastPrice));
 
                 order.auxPrice(adjustedPrice);
                 ib.placeOrModifyOrder(contract, order, null);
@@ -69,7 +72,7 @@ public class StopTrail {
 
             if (!isLongPosition && adjustedPrice < orderPrice) {
                 log.info("Adjusting short stop price from {} to {} using trail amount {} and last price {}",
-                        orderPrice, adjustedPrice, trailAmount, lastPrice);
+                        fmt(orderPrice), fmt(adjustedPrice), fmt(trailAmount), fmt(lastPrice));
 
                 order.auxPrice(adjustedPrice);
                 ib.placeOrModifyOrder(contract, order, null);

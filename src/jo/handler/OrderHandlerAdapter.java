@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.ib.client.Order;
 import com.ib.client.OrderState;
-import com.ib.client.OrderStatus;
 
 public class OrderHandlerAdapter implements IOrderHandler {
     private final Logger log = LogManager.getLogger(this.getClass());
@@ -15,7 +14,7 @@ public class OrderHandlerAdapter implements IOrderHandler {
     }
 
     @Override
-    public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+    public void orderStatus(OrderStatusInput input) {
     }
 
     @Override

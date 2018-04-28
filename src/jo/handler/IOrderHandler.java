@@ -2,7 +2,6 @@ package jo.handler;
 
 import com.ib.client.Order;
 import com.ib.client.OrderState;
-import com.ib.client.OrderStatus;
 
 // ---------------------------------------- Trading and Option Exercise ----------------------------------------
 /**
@@ -11,7 +10,7 @@ import com.ib.client.OrderStatus;
 public interface IOrderHandler {
     void orderState(Order order, OrderState orderState);
 
-    void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld);
+    void orderStatus(OrderStatusInput input);
 
     void handle(int errorCode, String errorMsg);
 }

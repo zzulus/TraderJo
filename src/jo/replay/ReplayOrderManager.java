@@ -21,6 +21,7 @@ import com.ib.client.TickType;
 import com.ib.client.Types.Action;
 
 import jo.handler.IOrderHandler;
+import jo.handler.OrderStatusInput;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.TickPriceEvent;
@@ -136,7 +137,16 @@ public class ReplayOrderManager {
         OrderState orderState = newOrderState(OrderStatus.Filled.name());
         IOrderHandler handler = replayOrder.getHandler();
         handler.orderState(null, orderState); // TODO
-        handler.orderStatus(OrderStatus.Filled, order.totalQuantity(), 0, executePrice, -1, order.parentId(), executePrice, -1, null);
+        
+        OrderStatusInput input = new OrderStatusInput();
+        input.setStatus(OrderStatus.Filled);
+        input.setFilled(order.totalQuantity());
+        input.setRemaining(0);
+        input.setAvgFillPrice(executePrice);
+        input.setParentId(order.parentId());
+        input.setLastFillPrice(executePrice);
+        
+        handler.orderStatus(input);
     }
 
     public synchronized void placeOrModifyOrder(Contract contract, Order order, IOrderHandler handler) {

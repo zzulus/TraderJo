@@ -26,6 +26,7 @@ import com.ib.client.OrderStatus;
 import jo.controller.IBroker;
 import jo.handler.ILiveOrderHandler;
 import jo.handler.ITradeReportHandler;
+import jo.handler.OrderStatusInput;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.CommissionReportEvent;
 import jo.recording.event.ErrorEvent;
@@ -122,8 +123,8 @@ public class TradeRecorder implements Recorder {
         }
 
         @Override
-        public void orderStatus(int orderId, OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-            q.add(new OrderStatusEvent(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld));
+        public void orderStatus(OrderStatusInput input) {
+            q.add(new OrderStatusEvent(input));
         }
 
         @Override

@@ -1,11 +1,8 @@
-package jo.recording.event;
+package jo.handler;
 
 import com.ib.client.OrderStatus;
 
-import jo.handler.OrderStatusInput;
-
-public class OrderStatusEvent extends AbstractEvent {
-    public static final String TYPE = "OrderStatus";
+public class OrderStatusInput {
     private int orderId;
     private OrderStatus status;
     private double filled;
@@ -16,24 +13,6 @@ public class OrderStatusEvent extends AbstractEvent {
     private double lastFillPrice;
     private int clientId;
     private String whyHeld;
-
-    public OrderStatusEvent() {
-        super(TYPE);
-    }
-
-    public OrderStatusEvent(OrderStatusInput input) {
-        super(TYPE);
-        this.orderId = input.getOrderId();
-        this.status = input.getStatus();
-        this.filled = input.getFilled();
-        this.remaining = input.getRemaining();
-        this.avgFillPrice = input.getAvgFillPrice();
-        this.permId = input.getPermId();
-        this.parentId = input.getParentId();
-        this.lastFillPrice = input.getLastFillPrice();
-        this.clientId = input.getClientId();
-        this.whyHeld = input.getWhyHeld();
-    }
 
     public int getOrderId() {
         return orderId;
@@ -113,6 +92,12 @@ public class OrderStatusEvent extends AbstractEvent {
 
     public void setWhyHeld(String whyHeld) {
         this.whyHeld = whyHeld;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderStatusInput [orderId=" + orderId + ", status=" + status + ", filled=" + filled + ", remaining=" + remaining + ", avgFillPrice=" + avgFillPrice + ", permId=" + permId + ", parentId="
+                + parentId + ", lastFillPrice=" + lastFillPrice + ", clientId=" + clientId + ", whyHeld=" + whyHeld + "]";
     }
 
 }

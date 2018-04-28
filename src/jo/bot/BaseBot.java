@@ -9,8 +9,11 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import jo.filter.Filter;
 import jo.handler.OrderHandlerAdapter;
+import jo.handler.OrderStatusInput;
 import jo.model.MarketData;
 import jo.position.PositionSizeStrategy;
 import jo.util.PnLLogger;
@@ -35,6 +38,8 @@ public abstract class BaseBot implements Bot {
     protected OrderStatus openOrderStatus = null;
     protected OrderStatus closeOrderStatus = null;
     protected OrderStatus stopLossOrderStatus = null;
+
+    protected TIntSet executedOrders = new TIntHashSet();
 
     protected Thread thread;
 
@@ -117,7 +122,13 @@ public abstract class BaseBot implements Bot {
 
     protected class OpenPositionOrderHandler extends OrderHandlerAdapter {
         @Override
-        public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+        public void orderStatus(OrderStatusInput input) {
+            OrderStatus status = input.getStatus();
+            final double filled = input.getFilled();
+            final double remaining = input.getRemaining();
+            final String whyHeld = input.getWhyHeld();
+            final double avgFillPrice = input.getAvgFillPrice();
+
             log.info("OpenPosition: OderStatus: status {}, filled {}, remaining {}, avgFillPrice {}, whyHeld {}",
                     status, filled, remaining, avgFillPrice, whyHeld);
 
@@ -157,7 +168,13 @@ public abstract class BaseBot implements Bot {
 
     protected class ClosePositionOrderHandler extends OrderHandlerAdapter {
         @Override
-        public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+        public void orderStatus(OrderStatusInput input) {
+            OrderStatus status = input.getStatus();
+            final double filled = input.getFilled();
+            final double remaining = input.getRemaining();
+            final String whyHeld = input.getWhyHeld();
+            final double avgFillPrice = input.getAvgFillPrice();
+
             log.info("ClosePosition: OderStatus: status {}, filled {}, remaining {}, avgFillPrice {}, whyHeld {}",
                     status, filled, remaining, avgFillPrice, whyHeld);
 
@@ -196,7 +213,12 @@ public abstract class BaseBot implements Bot {
 
     protected class StopLossOrderHandler extends OrderHandlerAdapter {
         @Override
-        public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+        public void orderStatus(OrderStatusInput input) {
+            OrderStatus status = input.getStatus();
+            final double filled = input.getFilled();
+            final double remaining = input.getRemaining();
+            final String whyHeld = input.getWhyHeld();
+            final double avgFillPrice = input.getAvgFillPrice();
             log.info("StopLoss: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
 
             if (stopLossOrderStatus == status) {
@@ -234,7 +256,12 @@ public abstract class BaseBot implements Bot {
 
     protected class MocOrderHandler extends OrderHandlerAdapter {
         @Override
-        public void orderStatus(OrderStatus status, double filled, double remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+        public void orderStatus(OrderStatusInput input) {
+            OrderStatus status = input.getStatus();
+            final double filled = input.getFilled();
+            final double remaining = input.getRemaining();
+            final double avgFillPrice = input.getAvgFillPrice();
+
             if (status == OrderStatus.Filled && remaining < 0.01) {
                 takeProfitOrderAvgFillPrice = avgFillPrice;
                 currentPosition -= filled;

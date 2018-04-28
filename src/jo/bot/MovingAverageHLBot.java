@@ -27,7 +27,6 @@ import jo.tech.PctChange;
 import jo.tech.StopTrail;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
-import jo.util.PriceUtils;
 import jo.util.SyncSignal;
 
 public class MovingAverageHLBot extends BaseBot {
