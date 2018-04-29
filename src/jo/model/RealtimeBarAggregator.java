@@ -1,13 +1,10 @@
-package jo.model.calc;
+package jo.model;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.ib.client.Types.BarSize;
 
-import jo.model.Bar;
-import jo.model.Bars;
-import jo.model.MarketData;
 import jo.util.BarSizeUtils;
 
 public class RealtimeBarAggregator {

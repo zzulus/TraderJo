@@ -11,16 +11,18 @@ import org.apache.commons.lang3.StringUtils;
 import com.ib.client.Contract;
 import com.ib.client.TickType;
 import com.ib.client.Types.BarSize;
+import com.ib.client.Types.DeepSide;
+import com.ib.client.Types.DeepType;
 import com.ib.client.Types.MktDataType;
 
+import jo.handler.IDeepMktDataHandler;
 import jo.handler.IRealTimeBarHandler;
 import jo.handler.ITopMktDataHandler;
-import jo.model.calc.RealtimeBarAggregator;
 import jo.recording.MarketDataRecorder;
 import jo.util.BarSizeUtils;
 import jo.util.SyncSignal;
 
-public class MarketData implements IRealTimeBarHandler, ITopMktDataHandler {
+public class MarketData implements IRealTimeBarHandler, ITopMktDataHandler, IDeepMktDataHandler {
     private Map<BarSize, Bars> barsMap = new ConcurrentHashMap<>();
     private CircularFifoQueue<MarketDataTrade> trades = new CircularFifoQueue<>(4 * 4096);
     private Contract contract;
@@ -358,5 +360,13 @@ public class MarketData implements IRealTimeBarHandler, ITopMktDataHandler {
     @Override
     public void marketDataType(MktDataType marketDataType) {
         // do nothing for now
+    }
+
+    @Override
+    public void updateMktDepth(int position, String marketMaker, DeepType operation, DeepSide side, double price, int size) {
+        if (isRecording) {
+            recorder.updateMktDepth(position, marketMaker, operation, side, price, size);
+        }
+        // TODO Market Depth support
     }
 }

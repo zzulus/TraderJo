@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.ib.client.Contract;
-import com.ib.client.Types.BarSize;
 import com.ib.client.Types.WhatToShow;
 
 import jo.controller.IBroker;
@@ -32,12 +31,12 @@ public class InitStockDataCommand implements AppCommand {
 
         // IB supports only 5 sec realtime bars
         // https://interactivebrokers.github.io/tws-api/realtime_bars.html#gsc.tab=0
-        ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, (bar) -> marketData.addBar(BarSize._5_secs, bar));
+        ib.reqRealTimeBars(contract, WhatToShow.TRADES, true, marketData);
 
         // 165 for Average Volume and Low/High XXX Weeks
         // 233 for RT Volume (Time & Sales) https://interactivebrokers.github.io/tws-api/tick_types.html#rt_volume&gsc.tab=0
         // 375 for RT Trade Volume
-        ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData.getTopMktDataHandler());
+        ib.reqTopMktData(contract, "165,375", /* snapshot */false, marketData);
     }
 
 }

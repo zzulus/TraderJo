@@ -1,6 +1,8 @@
 package jo.tech;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static jo.util.Formats.fmt;
+import static jo.util.PriceUtils.fixPriceVariance;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,20 +14,19 @@ import com.ib.client.Types.Action;
 import jo.controller.IBroker;
 import jo.model.MarketData;
 import jo.util.AsyncExec;
-import jo.util.Formats;
 import jo.util.PriceUtils;
 import jo.util.SyncSignal;
 
 public class StopTrail {
     private static final Logger log = LogManager.getLogger(StopTrail.class);
-
     private final IBroker ib;
     private final Contract contract;
     private final Order order;
+    private boolean longPosition;
     private final MarketData md;
-    private final double trailAmount;
+    private double trailAmount;
 
-    private boolean stop;
+    private volatile boolean stop;
     private Thread thread;
 
     public StopTrail(IBroker ib, Contract contract, Order order, MarketData md, double trailAmount) {
@@ -33,7 +34,8 @@ public class StopTrail {
         this.contract = contract;
         this.order = order;
         this.md = md;
-        this.trailAmount = trailAmount;
+        this.trailAmount = PriceUtils.fixPriceVariance(trailAmount);
+        this.longPosition = (order.action() == Action.SELL);
     }
 
     public void start() {
@@ -52,34 +54,69 @@ public class StopTrail {
     private void run() {
         log.info("Run");
         SyncSignal signal = md.getSignal();
-        boolean isLongPosition = (order.action() == Action.SELL);
+        double prevPrice = 0;
 
         while (!stop && signal.waitForSignal() && !stop) {
-            double lastPrice = md.getLastPrice();
-            double orderPrice = PriceUtils.fixPriceVariance(order.auxPrice());
-            double adjustedPrice = PriceUtils.fixPriceVariance(lastPrice - trailAmount);
+            double price = md.getLastPrice();
+            if (prevPrice == price)
+                continue;
 
-            log.info("Check: stop price {}, adjusted price {}, trail amount {}, last price {}",
-                    fmt(orderPrice), fmt(adjustedPrice), fmt(trailAmount), fmt(lastPrice));
+            double newStopPrice = getTrailStopPrice(price);
+            maybeUpdateStopPrice(newStopPrice);
 
-            if (isLongPosition && adjustedPrice > orderPrice) {
-                log.info("Adjusting long stop price from {} to {} using trail amount {} and last price {}",
-                        fmt(orderPrice), fmt(adjustedPrice), fmt(trailAmount), fmt(lastPrice));
-
-                order.auxPrice(adjustedPrice);
-                ib.placeOrModifyOrder(contract, order, null);
-            }
-
-            if (!isLongPosition && adjustedPrice < orderPrice) {
-                log.info("Adjusting short stop price from {} to {} using trail amount {} and last price {}",
-                        fmt(orderPrice), fmt(adjustedPrice), fmt(trailAmount), fmt(lastPrice));
-
-                order.auxPrice(adjustedPrice);
-                ib.placeOrModifyOrder(contract, order, null);
-            }
+            prevPrice = price;
         }
 
         log.info("Exit");
     }
 
+    public void maybeUpdateStopPrice(double proposedStopPrice) {
+        double lastPrice = md.getLastPrice();
+        double orderPrice = fixPriceVariance(order.auxPrice());
+        boolean update = false;
+
+        log.info("Check: {} order stop price {}, proposed stop price {}, trail amount {}, last price {}",
+                longPosition ? "long" : "short",
+                fmt(orderPrice), fmt(proposedStopPrice), fmt(trailAmount), fmt(lastPrice));
+
+        if (longPosition && proposedStopPrice > orderPrice) {
+            update = true;
+        }
+
+        if (!longPosition && proposedStopPrice < orderPrice) {
+            update = true;
+        }
+
+        if (update) {
+            log.info("Adjusting {} stop price from {} to {} using trail amount {} and last price {}",
+                    longPosition ? "long" : "short",
+                    fmt(orderPrice), fmt(proposedStopPrice), fmt(trailAmount), fmt(lastPrice));
+
+            order.auxPrice(proposedStopPrice);
+            ib.placeOrModifyOrder(contract, order, null);
+        }
+    }
+
+    private double getTrailStopPrice(double lastPrice) {
+        double trailStop;
+        if (longPosition) {
+            trailStop = lastPrice - trailAmount;
+        } else {
+            trailStop = lastPrice + trailAmount;
+        }
+        return fixPriceVariance(trailStop);
+    }
+
+    public double getTrailAmount() {
+        return trailAmount;
+    }
+
+    public void setTrailAmount(double trailAmount) {
+        checkArgument(trailAmount > 0, "trailAmount cannot be less zero: %s", trailAmount);
+        this.trailAmount = trailAmount;
+
+        double price = md.getLastPrice();
+        double newStopPrice = getTrailStopPrice(price);
+        maybeUpdateStopPrice(newStopPrice);
+    }
 }

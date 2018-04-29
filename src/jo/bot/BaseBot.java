@@ -17,9 +17,10 @@ import jo.handler.OrderStatusInput;
 import jo.model.MarketData;
 import jo.position.PositionSizeStrategy;
 import jo.util.PnLLogger;
+import jo.util.TradeRef;
 
 public abstract class BaseBot implements Bot {
-    protected final Logger log = LogManager.getLogger(this.getClass());
+    protected Logger log = LogManager.getLogger(this.getClass());
     protected final Logger pnlLog = LogManager.getLogger("PNL");
     protected final Contract contract;
     protected final PositionSizeStrategy positionSize;
@@ -118,6 +119,13 @@ public abstract class BaseBot implements Bot {
         if (thread != null) {
             thread.interrupt();
         }
+    }
+
+    protected String updateTradeRef() {
+        String prefix = this.getClass().getSimpleName() + "#" + contract.symbol();
+        String tradeRef = TradeRef.create(prefix);
+        this.log = LogManager.getLogger(tradeRef);
+        return tradeRef;
     }
 
     protected class OpenPositionOrderHandler extends OrderHandlerAdapter {

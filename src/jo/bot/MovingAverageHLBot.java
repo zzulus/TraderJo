@@ -6,9 +6,7 @@ import static jo.util.PriceUtils.fixPriceVariance;
 import java.util.concurrent.TimeUnit;
 
 import com.ib.client.Contract;
-import com.ib.client.Order;
 import com.ib.client.OrderStatus;
-import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
@@ -27,10 +25,11 @@ import jo.tech.PctChange;
 import jo.tech.StopTrail;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
+import jo.util.Orders;
 import jo.util.SyncSignal;
 
 public class MovingAverageHLBot extends BaseBot {
-    private final boolean whatIf = false;
+    private boolean whatIf = false;
     private SyncSignal signal;
     private SyncSignal priceSignal;
     private Bars maBars;
@@ -154,11 +153,11 @@ public class MovingAverageHLBot extends BaseBot {
         }
     }
 
-    private int skipBarSize = 0;
+    private int skipBarIdx = 0;
 
     private void mayBeOpenPosition() {
         int barSize = maBars.getSize();
-        if (barSize < period + 3 || barSize == skipBarSize)
+        if (barSize < period + 3 || barSize == skipBarIdx)
             return;
 
         double lastPrice = md.getLastPrice();
@@ -215,11 +214,13 @@ public class MovingAverageHLBot extends BaseBot {
         final double trailAmount = fixPriceVariance(trailAmountStrategy.getTrailAmount(md) * 1.7);
 
         if (openLong) {
+            updateTradeRef();
+
             final double openPrice = Math.min(lastPrice, askPrice - 0.01); //lastPrice;
             final double stopLossTrail = openPrice - trailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.max(stopLossTrail, stopLossEdge));
-            final double totalQuantity = positionSize.getPositionSize(md);
+            final int totalQuantity = positionSize.getPositionSize(md);
 
             log.info("Bars HL: {}, {}, {} <- last ", fmt(barHigh2 - barLow2), fmt(barHigh1 - barLow1), fmt(barHigh0 - barLow0));
             log.info("Bar Distance barLow - maH: {}, {}, {} <- last ", fmt(barLow2 - maValH2), fmt(barLow1 - maValH1), fmt(barLow0 - maValH0));
@@ -229,40 +230,21 @@ public class MovingAverageHLBot extends BaseBot {
             log.info("Price: last {}, bid {}, ask {}, ask-bid {}", fmt(md.getLastPrice()), fmt(bidPrice), fmt(askPrice), fmt(askPrice - bidPrice));
             log.info("Go Long: open {}, stop loss {}, trail amount {}, edge {}", fmt(openPrice), fmt(stopLossPrice), fmt(trailAmount), fmt(maEdgeVal0));
 
-            openOrder = new Order();
-            openOrder.orderId(ib.getNextOrderId());
-            openOrder.action(Action.BUY);
-            openOrder.orderType(OrderType.LMT);
-            openOrder.totalQuantity(totalQuantity);
-            openOrder.lmtPrice(openPrice);
-            openOrder.transmit(false);
-
-            mocOrder = new Order();
-            mocOrder.orderId(ib.getNextOrderId());
-            mocOrder.action(Action.SELL);
-            mocOrder.orderType(OrderType.MOC);
-            mocOrder.totalQuantity(totalQuantity);
-            mocOrder.parentId(openOrder.orderId());
-            mocOrder.transmit(false);
-
-            closeOrder = new Order();
-            closeOrder.orderId(ib.getNextOrderId());
-            closeOrder.action(Action.SELL);
-            closeOrder.totalQuantity(totalQuantity);
-            closeOrder.auxPrice(stopLossPrice);
-            closeOrder.parentId(openOrder.orderId());
-            closeOrder.orderType(OrderType.STP);
-            closeOrder.transmit(true);
+            openOrder = Orders.newLimitBuyOrder(ib, totalQuantity, openPrice);
+            mocOrder = Orders.newMocSellOrder(ib, totalQuantity, openOrder.orderId());
+            closeOrder = Orders.newStopSellOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
 
             placeOrders = true;
         }
 
         if (openShort) {
+            updateTradeRef();
+
             final double openPrice = Math.max(lastPrice, bidPrice + 0.01); //lastPrice;
             final double stopLossTrail = openPrice + trailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.min(stopLossTrail, stopLossEdge));
-            final double totalQuantity = positionSize.getPositionSize(md);
+            final int totalQuantity = positionSize.getPositionSize(md);
 
             log.info("Bar Distance maL - barHigh: {}, {}, {} <- last ", fmt(maValL2 - barHigh2), fmt(maValL1 - barHigh1), fmt(maValL0 - barHigh0));
             log.info("Bar Distance edge - barHigh: {}, {}, {} <- last ", fmt(maEdgeVal2 - barHigh2), fmt(maEdgeVal1 - barHigh1), fmt(maEdgeVal0 - barHigh0));
@@ -272,30 +254,9 @@ public class MovingAverageHLBot extends BaseBot {
             log.info("Price: last {}, bid {}, ask {}, ask-bid {}", fmt(md.getLastPrice()), fmt(bidPrice), fmt(askPrice), fmt(askPrice - bidPrice));
             log.info("Go Short: open {}, stop loss {}, trail amount {}, edge {}", fmt(openPrice), fmt(stopLossPrice), fmt(trailAmount), fmt(maEdgeVal0));
 
-            openOrder = new Order();
-            openOrder.orderId(ib.getNextOrderId());
-            openOrder.action(Action.SELL);
-            openOrder.orderType(OrderType.LMT);
-            openOrder.totalQuantity(totalQuantity);
-            openOrder.lmtPrice(openPrice);
-            openOrder.transmit(false);
-
-            mocOrder = new Order();
-            mocOrder.orderId(ib.getNextOrderId());
-            mocOrder.action(Action.BUY);
-            mocOrder.orderType(OrderType.MOC);
-            mocOrder.totalQuantity(totalQuantity);
-            mocOrder.parentId(openOrder.orderId());
-            mocOrder.transmit(false);
-
-            closeOrder = new Order();
-            closeOrder.orderId(ib.getNextOrderId());
-            closeOrder.action(Action.BUY);
-            closeOrder.totalQuantity(totalQuantity);
-            closeOrder.auxPrice(stopLossPrice);
-            closeOrder.parentId(openOrder.orderId());
-            closeOrder.orderType(OrderType.STP);
-            closeOrder.transmit(true);
+            openOrder = Orders.newLimitSellOrder(ib, totalQuantity, openPrice);
+            mocOrder = Orders.newMocBuyOrder(ib, totalQuantity, openOrder.orderId());
+            closeOrder = Orders.newStopBuyOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
 
             placeOrders = true;
         }
@@ -303,6 +264,10 @@ public class MovingAverageHLBot extends BaseBot {
         if (placeOrders) {
             openOrderStatus = OrderStatus.PendingSubmit;
             closeOrderStatus = OrderStatus.PendingSubmit;
+
+            openOrder.transmit(false);
+            mocOrder.transmit(false);
+            closeOrder.transmit(true);
 
             if (whatIf) {
                 openOrder.whatIf(true);
@@ -319,38 +284,23 @@ public class MovingAverageHLBot extends BaseBot {
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
 
             openOrder.transmit(true);
-            mocOrder.transmit(true);
-            closeOrder.transmit(true);
 
             stopTrail = new StopTrail(ib, contract, closeOrder, md, trailAmount);
             cancelOpenOrderAfter = System.currentTimeMillis() + cancelOpenOrderWaitInterval;
         } else {
-            skipBarSize = barSize;
+            skipBarIdx = barSize;
         }
     }
 
     private void mayBeUpdateProfitTaker() {
         double edgeVal = fixPriceVariance(maEdge0.get());
-        double oldPrice = closeOrder.auxPrice();
-        boolean update = false;
 
-        // long
-        if (closeOrder.action() == Action.SELL && oldPrice < edgeVal) {
-            log.info("mayBeUpdateProfitTaker: we are long, updating to edge");
-            update = true;
-        }
-
-        // short
-        if (closeOrder.action() == Action.BUY && oldPrice > edgeVal) {
-            log.info("mayBeUpdateProfitTaker: we are short, updating to edge");
-            update = true;
-        }
-
-        if (update) {
-            closeOrder.auxPrice(edgeVal);
-            log.info("mayBeUpdateProfitTaker: adjusting from {} to {}", oldPrice, edgeVal);
-            ib.placeOrModifyOrder(contract, closeOrder, null);
-        }
+        boolean longPosition = closeOrder.action() == Action.SELL;
+        log.info("mayBeUpdateProfitTaker {}: check if can update from {} to new edge {}",
+                longPosition ? "long" : "short",
+                fmt(closeOrder.auxPrice()),
+                fmt(edgeVal));
+        stopTrail.maybeUpdateStopPrice(edgeVal);
     }
 
     @Override

@@ -37,8 +37,7 @@ import jo.recording.event.TickSizeEvent;
 import jo.recording.event.TickStringEvent;
 
 public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandler, IErrorHandler, IDeepMktDataHandler {
-    private static final Logger log = LogManager.getLogger(MarketDataRecorder.class);
-    private OutputStream out;
+    private static final Logger log = LogManager.getLogger(MarketDataRecorder.class);    
     private PrintWriter ps;
     private BlockingQueue<AbstractEvent> q = new ArrayBlockingQueue<>(64000);
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -95,7 +94,7 @@ public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandl
         File logFile = new File(dir, fileName);
 
         try {
-            out = new FileOutputStream(logFile, true);
+            OutputStream out = new FileOutputStream(logFile, true);
             ps = new PrintWriter(out);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
