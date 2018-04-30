@@ -5,20 +5,18 @@
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
         </Console>
 
-        <RollingFile name="File" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd-HH}-%i.log">
+        <RollingFile name="File" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd-HH}.log">
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
-            <DefaultRolloverStrategy fileIndex="nomax" />
         </RollingFile>
 
-        <RollingFile name="AppFile" filePattern="log/app/app-%d{yyyy-MM-dd-HH}-%i.log">
+        <RollingFile name="AppFile" filePattern="log/app/app-%d{yyyy-MM-dd-HH}.log">
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
-            <DefaultRolloverStrategy fileIndex="nomax" />
         </RollingFile>
 
 
@@ -27,7 +25,6 @@
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
-            <DefaultRolloverStrategy fileIndex="nomax" />
         </RollingFile>
 
     </Appenders>

@@ -58,7 +58,6 @@ public class MovingAverageHLBot extends BaseBot {
     private long cancelOpenOrderAfter;
 
     private OpenPositionOrderHandler openPositionOrderHandler = new OpenPositionOrderHandler();
-    private MocOrderHandler mocOrderHandler = new MocOrderHandler();
     private ClosePositionOrderHandler closePositionOrderHandler = new ClosePositionOrderHandler();
 
     private PctChange changeH0;
@@ -231,7 +230,6 @@ public class MovingAverageHLBot extends BaseBot {
             log.info("Go Long: open {}, stop loss {}, trail amount {}, edge {}", fmt(openPrice), fmt(stopLossPrice), fmt(trailAmount), fmt(maEdgeVal0));
 
             openOrder = Orders.newLimitBuyOrder(ib, totalQuantity, openPrice);
-            mocOrder = Orders.newMocSellOrder(ib, totalQuantity, openOrder.orderId());
             closeOrder = Orders.newStopSellOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
 
             placeOrders = true;
@@ -255,7 +253,6 @@ public class MovingAverageHLBot extends BaseBot {
             log.info("Go Short: open {}, stop loss {}, trail amount {}, edge {}", fmt(openPrice), fmt(stopLossPrice), fmt(trailAmount), fmt(maEdgeVal0));
 
             openOrder = Orders.newLimitSellOrder(ib, totalQuantity, openPrice);
-            mocOrder = Orders.newMocBuyOrder(ib, totalQuantity, openOrder.orderId());
             closeOrder = Orders.newStopBuyOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
 
             placeOrders = true;
@@ -266,21 +263,17 @@ public class MovingAverageHLBot extends BaseBot {
             closeOrderStatus = OrderStatus.PendingSubmit;
 
             openOrder.transmit(false);
-            mocOrder.transmit(false);
             closeOrder.transmit(true);
 
             if (whatIf) {
                 openOrder.whatIf(true);
-                mocOrder.whatIf(true);
                 closeOrder.whatIf(true);
 
                 openOrder.transmit(true);
-                mocOrder.transmit(true);
                 closeOrder.transmit(true);
             }
 
-            ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
-            ib.placeOrModifyOrder(contract, mocOrder, mocOrderHandler);
+            ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);            
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
 
             openOrder.transmit(true);
@@ -294,12 +287,13 @@ public class MovingAverageHLBot extends BaseBot {
 
     private void mayBeUpdateProfitTaker() {
         double edgeVal = fixPriceVariance(maEdge0.get());
-
         boolean longPosition = closeOrder.action() == Action.SELL;
-        log.info("mayBeUpdateProfitTaker {}: check if can update from {} to new edge {}",
+        
+        log.info("mayBeUpdateProfitTaker {}: check if should update from {} to new edge {}",
                 longPosition ? "long" : "short",
                 fmt(closeOrder.auxPrice()),
                 fmt(edgeVal));
+        
         stopTrail.maybeUpdateStopPrice(edgeVal);
     }
 

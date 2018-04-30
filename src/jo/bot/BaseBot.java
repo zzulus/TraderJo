@@ -20,10 +20,9 @@ import jo.util.PnLLogger;
 import jo.util.TradeRef;
 
 public abstract class BaseBot implements Bot {
-    protected Logger log = LogManager.getLogger(this.getClass());
-    protected final Logger pnlLog = LogManager.getLogger("PNL");
-    protected final Contract contract;
-    protected final PositionSizeStrategy positionSize;
+    protected Logger log = LogManager.getLogger(this.getClass());    
+    protected Contract contract;
+    protected PositionSizeStrategy positionSize;
     protected MarketData md;
 
     protected Filter positionFilter;
@@ -33,8 +32,7 @@ public abstract class BaseBot implements Bot {
     protected int currentPosition = 0;
 
     protected Order openOrder;
-    protected Order closeOrder;
-    protected Order mocOrder;
+    protected Order closeOrder;    
 
     protected OrderStatus openOrderStatus = null;
     protected OrderStatus closeOrderStatus = null;

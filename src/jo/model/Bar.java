@@ -3,14 +3,13 @@
 
 package jo.model;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jo.util.Formats;
 
 public class Bar {
-    private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyyMMdd HH:mm:ss"); // format for historical query
-
     private long time;
     private double high;
     private double low;
@@ -39,6 +38,7 @@ public class Bar {
         return time;
     }
 
+    @JsonIgnore
     public Date getTimeAsDate() {
         return new Date(this.time * 1000);
     }
@@ -105,11 +105,6 @@ public class Bar {
 
     public String formattedTime() {
         return Formats.fmtDate(this.time * 1000);
-    }
-
-    /** Format for query. */
-    public static String format(long ms) {
-        return FORMAT.format(new Date(ms));
     }
 
     @Override

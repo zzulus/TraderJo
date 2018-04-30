@@ -190,14 +190,6 @@ public class DonchianBot extends BaseBot {
             openOrder.lmtPrice(openPrice);
             openOrder.transmit(false);
 
-            mocOrder = new Order();
-            mocOrder.orderId(ib.getNextOrderId());
-            mocOrder.action(Action.SELL);
-            mocOrder.orderType(OrderType.MOC);
-            mocOrder.totalQuantity(totalQuantity);
-            mocOrder.parentId(openOrder.orderId());
-            mocOrder.transmit(false);
-
             closeOrder = new Order();
             closeOrder.orderId(ib.getNextOrderId());
             closeOrder.action(Action.SELL);
@@ -229,14 +221,6 @@ public class DonchianBot extends BaseBot {
             openOrder.lmtPrice(openPrice);
             openOrder.transmit(false);
 
-            mocOrder = new Order();
-            mocOrder.orderId(ib.getNextOrderId());
-            mocOrder.action(Action.BUY);
-            mocOrder.orderType(OrderType.MOC);
-            mocOrder.totalQuantity(totalQuantity);
-            mocOrder.parentId(openOrder.orderId());
-            mocOrder.transmit(false);
-
             closeOrder = new Order();
             closeOrder.orderId(ib.getNextOrderId());
             closeOrder.action(Action.BUY);
@@ -254,11 +238,9 @@ public class DonchianBot extends BaseBot {
             closeOrderStatus = OrderStatus.PendingSubmit;
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
-            ib.placeOrModifyOrder(contract, mocOrder, mocOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
 
             openOrder.transmit(true);
-            mocOrder.transmit(true);
             closeOrder.transmit(true);
 
             stopTrail = new StopTrail(ib, contract, closeOrder, md, trailAmount);

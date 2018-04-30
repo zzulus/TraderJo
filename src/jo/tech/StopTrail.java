@@ -61,7 +61,7 @@ public class StopTrail {
             if (prevPrice == price)
                 continue;
 
-            double newStopPrice = getTrailStopPrice(price);
+            double newStopPrice = calculateTrailStopPrice(price);
             maybeUpdateStopPrice(newStopPrice);
 
             prevPrice = price;
@@ -97,7 +97,7 @@ public class StopTrail {
         }
     }
 
-    private double getTrailStopPrice(double lastPrice) {
+    private double calculateTrailStopPrice(double lastPrice) {
         double trailStop;
         if (longPosition) {
             trailStop = lastPrice - trailAmount;
@@ -111,12 +111,15 @@ public class StopTrail {
         return trailAmount;
     }
 
-    public void setTrailAmount(double trailAmount) {
-        checkArgument(trailAmount > 0, "trailAmount cannot be less zero: %s", trailAmount);
-        this.trailAmount = trailAmount;
+    public void setTrailAmount(double newTrailAmount) {
+        log.info("Updating trailAmount: from {} to {}",
+                fmt(this.trailAmount), fmt(newTrailAmount));
+
+        checkArgument(newTrailAmount > 0, "trailAmount cannot be less zero: %s", newTrailAmount);
+        this.trailAmount = newTrailAmount;
 
         double price = md.getLastPrice();
-        double newStopPrice = getTrailStopPrice(price);
+        double newStopPrice = calculateTrailStopPrice(price);
         maybeUpdateStopPrice(newStopPrice);
     }
 }
