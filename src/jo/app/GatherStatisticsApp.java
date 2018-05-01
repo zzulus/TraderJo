@@ -59,6 +59,8 @@ public class GatherStatisticsApp {
         System.out.println(contract.symbol());
 
         File file = new File("D:\\autobot\\TraderJo\\historical\\2018-03-26-1m-90d", symbol + ".log");
+        if (file.exists() && file.length() > 0)
+            return;
 
         AsyncVal<String> ex = new AsyncVal<>();
 
@@ -67,6 +69,7 @@ public class GatherStatisticsApp {
                 @Override
                 public void historicalDataEnd() {
                     ex.set(symbol);
+                    System.out.println(symbol + " end");
                 }
 
                 @Override

@@ -28,6 +28,7 @@ public class StopTrail {
 
     private volatile boolean stop;
     private Thread thread;
+    private long startTimeMs;
 
     public StopTrail(IBroker ib, Contract contract, Order order, MarketData md, double trailAmount) {
         this.ib = ib;
@@ -40,6 +41,7 @@ public class StopTrail {
 
     public void start() {
         log.info("Start");
+        this.startTimeMs = System.currentTimeMillis();
         thread = AsyncExec.startThread("StopTrail#" + contract.symbol(), this::run);
     }
 
@@ -107,10 +109,6 @@ public class StopTrail {
         return fixPriceVariance(trailStop);
     }
 
-    public double getTrailAmount() {
-        return trailAmount;
-    }
-
     public void setTrailAmount(double newTrailAmount) {
         log.info("Updating trailAmount: from {} to {}",
                 fmt(this.trailAmount), fmt(newTrailAmount));
@@ -121,5 +119,13 @@ public class StopTrail {
         double price = md.getLastPrice();
         double newStopPrice = calculateTrailStopPrice(price);
         maybeUpdateStopPrice(newStopPrice);
+    }
+
+    public double getTrailAmount() {
+        return trailAmount;
+    }
+
+    public long getStartTimeMs() {
+        return startTimeMs;
     }
 }

@@ -15,7 +15,9 @@ import jo.filter.Filter;
 import jo.filter.NasdaqRegularHoursFilter;
 import jo.model.BarType;
 import jo.model.Bars;
+import jo.model.HistoricalStat;
 import jo.model.IApp;
+import jo.position.DollarValueTrailAmountStrategy;
 import jo.position.HighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
@@ -67,6 +69,7 @@ public class MovingAverageHLBot extends BaseBot {
     private PctChange changeL1;
     private PctChange changeL2;
     private ChangeList hlChanges;
+    private Bars realitimeBars;
 
     public MovingAverageHLBot(Contract contract, PositionSizeStrategy positionSize, TrailAmountStrategy trailAmountStrategy) {
         super(contract, positionSize);
@@ -87,6 +90,7 @@ public class MovingAverageHLBot extends BaseBot {
         this.signal = priceSignal;
 
         this.maBars = md.getBars(BarSize._1_min);
+        this.realitimeBars = md.getBars(BarSize._5_secs);
 
         this.maEdge0 = new EMA(maBars, BarType.CLOSE, period * 3, 0);
         this.maEdge1 = new EMA(maBars, BarType.CLOSE, period * 3, 1);
@@ -108,8 +112,14 @@ public class MovingAverageHLBot extends BaseBot {
 
         this.hlChanges = ChangeList.of(changeH0, changeH1, changeH2, changeL0, changeL1, changeL2);
 
-        this.trailAmountStrategy = new HighLowAvgTrailAmountStrategy(maBars, 180, 0);
-        //this.trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
+        HistoricalStat hs = HistoricalStat.tryLoad(contract.symbol());
+        if (hs != null) {
+            this.trailAmountStrategy = new DollarValueTrailAmountStrategy(hs.getHiLoAvg());
+        } else {
+            this.trailAmountStrategy = new HighLowAvgTrailAmountStrategy(maBars, 180, 0);
+            //this.trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
+        }
+
         this.trailAmountStrategy.init(ib, app);
     }
 
@@ -210,12 +220,13 @@ public class MovingAverageHLBot extends BaseBot {
                 && bidPrice < maEdgeVal0
                 && askPrice < maEdgeVal0;
 
-        final double trailAmount = fixPriceVariance(trailAmountStrategy.getTrailAmount(md) * 1.7);
+        final double trailAmount = fixPriceVariance(trailAmountStrategy.getTrailAmount(md) * 1.5);
 
         if (openLong) {
-            updateTradeRef();
+            String ref = updateTradeRef();
 
-            final double openPrice = Math.min(lastPrice, askPrice - 0.01); //lastPrice;
+            //final double openPrice = Math.min(lastPrice, askPrice - 0.01); //lastPrice;
+            final double openPrice = realitimeBars.getLastBar().getWap();
             final double stopLossTrail = openPrice - trailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.max(stopLossTrail, stopLossEdge));
@@ -231,14 +242,17 @@ public class MovingAverageHLBot extends BaseBot {
 
             openOrder = Orders.newLimitBuyOrder(ib, totalQuantity, openPrice);
             closeOrder = Orders.newStopSellOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
+            openOrder.orderRef(ref);
+            closeOrder.orderRef(ref);
 
             placeOrders = true;
         }
 
         if (openShort) {
-            updateTradeRef();
+            String ref = updateTradeRef();
 
-            final double openPrice = Math.max(lastPrice, bidPrice + 0.01); //lastPrice;
+            //final double openPrice = Math.max(lastPrice, bidPrice + 0.01); //lastPrice;
+            final double openPrice = realitimeBars.getLastBar().getWap();
             final double stopLossTrail = openPrice + trailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.min(stopLossTrail, stopLossEdge));
@@ -254,6 +268,8 @@ public class MovingAverageHLBot extends BaseBot {
 
             openOrder = Orders.newLimitSellOrder(ib, totalQuantity, openPrice);
             closeOrder = Orders.newStopBuyOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
+            openOrder.orderRef(ref);
+            closeOrder.orderRef(ref);
 
             placeOrders = true;
         }
@@ -273,7 +289,7 @@ public class MovingAverageHLBot extends BaseBot {
                 closeOrder.transmit(true);
             }
 
-            ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);            
+            ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
 
             openOrder.transmit(true);
@@ -288,12 +304,12 @@ public class MovingAverageHLBot extends BaseBot {
     private void mayBeUpdateProfitTaker() {
         double edgeVal = fixPriceVariance(maEdge0.get());
         boolean longPosition = closeOrder.action() == Action.SELL;
-        
+
         log.info("mayBeUpdateProfitTaker {}: check if should update from {} to new edge {}",
                 longPosition ? "long" : "short",
                 fmt(closeOrder.auxPrice()),
                 fmt(edgeVal));
-        
+
         stopTrail.maybeUpdateStopPrice(edgeVal);
     }
 

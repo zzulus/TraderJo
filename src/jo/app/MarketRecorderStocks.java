@@ -9,8 +9,8 @@ public class MarketRecorderStocks {
     public static final Set<String> TICKS_ONLY_ETFS = ImmutableSet.of(
             "SPY",
             "SQQQ",
-            //"TQQQ",
-            //"QQQ",
+            "TQQQ",
+            "QQQ",
             "EEM",
             "XLF",
             "VXX",
@@ -20,7 +20,6 @@ public class MarketRecorderStocks {
             "EFA",
             "IWM",
             "FXI",
-            "UWTI",
             "USO",
             "XLU",
             "AMLP",

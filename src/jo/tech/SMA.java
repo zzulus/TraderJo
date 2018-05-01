@@ -6,6 +6,7 @@ import com.tictactec.ta.lib.Core;
 import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 
+import gnu.trove.list.TDoubleList;
 import jo.collection.TDoubleNakedArrayList;
 import jo.model.BarType;
 import jo.model.Bars;
@@ -52,5 +53,32 @@ public class SMA {
         prevSize = size;
 
         return value;
+    }
+
+    public static double of(TDoubleList series) {
+        Core talib = new Core();
+        int size = series.size();
+        int end = size - 1;
+        double[] arr = series.toArray();
+        double[] out = new double[1];
+
+        MInteger beginOut = new MInteger();
+        MInteger lengthOut = new MInteger();
+
+        RetCode retCode = talib.sma(end, end, arr, size, beginOut, lengthOut, out);
+        if (retCode != RetCode.Success) {
+            throw new RuntimeException(retCode.toString());
+        }
+
+        return out[0];
+    }
+
+    public static void main(String[] args) {
+        TDoubleNakedArrayList series = new TDoubleNakedArrayList();
+        series.add(0);
+        series.add(1);
+        series.add(20);
+
+        System.out.println(of(series));
     }
 }
