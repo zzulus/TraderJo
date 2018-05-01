@@ -19,7 +19,6 @@ sourceSets {
 
 dependencies {
     compile files('lib/TwsApi-9.73.06.jar')
-    compile files('lib/TwsApi-9.73.06-src.jar')
     
     compile 'commons-io:commons-io:2.6'
     compile 'org.apache.commons:commons-lang3:3.7'
