@@ -12,11 +12,11 @@ import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 
 import gnu.trove.list.TDoubleList;
+import jo.controller.IApp;
 import jo.controller.IBroker;
 import jo.handler.IHistoricalDataHandler;
 import jo.model.Bar;
 import jo.model.Bars;
-import jo.model.IApp;
 import jo.model.MarketData;
 import jo.util.AsyncVal;
 import jo.util.Formats;

@@ -2,7 +2,7 @@ package jo.filter;
 
 import com.ib.client.Contract;
 
-import jo.model.IApp;
+import jo.controller.IApp;
 import jo.model.MarketData;
 
 public class NotCloseToDailyHighFilter implements Filter {

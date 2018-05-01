@@ -4,6 +4,8 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 
+import jo.model.OrderStatusInput;
+
 // ---------------------------------------- Live order handling ----------------------------------------
 /**
  * This interface is for downloading and receiving events for all live orders. Compare to IOrderHandler.

@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.util.concurrent.Uninterruptibles;
 
 import jo.bot.Bot;
+import jo.controller.IApp;
 import jo.controller.IBroker;
-import jo.model.IApp;
 
 public class StartBotsCommand implements AppCommand {
     private List<Bot> bots;

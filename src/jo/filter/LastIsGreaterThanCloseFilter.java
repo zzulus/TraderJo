@@ -4,7 +4,7 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
 import gnu.trove.list.TDoubleList;
-import jo.model.IApp;
+import jo.controller.IApp;
 import jo.model.MarketData;
 
 public class LastIsGreaterThanCloseFilter implements Filter {

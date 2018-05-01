@@ -3,6 +3,8 @@ package jo.handler;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 
+import jo.model.OrderStatusInput;
+
 // ---------------------------------------- Trading and Option Exercise ----------------------------------------
 /**
  * This interface is for receiving events for a specific order placed from the API. Compare to ILiveOrderHandler.

@@ -2,7 +2,7 @@ package jo.recording.event;
 
 import com.ib.client.OrderStatus;
 
-import jo.handler.OrderStatusInput;
+import jo.model.OrderStatusInput;
 
 public class OrderStatusEvent extends AbstractEvent {
     public static final String TYPE = "OrderStatus";

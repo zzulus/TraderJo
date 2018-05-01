@@ -92,8 +92,8 @@ import jo.handler.ITimeHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.handler.ITradeReportHandler;
 import jo.handler.OrderHandlerAdapter;
-import jo.handler.OrderStatusInput;
 import jo.model.Bar;
+import jo.model.OrderStatusInput;
 import jo.util.AdvisorUtil;
 import jo.util.ConcurrentHashSet;
 

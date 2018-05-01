@@ -4,8 +4,8 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
 import gnu.trove.list.TDoubleList;
+import jo.controller.IApp;
 import jo.model.Bars;
-import jo.model.IApp;
 import jo.model.MarketData;
 
 public class LastClosePositiveFilter implements Filter {

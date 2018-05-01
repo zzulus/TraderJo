@@ -21,8 +21,8 @@ import com.ib.client.TickType;
 import com.ib.client.Types.Action;
 
 import jo.handler.IOrderHandler;
-import jo.handler.OrderStatusInput;
 import jo.model.MarketData;
+import jo.model.OrderStatusInput;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.TickPriceEvent;
 

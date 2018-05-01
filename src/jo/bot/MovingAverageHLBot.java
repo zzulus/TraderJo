@@ -10,13 +10,13 @@ import com.ib.client.OrderStatus;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
+import jo.controller.IApp;
 import jo.controller.IBroker;
 import jo.filter.Filter;
 import jo.filter.NasdaqRegularHoursFilter;
 import jo.model.BarType;
 import jo.model.Bars;
-import jo.model.HistoricalStat;
-import jo.model.IApp;
+import jo.model.Stats;
 import jo.position.DollarValueTrailAmountStrategy;
 import jo.position.HighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
@@ -112,9 +112,9 @@ public class MovingAverageHLBot extends BaseBot {
 
         this.hlChanges = ChangeList.of(changeH0, changeH1, changeH2, changeL0, changeL1, changeL2);
 
-        HistoricalStat hs = HistoricalStat.tryLoad(contract.symbol());
+        Stats hs = Stats.tryLoad(contract.symbol());
         if (hs != null) {
-            this.trailAmountStrategy = new DollarValueTrailAmountStrategy(hs.getHiLoAvg());
+            this.trailAmountStrategy = new DollarValueTrailAmountStrategy(hs.getHiLo().getAvg());
         } else {
             this.trailAmountStrategy = new HighLowAvgTrailAmountStrategy(maBars, 180, 0);
             //this.trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);

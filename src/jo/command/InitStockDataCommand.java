@@ -8,8 +8,8 @@ import org.apache.logging.log4j.Logger;
 import com.ib.client.Contract;
 import com.ib.client.Types.WhatToShow;
 
+import jo.controller.IApp;
 import jo.controller.IBroker;
-import jo.model.IApp;
 import jo.model.MarketData;
 
 public class InitStockDataCommand implements AppCommand {

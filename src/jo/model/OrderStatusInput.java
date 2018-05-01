@@ -1,4 +1,4 @@
-package jo.handler;
+package jo.model;
 
 import com.ib.client.OrderStatus;
 

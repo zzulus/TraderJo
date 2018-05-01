@@ -7,8 +7,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.ib.client.Contract;
 
+import jo.controller.IApp;
 import jo.controller.IBroker;
-import jo.model.IApp;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.ErrorEvent;

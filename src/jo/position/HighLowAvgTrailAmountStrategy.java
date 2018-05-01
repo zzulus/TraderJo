@@ -5,9 +5,9 @@ import com.tictactec.ta.lib.Core;
 import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 
+import jo.controller.IApp;
 import jo.controller.IBroker;
 import jo.model.Bars;
-import jo.model.IApp;
 import jo.model.MarketData;
 
 // TODO Extract base class BarTrailAmountStrategy

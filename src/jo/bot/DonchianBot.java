@@ -11,12 +11,12 @@ import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
+import jo.controller.IApp;
 import jo.controller.IBroker;
 import jo.filter.Filter;
 import jo.filter.NasdaqRegularHoursFilter;
 import jo.model.BarType;
 import jo.model.Bars;
-import jo.model.IApp;
 import jo.position.PositionSizeStrategy;
 import jo.tech.Channel;
 import jo.tech.DonchianChannel;

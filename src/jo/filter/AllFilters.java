@@ -5,7 +5,7 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.ib.client.Contract;
 
-import jo.model.IApp;
+import jo.controller.IApp;
 import jo.model.MarketData;
 
 public class AllFilters implements Filter {

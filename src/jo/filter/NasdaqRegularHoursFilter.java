@@ -6,7 +6,7 @@ import java.time.temporal.ChronoField;
 
 import com.ib.client.Contract;
 
-import jo.model.IApp;
+import jo.controller.IApp;
 import jo.model.MarketData;
 
 // NASDAQ
