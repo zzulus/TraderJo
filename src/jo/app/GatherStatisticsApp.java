@@ -18,7 +18,6 @@ import com.ib.client.Types.WhatToShow;
 
 import jo.constant.Stocks;
 import jo.controller.IBService;
-import jo.controller.IBroker;
 import jo.handler.ConnectionHandlerAdapter;
 import jo.handler.IHistoricalDataHandler;
 import jo.model.Bar;
@@ -32,7 +31,7 @@ public class GatherStatisticsApp {
     public static void main(String[] args) throws InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         Set<String> stockSymbols = getSymbols();
-        IBroker ib = new IBService();
+        IBService ib = new IBService();
 
         AsyncVal<String> ex = new AsyncVal<>();
 
@@ -54,7 +53,7 @@ public class GatherStatisticsApp {
         System.exit(0);
     }
 
-    private static void gatherData(ObjectMapper objectMapper, IBroker ib, String symbol) {
+    private static void gatherData(ObjectMapper objectMapper, IBService ib, String symbol) {
         Contract contract = Stocks.smartOf(symbol);
         System.out.println(contract.symbol());
 

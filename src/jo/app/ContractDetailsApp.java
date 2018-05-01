@@ -7,13 +7,12 @@ import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 
 import jo.controller.IBService;
-import jo.controller.IBroker;
 import jo.handler.ConnectionHandlerAdapter;
 import jo.util.AsyncVal;
 
 public class ContractDetailsApp {
     public static void main(String[] args) throws InterruptedException, ExecutionException {
-        final IBroker ib = new IBService();
+        final IBService ib = new IBService();
         Contract contract = new Contract();
         contract.symbol("AMZN");
         contract.secType("STK");

@@ -35,7 +35,6 @@ import com.ib.client.Types.WhatToShow;
 
 import jo.constant.Stocks;
 import jo.controller.IBService;
-import jo.controller.IBroker;
 import jo.handler.ConnectionHandlerAdapter;
 import jo.handler.IHistoricalDataHandler;
 import jo.model.Bar;
@@ -47,7 +46,7 @@ public class CreateBarChartApp {
     private final static ChartTheme theme = StandardChartTheme.createDarknessTheme();
 
     public static void main(String[] args) throws Exception {
-        IBroker ib = new IBService();
+        IBService ib = new IBService();
         Contract contract = Stocks.smartOf("AAPL");
         BarSize barSize = BarSize._30_secs;
         int duration = 1;

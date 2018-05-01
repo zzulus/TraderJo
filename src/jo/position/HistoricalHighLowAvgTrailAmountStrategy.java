@@ -1,11 +1,8 @@
 package jo.position;
 
-import java.util.concurrent.TimeUnit;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.util.concurrent.Uninterruptibles;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
@@ -21,7 +18,6 @@ import jo.model.Bar;
 import jo.model.Bars;
 import jo.model.IApp;
 import jo.model.MarketData;
-import jo.util.AsyncExec;
 import jo.util.AsyncVal;
 import jo.util.Formats;
 

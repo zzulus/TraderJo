@@ -8,15 +8,13 @@ import org.apache.logging.log4j.Logger;
 
 import jo.constant.Stocks;
 import jo.controller.IBService;
-import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
 import jo.recording.MarketRecorder;
 import jo.recording.Recorder;
-import jo.recording.TradeRecorder;
 
 public class MarketRecorderApp {
     private static final Logger log = LogManager.getLogger(MarketRecorderApp.class);
-    private IBroker ib;
+    private IBService ib;
 
     public static void main(String[] args) {
         new MarketRecorderApp().start();
@@ -24,7 +22,6 @@ public class MarketRecorderApp {
 
     public void start() {
         List<Recorder> records = new ArrayList<>();
-        records.add(new TradeRecorder());
         records.add(new MarketRecorder(Stocks.AAPL(true)).withDeepBook(true));
         records.add(new MarketRecorder(Stocks.TQQQ(true)).withDeepBook(true));
         records.add(new MarketRecorder(Stocks.QQQ(true)).withDeepBook(true));
