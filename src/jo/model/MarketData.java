@@ -143,13 +143,13 @@ public class MarketData implements IRealTimeBarHandler, ITopMktDataHandler, IDee
     }
 
     @Override
-    public void tickPrice(TickType tickType, double price, int canAutoExecute) {
+    public void tickPrice(TickType tickType, double price) {
         if (price <= 0) {
             return;
         }
 
         if (isRecording) {
-            recorder.tickPrice(tickType, price, canAutoExecute);
+            recorder.tickPrice(tickType, price);
         }
 
         switch (tickType) {

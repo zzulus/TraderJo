@@ -135,8 +135,8 @@ public class MarketRecorder implements Recorder {
     private class TopMktDataHandler implements ITopMktDataHandler {
 
         @Override
-        public void tickPrice(TickType tickType, double price, int canAutoExecute) {
-            q.add(new TickPriceEvent(tickType, price, canAutoExecute));
+        public void tickPrice(TickType tickType, double price) {
+            q.add(new TickPriceEvent(tickType, price));
         }
 
         @Override

@@ -20,8 +20,10 @@ import org.apache.logging.log4j.Logger;
 
 import com.ib.client.CommissionReport;
 import com.ib.client.Contract;
+import com.ib.client.ContractDescription;
 import com.ib.client.ContractDetails;
 import com.ib.client.DeltaNeutralContract;
+import com.ib.client.DepthMktDataDescription;
 import com.ib.client.EClientErrors;
 import com.ib.client.EClientSocket;
 import com.ib.client.EJavaSignal;
@@ -30,12 +32,20 @@ import com.ib.client.EReaderSignal;
 import com.ib.client.EWrapper;
 import com.ib.client.Execution;
 import com.ib.client.ExecutionFilter;
+import com.ib.client.FamilyCode;
+import com.ib.client.HistogramEntry;
+import com.ib.client.HistoricalTick;
+import com.ib.client.HistoricalTickBidAsk;
+import com.ib.client.HistoricalTickLast;
+import com.ib.client.NewsProvider;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
+import com.ib.client.PriceIncrement;
 import com.ib.client.ScannerSubscription;
 import com.ib.client.SoftDollarTier;
 import com.ib.client.TagValue;
+import com.ib.client.TickAttr;
 import com.ib.client.TickType;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DeepSide;
@@ -64,16 +74,20 @@ import jo.handler.IDeepMktDataHandler;
 import jo.handler.IEfpHandler;
 import jo.handler.IFundamentalsHandler;
 import jo.handler.IHistoricalDataHandler;
+import jo.handler.IHistoricalTickHandler;
 import jo.handler.ILiveOrderHandler;
 import jo.handler.IMarketValueSummaryHandler;
 import jo.handler.IOptHandler;
 import jo.handler.IOrderHandler;
+import jo.handler.IPnLHandler;
+import jo.handler.IPnLSingleHandler;
 import jo.handler.IPositionHandler;
 import jo.handler.IPositionMultiHandler;
 import jo.handler.IRealTimeBarHandler;
 import jo.handler.IScannerHandler;
 import jo.handler.ISecDefOptParamsReqHandler;
 import jo.handler.ISoftDollarTiersReqHandler;
+import jo.handler.ITickByTickDataHandler;
 import jo.handler.ITimeHandler;
 import jo.handler.ITopMktDataHandler;
 import jo.handler.ITradeReportHandler;
@@ -89,6 +103,7 @@ public class IBService implements IBroker {
     // TODO WTF is that?
     private interface IInternalContractDetailsHandler {
         void contractDetails(ContractDetails data);
+
         void contractDetailsEnd();
     }
 
@@ -122,6 +137,12 @@ public class IBService implements IBroker {
     private final Map<Integer, IAccountUpdateMultiHandler> accountUpdateMultiMap = new ConcurrentHashMap<>();
     private final Map<Integer, ISecDefOptParamsReqHandler> secDefOptParamsReqMap = new ConcurrentHashMap<>();
     private final Map<Integer, ISoftDollarTiersReqHandler> softDollarTiersReqMap = new ConcurrentHashMap<>();
+
+    private final Map<Integer, IPnLHandler> pnlMap = new ConcurrentHashMap<>();
+    private final Map<Integer, IPnLSingleHandler> pnlSingleMap = new ConcurrentHashMap<>();
+    private final Map<Integer, IHistoricalTickHandler> historicalTicksMap = new ConcurrentHashMap<>();
+    private final Map<Integer, ITickByTickDataHandler> tickByTickDataMap = new ConcurrentHashMap<>();
+
     private final Set<IPositionHandler> positionHandlers = new ConcurrentHashSet<>();
     private final Set<IAccountHandler> accountHandlers = new ConcurrentHashSet<>();
     private final Set<ILiveOrderHandler> liveOrderHandlers = new ConcurrentHashSet<>();
@@ -304,7 +325,7 @@ public class IBService implements IBroker {
 
         int reqId = getNextRequestId();
         topMktDataMap.put(reqId, handler);
-        client.reqMktData(reqId, contract, genericTickList, snapshot, null);
+        client.reqMktData(reqId, contract, genericTickList, snapshot, false, Collections.<TagValue>emptyList());
     }
 
     @Override
@@ -315,7 +336,7 @@ public class IBService implements IBroker {
         int reqId = getNextRequestId();
         topMktDataMap.put(reqId, handler);
         optionCompMap.put(reqId, handler);
-        client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
+        client.reqMktData(reqId, contract, genericTickList, snapshot, false, Collections.<TagValue>emptyList());
     }
 
     @Override
@@ -326,7 +347,7 @@ public class IBService implements IBroker {
         int reqId = getNextRequestId();
         topMktDataMap.put(reqId, handler);
         efpMap.put(reqId, handler);
-        client.reqMktData(reqId, contract, genericTickList, snapshot, Collections.<TagValue>emptyList());
+        client.reqMktData(reqId, contract, genericTickList, snapshot, false, Collections.<TagValue>emptyList());
     }
 
     @Override
@@ -583,7 +604,15 @@ public class IBService implements IBroker {
         int reqId = getNextRequestId();
         historicalDataMap.put(reqId, handler);
         String durationStr = duration + " " + durationUnit.toString().charAt(0);
-        client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(), rthOnly ? 1 : 0, 2, Collections.emptyList());
+        // int tickerId, Contract contract, String endDateTime, String durationStr, String barSizeSetting, String whatToShow, int useRTH, int formatDate, boolean keepUpToDate, List<TagValue> chartOptions
+
+        boolean keepUpToDate = false;
+        int formatDate = 2; // magic number
+        client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(),
+                rthOnly ? 1 : 0,
+                formatDate,
+                keepUpToDate,
+                Collections.emptyList());
     }
 
     @Override
@@ -721,6 +750,73 @@ public class IBService implements IBroker {
 
         this.softDollarTiersReqMap.put(reqId, handler);
         this.client.reqSoftDollarTiers(reqId);
+    }
+
+    public void reqPnL(String account, String modelCode, IPnLHandler handler) {
+        if (!checkConnection())
+            return;
+
+        int reqId = getNextRequestId();
+        pnlMap.put(reqId, handler);
+        client.reqPnL(reqId, account, modelCode);
+    }
+
+    public void cancelPnL(IPnLHandler handler) {
+        if (!checkConnection())
+            return;
+
+        Integer reqId = getAndRemoveKey(pnlMap, handler);
+        if (reqId != null) {
+            client.cancelPnL(reqId);
+        }
+    }
+
+    public void reqPnLSingle(String account, String modelCode, int conId, IPnLSingleHandler handler) {
+        if (!checkConnection())
+            return;
+
+        int reqId = getNextRequestId();
+        pnlSingleMap.put(reqId, handler);
+        client.reqPnLSingle(reqId, account, modelCode, conId);
+    }
+
+    public void cancelPnLSingle(IPnLSingleHandler handler) {
+        if (!checkConnection())
+            return;
+
+        Integer reqId = getAndRemoveKey(pnlSingleMap, handler);
+        if (reqId != null) {
+            client.cancelPnLSingle(reqId);
+        }
+    }
+
+    public void reqHistoricalTicks(Contract contract, String startDateTime,
+            String endDateTime, int numberOfTicks, String whatToShow, int useRth, boolean ignoreSize, IHistoricalTickHandler handler) {
+        if (!checkConnection())
+            return;
+
+        int reqId = getNextRequestId();
+        historicalTicksMap.put(reqId, handler);
+        client.reqHistoricalTicks(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow, useRth, ignoreSize, Collections.emptyList());
+    }
+
+    public void reqTickByTickData(Contract contract, String tickType, ITickByTickDataHandler handler) {
+        if (!checkConnection())
+            return;
+
+        int reqId = getNextRequestId();
+        tickByTickDataMap.put(reqId, handler);
+        client.reqTickByTickData(reqId, contract, tickType);
+    }
+
+    public void cancelTickByTickData(ITickByTickDataHandler handler) {
+        if (!checkConnection())
+            return;
+
+        Integer reqId = getAndRemoveKey(tickByTickDataMap, handler);
+        if (reqId != null) {
+            client.cancelTickByTickData(reqId);
+        }
     }
 
     public EClientSocket getClient() {
@@ -935,10 +1031,10 @@ public class IBService implements IBroker {
         }
 
         @Override
-        public void tickPrice(int reqId, int tickType, double price, int canAutoExecute) {
+        public void tickPrice(int reqId, int tickType, double price, TickAttr attrib) {
             ITopMktDataHandler handler = topMktDataMap.get(reqId);
             if (handler != null) {
-                handler.tickPrice(TickType.get(tickType), price, canAutoExecute);
+                handler.tickPrice(TickType.get(tickType), price);
             }
         }
 
@@ -946,7 +1042,7 @@ public class IBService implements IBroker {
         public void tickGeneric(int reqId, int tickType, double value) {
             ITopMktDataHandler handler = topMktDataMap.get(reqId);
             if (handler != null) {
-                handler.tickPrice(TickType.get(tickType), value, 0);
+                handler.tickPrice(TickType.get(tickType), value);
             }
         }
 
@@ -1072,10 +1168,11 @@ public class IBService implements IBroker {
         }
 
         @Override
-        public void orderStatus(int orderId, String statusVal, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+        public void orderStatus(int orderId, String statusVal, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld,
+                double mktCapPrice) {
             OrderStatus status = OrderStatus.valueOf(statusVal);
             IOrderHandler handler = orderHandlers.get(orderId);
-            
+
             OrderStatusInput input = new OrderStatusInput();
             input.setOrderId(orderId);
             input.setStatus(status);
@@ -1088,7 +1185,6 @@ public class IBService implements IBroker {
             input.setClientId(clientId);
             input.setWhyHeld(whyHeld);
 
-            
             if (handler != null) {
                 handler.orderStatus(input);
             }
@@ -1120,9 +1216,11 @@ public class IBService implements IBroker {
         }
 
         @Override
-        public void historicalData(int reqId, String date, double open, double high, double low, double close, int volume, int count, double wap, boolean hasGaps) {
+        public void historicalData(int reqId, com.ib.client.Bar ibBar) {
             IHistoricalDataHandler handler = historicalDataMap.get(reqId);
             if (handler != null) {
+                String date = ibBar.time();
+
                 if (date.startsWith("finished")) {
                     handler.historicalDataEnd();
                 } else {
@@ -1131,13 +1229,22 @@ public class IBService implements IBroker {
                         int year = Integer.parseInt(date.substring(0, 4));
                         int month = Integer.parseInt(date.substring(4, 6));
                         int day = Integer.parseInt(date.substring(6));
-                        longDate = new GregorianCalendar(year - 1900, month - 1, day).getTimeInMillis() / 1000;
+                        longDate = new GregorianCalendar(year, month - 1, day).getTimeInMillis() / 1000;
                     } else {
                         longDate = Long.parseLong(date);
                     }
-                    Bar bar = new Bar(longDate, high, low, open, close, wap, volume, count);
-                    handler.historicalData(bar, hasGaps);
+
+                    Bar bar = new Bar(longDate, ibBar.high(), ibBar.low(), ibBar.open(), ibBar.close(), ibBar.wap(), ibBar.volume(), ibBar.count());
+                    handler.historicalData(bar);
                 }
+            }
+        }
+
+        @Override
+        public void historicalDataEnd(int reqId, String startDateStr, String endDateStr) {
+            IHistoricalDataHandler handler = historicalDataMap.get(reqId);
+            if (handler != null) {
+                handler.historicalDataEnd();
             }
         }
 
@@ -1268,6 +1375,137 @@ public class IBService implements IBroker {
 
             if (handler != null) {
                 handler.softDollarTiers(tiers);
+            }
+        }
+
+        @Override
+        public void familyCodes(FamilyCode[] familyCodes) {
+        }
+
+        @Override
+        public void symbolSamples(int reqId, ContractDescription[] contractDescriptions) {
+        }
+
+        @Override
+        public void mktDepthExchanges(DepthMktDataDescription[] depthMktDataDescriptions) {
+        }
+
+        @Override
+        public void smartComponents(int reqId, Map<Integer, Entry<String, Character>> theMap) {
+        }
+
+        @Override
+        public void tickReqParams(int tickerId, double minTick, String bboExchange, int snapshotPermissions) {
+        }
+
+        @Override
+        public void tickNews(int tickerId, long timeStamp, String providerCode, String articleId, String headline, String extraData) {
+        }
+
+        @Override
+        public void newsProviders(NewsProvider[] newsProviders) {
+        }
+
+        @Override
+        public void newsArticle(int requestId, int articleType, String articleText) {
+        }
+
+        @Override
+        public void historicalNews(int requestId, String time, String providerCode, String articleId, String headline) {
+        }
+
+        @Override
+        public void historicalNewsEnd(int requestId, boolean hasMore) {
+        }
+
+        @Override
+        public void headTimestamp(int reqId, String headTimestamp) {
+        }
+
+        @Override
+        public void histogramData(int reqId, List<HistogramEntry> items) {
+        }
+
+        @Override
+        public void historicalDataUpdate(int reqId, com.ib.client.Bar bar) {
+        }
+
+        @Override
+        public void rerouteMktDataReq(int reqId, int conId, String exchange) {
+        }
+
+        @Override
+        public void rerouteMktDepthReq(int reqId, int conId, String exchange) {
+        }
+
+        @Override
+        public void marketRule(int marketRuleId, PriceIncrement[] priceIncrements) {
+        }
+
+        @Override
+        public void pnl(int reqId, double dailyPnL, double unrealizedPnL, double realizedPnL) {
+            IPnLHandler handler = pnlMap.get(reqId);
+
+            if (handler != null) {
+                handler.pnl(reqId, dailyPnL, unrealizedPnL, realizedPnL);
+            }
+        }
+
+        @Override
+        public void pnlSingle(int reqId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
+            IPnLSingleHandler handler = pnlSingleMap.get(reqId);
+            if (handler != null) {
+                handler.pnlSingle(reqId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
+            }
+        }
+
+        @Override
+        public void historicalTicks(int reqId, List<HistoricalTick> ticks, boolean last) {
+            IHistoricalTickHandler handler = historicalTicksMap.get(reqId);
+            if (handler != null) {
+                handler.historicalTick(reqId, ticks);
+            }
+        }
+
+        @Override
+        public void historicalTicksBidAsk(int reqId, List<HistoricalTickBidAsk> ticks, boolean done) {
+            IHistoricalTickHandler handler = historicalTicksMap.get(reqId);
+            if (handler != null) {
+                handler.historicalTickBidAsk(reqId, ticks);
+            }
+        }
+
+        @Override
+        public void historicalTicksLast(int reqId, List<HistoricalTickLast> ticks, boolean done) {
+            IHistoricalTickHandler handler = historicalTicksMap.get(reqId);
+            if (handler != null) {
+                handler.historicalTickLast(reqId, ticks);
+            }
+        }
+
+        @Override
+        public void tickByTickAllLast(int reqId, int tickType, long time, double price, int size, TickAttr attribs, String exchange, String specialConditions) {
+            ITickByTickDataHandler handler = tickByTickDataMap.get(reqId);
+
+            if (handler != null) {
+                handler.tickByTickAllLast(reqId, tickType, time, price, size, attribs, exchange, specialConditions);
+            }
+        }
+
+        @Override
+        public void tickByTickBidAsk(int reqId, long time, double bidPrice, double askPrice, int bidSize, int askSize, TickAttr attribs) {
+            ITickByTickDataHandler handler = tickByTickDataMap.get(reqId);
+
+            if (handler != null) {
+                handler.tickByTickBidAsk(reqId, time, bidPrice, askPrice, bidSize, askSize, attribs);
+            }
+        }
+
+        @Override
+        public void tickByTickMidPoint(int reqId, long time, double midPoint) {
+            ITickByTickDataHandler handler = tickByTickDataMap.get(reqId);
+            if (handler != null) {
+                handler.tickByTickMidPoint(reqId, time, midPoint);
             }
         }
     }

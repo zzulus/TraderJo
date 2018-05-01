@@ -5,7 +5,7 @@ import com.ib.client.Types.MktDataType;
 
 public class TopMktDataAdapter implements ITopMktDataHandler {
     @Override
-    public void tickPrice(TickType tickType, double price, int canAutoExecute) {
+    public void tickPrice(TickType tickType, double price) {
     }
 
     @Override

@@ -5,7 +5,7 @@ import com.ib.client.Types.MktDataType;
 
 // ---------------------------------------- Top Market Data handling ----------------------------------------
 public interface ITopMktDataHandler {
-    void tickPrice(TickType tickType, double price, int canAutoExecute);
+    void tickPrice(TickType tickType, double price);
 
     void tickSize(TickType tickType, int size);
 

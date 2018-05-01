@@ -58,14 +58,14 @@ public class GatherStatisticsApp {
         Contract contract = Stocks.smartOf(symbol);
         System.out.println(contract.symbol());
 
-        File file = new File("D:\\autobot\\TraderJo\\historical\\2018-03-26-1m-90d", symbol + ".log");
+        File file = new File("D:\\autobot\\TraderJo\\historical\\2018-03-27-1m-20d", symbol + ".log");
         if (file.exists() && file.length() > 0)
             return;
 
         AsyncVal<String> ex = new AsyncVal<>();
 
         try (PrintWriter ps = new PrintWriter(new FileOutputStream(file, true))) {
-            ib.reqHistoricalData(contract, "", 90, DurationUnit.DAY, BarSize._1_min, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
+            ib.reqHistoricalData(contract, "", 20, DurationUnit.DAY, BarSize._1_min, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
                 @Override
                 public void historicalDataEnd() {
                     ex.set(symbol);
@@ -73,7 +73,7 @@ public class GatherStatisticsApp {
                 }
 
                 @Override
-                public void historicalData(Bar bar, boolean hasGaps) {
+                public void historicalData(Bar bar) {
                     try {
                         RealTimeBarEvent e = new RealTimeBarEvent(bar);
                         String str = objectMapper.writeValueAsString(e);

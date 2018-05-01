@@ -102,8 +102,8 @@ public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandl
     }
 
     @Override
-    public void tickPrice(TickType tickType, double price, int canAutoExecute) {
-        q.add(new TickPriceEvent(tickType, price, canAutoExecute));
+    public void tickPrice(TickType tickType, double price) {
+        q.add(new TickPriceEvent(tickType, price));
     }
 
     @Override

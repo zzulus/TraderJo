@@ -37,7 +37,7 @@ public class TestRequestHistoricalTicksApp {
                     }
 
                     @Override
-                    public void historicalData(Bar bar, boolean hasGaps) {
+                    public void historicalData(Bar bar) {
                         // log.info("Bar: {} / {}", bar.getLow(), bar.getHigh());
                         bars.addBar(bar);
                     }

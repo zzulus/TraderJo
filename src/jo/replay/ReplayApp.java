@@ -58,7 +58,7 @@ public class ReplayApp implements IApp {
 
         } else if (event instanceof TickPriceEvent) {
             TickPriceEvent typedEvent = (TickPriceEvent) event;
-            marketData.tickPrice(typedEvent.getTickType(), typedEvent.getPrice(), typedEvent.getCanAutoExecute());
+            marketData.tickPrice(typedEvent.getTickType(), typedEvent.getPrice());
 
         } else if (event instanceof TickSizeEvent) {
             TickSizeEvent typedEvent = (TickSizeEvent) event;

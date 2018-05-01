@@ -62,7 +62,7 @@ public class HistoricalHighLowAvgTrailAmountStrategy implements TrailAmountStrat
                 }
 
                 @Override
-                public void historicalData(Bar bar, boolean hasGaps) {
+                public void historicalData(Bar bar) {
                     log.info("addBar " + contract.symbol());
                     bars.addBar(bar);
                 }

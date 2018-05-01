@@ -1,10 +1,8 @@
 package jo.app;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
-import java.awt.Stroke;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -19,7 +17,6 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.CrosshairState;
 import org.jfree.chart.plot.PlotOrientation;
@@ -36,7 +33,6 @@ import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
 
-import gnu.trove.list.TLongList;
 import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.controller.IBroker;
@@ -73,12 +69,8 @@ public class CreateBarChartApp {
                     }
 
                     @Override
-                    public void historicalData(Bar bar, boolean hasGaps) {
+                    public void historicalData(Bar bar) {
                         bars.addBar(bar);
-                        if (hasGaps) {
-                            System.out.println("GGGGGAP");
-                        }
-
                         // (bar.getHigh() < 100 || bar.getLow() < 100 || bar.getOpen() < 100 || bar.getClose() < 100)
                         //System.out.println(hasGaps + " " + bar);
                     }
