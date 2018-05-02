@@ -26,8 +26,7 @@ import jo.recording.event.EventTypeRegistry;
 import jo.recording.event.RealTimeBarEvent;
 
 public class CreateHistoricalStatsApp {
-    private static File historicalsDir = new File("historical\\2018-03-26-1m-90d");
-    private static File dataDir = new File("data");
+    private static File historicalsDir = new File("historical\\2018-05-01-1m-20d");
     private static ObjectMapper objectMapper = new ObjectMapper();
     static {
         objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
@@ -79,9 +78,9 @@ public class CreateHistoricalStatsApp {
         stat.setHiLo(StatVar.of(hiLoDiffs));
         stat.setOpenClose(StatVar.of(openCloseDiffs));
 
-        File symbolFile = new File(dataDir, symbol.toUpperCase() + "-HistoricalStat.txt");
+        File symbolFile = new File("data", symbol.toUpperCase() + "-HistoricalStat.json");
         try (PrintWriter ps = new PrintWriter(new FileOutputStream(symbolFile))) {
-            String str = objectMapper.writeValueAsString(stat);
+            String str = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(stat);
             ps.println(str);
             ps.flush();
         }

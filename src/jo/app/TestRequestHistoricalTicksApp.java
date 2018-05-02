@@ -1,8 +1,15 @@
 package jo.app;
 
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import com.ib.client.Contract;
+import com.ib.client.HistoricalTick;
+import com.ib.client.HistoricalTickBidAsk;
+import com.ib.client.HistoricalTickLast;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
@@ -13,41 +20,71 @@ import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.handler.ConnectionHandlerAdapter;
 import jo.handler.IHistoricalDataHandler;
+import jo.handler.IHistoricalTickHandler;
 import jo.model.Bar;
 import jo.model.Bars;
+import jo.util.AsyncVal;
 
 // http://etfdb.com/type/equity/all/leveraged/#etfs&sort_name=three_month_average_volume&sort_order=desc&page=1
 public class TestRequestHistoricalTicksApp {
     public static void main(String[] args) throws InterruptedException {
-        final IBService ib = new IBService();
+        IBService ib = new IBService();
         Contract contract = Stocks.TQQQ(true);
 
-        SynchronousQueue<Bars> q = new SynchronousQueue<>();
+        AsyncVal<Bars> barsEx = new AsyncVal<>();
 
         ib.connectLocalhostLive(new ConnectionHandlerAdapter() {
             @Override
             public void connected() {
-                ib.reqHistoricalData(contract, "20180226 23:59:59 GMT", 90, DurationUnit.DAY, BarSize._30_secs, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
+                ib.reqHistoricalData(contract, "", 1, DurationUnit.DAY, BarSize._1_min, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
                     final Bars bars = new Bars();
 
                     @Override
                     public void historicalDataEnd() {
-                        // log.info("End");
-                        q.offer(bars);
+                        barsEx.set(bars);
                     }
 
                     @Override
                     public void historicalData(Bar bar) {
-                        // log.info("Bar: {} / {}", bar.getLow(), bar.getHigh());
                         bars.addBar(bar);
                     }
                 });
             }
         });
 
-        Bars bars = q.take();
+        Bars bars = barsEx.get();
 
-        calcDays(contract, bars);
+        AsyncVal<String> ticksEx = new AsyncVal<>();
+
+        ib.reqHistoricalTicks(contract, "20180501 06:30:00", null, 1000, WhatToShow.TRADES, true, false, new IHistoricalTickHandler() {
+            @Override
+            public void historicalTick(int reqId, List<HistoricalTick> ticks, boolean last) {
+                System.out.println("historicalTick: ");
+                for (HistoricalTick tick : ticks) {
+                    System.out.println(ToStringBuilder.reflectionToString(tick));
+                }
+            }
+
+            @Override
+            public void historicalTickBidAsk(int reqId, List<HistoricalTickBidAsk> ticks, boolean last) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void historicalTickLast(int reqId, List<HistoricalTickLast> ticks, boolean allReceived) {
+                System.out.println("historicalTickLast: allReceived " + allReceived);
+                for (HistoricalTickLast tick : ticks) {
+                    System.out.println(new Date(tick.time() * 1000) + " " + ToStringBuilder.reflectionToString(tick));
+                }
+                ticksEx.set("");
+            }
+
+        });
+
+        ticksEx.get();
+
+        ib.disconnect();
         System.exit(0);
     }
 

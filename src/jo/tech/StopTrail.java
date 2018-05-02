@@ -113,6 +113,10 @@ public class StopTrail {
         log.info("Updating trailAmount: from {} to {}",
                 fmt(this.trailAmount), fmt(newTrailAmount));
 
+        if (trailAmount == this.trailAmount) {
+            return;
+        }
+
         checkArgument(newTrailAmount > 0, "trailAmount cannot be less zero: %s", newTrailAmount);
         this.trailAmount = newTrailAmount;
 

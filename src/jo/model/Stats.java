@@ -17,7 +17,7 @@ public class Stats {
 
     @Nullable
     public static Stats tryLoad(String symbol) {
-        File file = new File("data", symbol.toLowerCase() + "-HistoricalStat.txt");
+        File file = new File("data", symbol.toLowerCase() + "-HistoricalStat.json");
         if (!file.exists())
             return null;
 

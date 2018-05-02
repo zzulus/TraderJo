@@ -57,7 +57,10 @@ public class GatherStatisticsApp {
         Contract contract = Stocks.smartOf(symbol);
         System.out.println(contract.symbol());
 
-        File file = new File("D:\\autobot\\TraderJo\\historical\\2018-03-27-1m-20d", symbol + ".log");
+        File folder = new File("D:\\autobot\\TraderJo\\historical\\2018-05-01-1m-20d");
+        folder.mkdirs();
+
+        File file = new File(folder, symbol + ".log");
         if (file.exists() && file.length() > 0)
             return;
 
@@ -115,8 +118,8 @@ public class GatherStatisticsApp {
         stockSymbols.add("V");
         stockSymbols.add("PYPL");
 
-        stockSymbols.addAll(MarketRecorderStocks.TICKS_ONLY_STOCKS);
-        stockSymbols.addAll(MarketRecorderStocks.TICKS_ONLY_ETFS);
+        stockSymbols.addAll(MyStocks.TICKS_ONLY_STOCKS);
+        stockSymbols.addAll(MyStocks.TICKS_ONLY_ETFS);
         return stockSymbols;
     }
 }

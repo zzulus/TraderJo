@@ -4,7 +4,7 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 
-public class MarketRecorderStocks {
+public class MyStocks {
     // http://etfdb.com/compare/volume/
     public static final Set<String> TICKS_ONLY_ETFS = ImmutableSet.of(
             "SPY",

@@ -17,6 +17,7 @@ import com.ib.client.Contract;
 import com.ib.client.Types.WhatToShow;
 
 import jo.bot.Bot;
+import jo.bot.MovingAverageBot;
 import jo.bot.MovingAverageHLBot;
 import jo.command.AppCommand;
 import jo.command.StartBotsCommand;
@@ -75,14 +76,14 @@ public class TraderApp implements IApp {
         stockSymbols.add("V");
         stockSymbols.add("PYPL");
 
-        stockSymbols.addAll(MarketRecorderStocks.TICKS_ONLY_STOCKS);
+        stockSymbols.addAll(MyStocks.TICKS_ONLY_STOCKS);
 
         List<Bot> bots = new ArrayList<>();
         for (String stockSymbol : stockSymbols) {
             Contract contract = Stocks.smartOf(stockSymbol);
             //TrailAmountStrategy trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
             TrailAmountStrategy trailAmountStrategy = HighLowAvgTrailAmountStrategy.createDefault();
-            MovingAverageHLBot bot = new MovingAverageHLBot(contract, positionSizeStrategy, trailAmountStrategy);
+            MovingAverageBot bot = new MovingAverageBot(contract, positionSizeStrategy, trailAmountStrategy);
             bots.add(bot);
         }
 
@@ -182,7 +183,7 @@ public class TraderApp implements IApp {
 
         MarketData marketData = new MarketData(contract);
         marketData.startRecording();
-        
+
         stockMarketDataMap.put(contract.symbol(), marketData);
 
         // IB supports only 5 sec realtime bars

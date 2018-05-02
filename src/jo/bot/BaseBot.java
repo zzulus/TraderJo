@@ -20,7 +20,7 @@ import jo.util.PnLLogger;
 import jo.util.TradeRef;
 
 public abstract class BaseBot implements Bot {
-    protected Logger log = LogManager.getLogger(this.getClass());    
+    protected Logger log = LogManager.getLogger(this.getClass());
     protected Contract contract;
     protected PositionSizeStrategy positionSize;
     protected MarketData md;
@@ -120,7 +120,7 @@ public abstract class BaseBot implements Bot {
     }
 
     protected String updateTradeRef() {
-        String prefix = this.getClass().getSimpleName() + "#" + contract.symbol();
+        String prefix = this.getClass().getSimpleName() + "-" + contract.symbol();
         String tradeRef = TradeRef.create(prefix);
         this.log = LogManager.getLogger(tradeRef);
         return tradeRef;

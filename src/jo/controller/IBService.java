@@ -747,13 +747,13 @@ public class IBService implements IBroker {
     }
 
     public void reqHistoricalTicks(Contract contract, String startDateTime,
-            String endDateTime, int numberOfTicks, String whatToShow, int useRth, boolean ignoreSize, IHistoricalTickHandler handler) {
+            String endDateTime, int numberOfTicks, WhatToShow whatToShow, boolean rthOnly, boolean ignoreSize, IHistoricalTickHandler handler) {
         if (!checkConnection())
             return;
 
         int reqId = getNextRequestId();
         historicalTicksMap.put(reqId, handler);
-        client.reqHistoricalTicks(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow, useRth, ignoreSize, Collections.emptyList());
+        client.reqHistoricalTicks(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow.name(), rthOnly ? 1 : 0, ignoreSize, Collections.emptyList());
     }
 
     public void reqTickByTickData(Contract contract, String tickType, ITickByTickDataHandler handler) {
@@ -1419,15 +1419,15 @@ public class IBService implements IBroker {
         public void historicalTicks(int reqId, List<HistoricalTick> ticks, boolean last) {
             IHistoricalTickHandler handler = historicalTicksMap.get(reqId);
             if (handler != null) {
-                handler.historicalTick(reqId, ticks);
+                handler.historicalTick(reqId, ticks, last);
             }
         }
 
         @Override
-        public void historicalTicksBidAsk(int reqId, List<HistoricalTickBidAsk> ticks, boolean done) {
+        public void historicalTicksBidAsk(int reqId, List<HistoricalTickBidAsk> ticks, boolean last) {
             IHistoricalTickHandler handler = historicalTicksMap.get(reqId);
             if (handler != null) {
-                handler.historicalTickBidAsk(reqId, ticks);
+                handler.historicalTickBidAsk(reqId, ticks, last);
             }
         }
 
@@ -1435,7 +1435,7 @@ public class IBService implements IBroker {
         public void historicalTicksLast(int reqId, List<HistoricalTickLast> ticks, boolean done) {
             IHistoricalTickHandler handler = historicalTicksMap.get(reqId);
             if (handler != null) {
-                handler.historicalTickLast(reqId, ticks);
+                handler.historicalTickLast(reqId, ticks, done);
             }
         }
 

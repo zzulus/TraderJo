@@ -1,11 +1,10 @@
 package jo.app;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Paint;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
@@ -17,22 +16,25 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
-import org.jfree.chart.plot.CrosshairState;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.CandlestickRenderer;
-import org.jfree.chart.renderer.xy.XYItemRendererState;
+import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.data.xy.DefaultHighLowDataset;
-import org.jfree.data.xy.OHLCDataset;
 import org.jfree.data.xy.XYDataset;
 
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
 
+import jo.chart.MyCandlestickRenderer;
+import jo.chart.MyStockDataset;
 import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.handler.ConnectionHandlerAdapter;
@@ -42,49 +44,76 @@ import jo.model.Bars;
 import jo.util.AsyncVal;
 
 public class CreateBarChartApp {
-    private final static Logger log = LogManager.getLogger(CreateBarChartApp.class);
     private final static ChartTheme theme = StandardChartTheme.createDarknessTheme();
+    private static ObjectMapper objectMapper = new ObjectMapper();
+    static {
+        objectMapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);        
+    }
 
     public static void main(String[] args) throws Exception {
-        IBService ib = new IBService();
-        Contract contract = Stocks.smartOf("AAPL");
-        BarSize barSize = BarSize._30_secs;
-        int duration = 1;
-        DurationUnit durationUnit = DurationUnit.DAY;
+        Contract contract = Stocks.smartOf("FB");
 
-        AsyncVal<Bars> barsEx = new AsyncVal<>();
-
-        ib.connectLocalhostLive(new ConnectionHandlerAdapter() {
-            @Override
-            public void connected() {
-
-                ib.reqHistoricalData(contract, "", duration, durationUnit, barSize, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
-                    final Bars bars = new Bars();
-
-                    @Override
-                    public void historicalDataEnd() {
-                        System.out.println("End");
-                        barsEx.set(bars);
-                    }
-
-                    @Override
-                    public void historicalData(Bar bar) {
-                        bars.addBar(bar);
-                        // (bar.getHigh() < 100 || bar.getLow() < 100 || bar.getOpen() < 100 || bar.getClose() < 100)
-                        //System.out.println(hasGaps + " " + bar);
-                    }
-                });
-            }
-        });
-
-        Bars bars = barsEx.get();
-        createImage(contract, bars);
+        createImage(contract);
         System.out.println("Done, ignore exception");
-        ib.disconnect();
+
         System.exit(0);
     }
 
-    private static void createImage(Contract contract, Bars bars) throws Exception {
+    private static void createImage(Contract contract) throws Exception {        
+        DateAxis timeAxis = new DateAxis("Time");
+        timeAxis.setAutoRange(true);
+        timeAxis.setTickLabelsVisible(true);
+        timeAxis.setAutoTickUnitSelection(true);
+
+        NumberAxis priceAxis = new NumberAxis("Price");
+        priceAxis.setAutoRange(true);
+        priceAxis.setAutoRangeIncludesZero(false);
+        priceAxis.setStandardTickUnits(NumberAxis.createStandardTickUnits());
+
+        XYPlot plot = new XYPlot();
+        plot.setDomainAxis(timeAxis);
+        plot.setRangeAxis(0, priceAxis);
+        
+        
+        MyStockDataset barsDataset = loadDataset(contract);        
+        plot.setDataset(0, barsDataset);
+
+        CandlestickRenderer renderer1 = new MyCandlestickRenderer();
+        StandardXYItemRenderer renderer2 = new StandardXYItemRenderer();
+        plot.setRenderer(0, renderer1);
+        
+        JFreeChart chart = new JFreeChart(contract.symbol(), JFreeChart.DEFAULT_TITLE_FONT, plot, false);
+        chart.getXYPlot().setOrientation(PlotOrientation.VERTICAL);
+        theme.apply(chart);
+
+        File f = new File("PNGTimeSeriesChartDemo1.png");
+
+        BufferedImage chartImage = chart.createBufferedImage(barsDataset.getItemCount(0) * 15, 2000);
+        ImageIO.write(chartImage, "png", f);
+        System.out.println("file://" + f.getAbsolutePath().replaceAll("\\\\", "/"));
+        new ProcessBuilder("D:\\Program Files (x86)\\XnView\\xnview.exe", f.getAbsolutePath()).start();
+    }
+
+    private static MyStockDataset loadDataset(Contract contract) throws IOException, JsonParseException, JsonMappingException, Exception {
+        MyStockDataset barsDataset;
+        File cachedDatasetFile = new File("Cached_" + contract.symbol() + ".txt");
+        if (cachedDatasetFile.exists()) {
+            barsDataset = objectMapper.readValue(cachedDatasetFile, MyStockDataset.class);
+        } else {
+            Bars bars = retrieveBarsFromIB(contract);
+            barsDataset = barsToDataSet(bars);
+
+            try (FileOutputStream fos = new FileOutputStream(cachedDatasetFile)) {
+                String str = objectMapper.writeValueAsString(barsDataset);
+                fos.write(str.getBytes(StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                throw e;
+            }
+        }
+        return barsDataset;
+    }
+
+    private static MyStockDataset barsToDataSet(Bars bars) {
         int size = bars.getSize();
 
         Date[] date = new Date[size];
@@ -92,7 +121,6 @@ public class CreateBarChartApp {
         double[] low = bars.getLow().toArray();
         double[] open = bars.getOpen().toArray();
         double[] close = bars.getClose().toArray();
-
         double[] volume = new double[size];
 
         long[] volumeSrc = bars.getVolume().toArray();
@@ -103,102 +131,41 @@ public class CreateBarChartApp {
             date[i] = new Date(1000 * timeSrc[i]);
         }
 
-        DefaultHighLowDataset dataset = new DefaultHighLowDataset("", date, high, low, open, close, volume);
-
-        JFreeChart chart = createChart(contract.symbol(), dataset);
-        chart.getXYPlot().setOrientation(PlotOrientation.VERTICAL);
-
-        File f = new File("PNGTimeSeriesChartDemo1.png");
-
-        BufferedImage chartImage = chart.createBufferedImage(size * 15, 2000);
-        ImageIO.write(chartImage, "png", f);
-        System.out.println("file:///" + f.getAbsolutePath().replaceAll("\\\\", "/"));
+        MyStockDataset barsDataset = new MyStockDataset("", date, high, low, open, close, volume);
+        return barsDataset;
     }
 
-    private static JFreeChart createChart(String symbol, final DefaultHighLowDataset dataset) {
-        final JFreeChart chart = createCandlestickChart(
-                symbol,
-                "Time",
-                "Price",
-                dataset,
-                true);
-        return chart;
-    }
+    private static Bars retrieveBarsFromIB(Contract contract) {
+        BarSize barSize = BarSize._1_min;
+        int duration = 1;
+        DurationUnit durationUnit = DurationUnit.DAY;
 
-    public static JFreeChart createCandlestickChart(String title, String timeAxisLabel, String valueAxisLabel, OHLCDataset dataset, boolean legend) {
-        DateAxis timeAxis = new DateAxis(timeAxisLabel);
-        timeAxis.setAutoRange(true);
-        timeAxis.setTickLabelsVisible(true);
-        timeAxis.setAutoTickUnitSelection(true);
+        AsyncVal<Bars> barsEx = new AsyncVal<>();
+        IBService ib = new IBService();
+        ib.connectLocalhostLive(new ConnectionHandlerAdapter() {
+            @Override
+            public void connected() {
 
-        NumberAxis priceAxis = new NumberAxis(valueAxisLabel);
-        priceAxis.setAutoRange(true);        
-        priceAxis.setAutoRangeIncludesZero(false);
-        priceAxis.setStandardTickUnits(NumberAxis.createStandardTickUnits());
+                ib.reqHistoricalData(contract, "", duration, durationUnit, barSize, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
+                    final Bars bars = new Bars();
 
+                    @Override
+                    public void historicalDataEnd() {
+                        System.out.println("Bars downloaded\n");
 
-        //priceAxis.setRange(162, 167);
+                        barsEx.set(bars);
+                    }
 
-        XYPlot plot = new XYPlot(dataset, timeAxis, priceAxis, null);
-        CandlestickRenderer renderer = new MyCandlestickRenderer();
-
-        plot.setRenderer(renderer);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, legend);
-        theme.apply(chart);
-        return chart;
-    }
-
-    public static class MyCandlestickRenderer extends org.jfree.chart.renderer.xy.CandlestickRenderer {
-        private final Paint colorRaising = Color.GREEN;
-        private final Paint colorFalling = Color.RED;
-        private final Paint colorUnknown = Color.GRAY;
-        private final Paint colorTransparent = Color.BLACK;
-
-        public MyCandlestickRenderer() {
-            setDrawVolume(false);
-            setUpPaint(colorUnknown); // use unknown color if error
-            setDownPaint(colorUnknown); // use unknown color if error
-            
-        }
-
-        @Override
-        public Paint getItemPaint(int series, int item) {
-            OHLCDataset highLowData = (OHLCDataset) getPlot().getDataset(series);
-            Number curClose = highLowData.getClose(series, item);
-            Number prevClose = highLowData.getClose(series, item > 0 ? item - 1 : 0);
-
-            if (prevClose.doubleValue() <= curClose.doubleValue()) {
-                return Color.GREEN;
-            } else {
-                return Color.RED;
+                    @Override
+                    public void historicalData(Bar bar) {
+                        bars.addBar(bar);
+                    }
+                });
             }
-        }
+        });
 
-        @Override
-        public void drawItem(Graphics2D g2, XYItemRendererState state,
-                Rectangle2D dataArea, PlotRenderingInfo info, XYPlot plot,
-                ValueAxis domainAxis, ValueAxis rangeAxis, XYDataset dataset,
-                int series, int item, CrosshairState crosshairState, int pass) {
-
-            OHLCDataset highLowData = (OHLCDataset) dataset;
-            double yOpen = highLowData.getOpenValue(series, item);
-            double yClose = highLowData.getCloseValue(series, item);
-
-            // set color for filled candle
-            if (yClose >= yOpen) {
-                setUpPaint(colorRaising);
-                setDownPaint(colorFalling);
-            }
-
-            // set color for hollow (not filled) candle
-            else {
-                setUpPaint(colorTransparent);
-                setDownPaint(colorTransparent);
-            }
-
-            // call parent method
-            super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
-        }
-
+        Bars bars = barsEx.get();
+        ib.disconnect();
+        return bars;
     }
 }
