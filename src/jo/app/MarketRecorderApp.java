@@ -22,9 +22,9 @@ public class MarketRecorderApp {
 
     public void start() {
         List<Recorder> records = new ArrayList<>();
-        records.add(new MarketRecorder(Stocks.AAPL(true)).withDeepBook(true));
-        records.add(new MarketRecorder(Stocks.TQQQ(true)).withDeepBook(true));
-        records.add(new MarketRecorder(Stocks.QQQ(true)).withDeepBook(true));
+        records.add(new MarketRecorder(Stocks.of("AAPL", true)).withDeepBook(true));
+        records.add(new MarketRecorder(Stocks.of("TQQQ", true)).withDeepBook(true));
+        records.add(new MarketRecorder(Stocks.of("QQQ", true)).withDeepBook(true));
 
         for (String stock : MyStocks.TICKS_ONLY_ETFS) {
             records.add(new MarketRecorder(Stocks.of(stock, true)).withDeepBook(false));

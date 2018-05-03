@@ -24,7 +24,7 @@ import jo.model.BarType;
 import jo.model.Bars;
 import jo.tech.ChangeList;
 import jo.tech.EMA;
-import jo.tech.PctChange;
+import jo.tech.BarsPctChange;
 import jo.util.AsyncVal;
 import jo.util.Formats;
 import jo.util.NullUtils;
@@ -34,7 +34,7 @@ public class TestBotEntryApp {
     private static final SimpleDateFormat TIME_FMT = new SimpleDateFormat("HH:mm:ss");
     private static final DecimalFormat CHANGE_FMT = new DecimalFormat("#,##0.00000");
 
-    private Contract contract = Stocks.smartOf("FB");
+    private Contract contract = Stocks.smartOf("BABA");
     private int period = 18;
     private Bars srcBars;
     private Bars maBars;
@@ -42,12 +42,12 @@ public class TestBotEntryApp {
     private EMA maEdge1;
     private EMA maEdge2;
 
-    private PctChange changeO0;
-    private PctChange changeO1;
-    private PctChange changeO2;
-    private PctChange changeC0;
-    private PctChange changeC1;
-    private PctChange changeC2;
+    private BarsPctChange changeO0;
+    private BarsPctChange changeO1;
+    private BarsPctChange changeO2;
+    private BarsPctChange changeC0;
+    private BarsPctChange changeC1;
+    private BarsPctChange changeC2;
     private ChangeList ocChanges;
 
     int trades = 0;
@@ -90,8 +90,8 @@ public class TestBotEntryApp {
         Bar lastBar = maBars.getLastBar();
         String timeStr = TIME_FMT.format((lastBar.getTime() + TimeUnit.HOURS.toSeconds(3)) * 1000);
 
-        double maEdgeValChange1 = PctChange.of(maEdgeVal2, maEdgeVal1);
-        double maEdgeValChange0 = PctChange.of(maEdgeVal1, maEdgeVal0);
+        double maEdgeValChange1 = BarsPctChange.of(maEdgeVal2, maEdgeVal1);
+        double maEdgeValChange0 = BarsPctChange.of(maEdgeVal1, maEdgeVal0);
 
         //        boolean maEdgeGoingUp = maEdgeValChange1 > 0.0005 && maEdgeValChange0 > 0.0005;
         //        boolean maEdgeGoingDown = maEdgeValChange1 < -0.0005 && maEdgeValChange0 < -0.0005;
@@ -131,12 +131,12 @@ public class TestBotEntryApp {
         this.maEdge1 = new EMA(maBars, BarType.CLOSE, period, 1);
         this.maEdge2 = new EMA(maBars, BarType.CLOSE, period, 2);
 
-        this.changeO0 = new PctChange(maBars, BarType.OPEN, 0);
-        this.changeO1 = new PctChange(maBars, BarType.OPEN, 1);
-        this.changeO2 = new PctChange(maBars, BarType.OPEN, 2);
-        this.changeC0 = new PctChange(maBars, BarType.CLOSE, 0);
-        this.changeC1 = new PctChange(maBars, BarType.CLOSE, 1);
-        this.changeC2 = new PctChange(maBars, BarType.CLOSE, 2);
+        this.changeO0 = new BarsPctChange(maBars, BarType.OPEN, 0);
+        this.changeO1 = new BarsPctChange(maBars, BarType.OPEN, 1);
+        this.changeO2 = new BarsPctChange(maBars, BarType.OPEN, 2);
+        this.changeC0 = new BarsPctChange(maBars, BarType.CLOSE, 0);
+        this.changeC1 = new BarsPctChange(maBars, BarType.CLOSE, 1);
+        this.changeC2 = new BarsPctChange(maBars, BarType.CLOSE, 2);
 
         this.ocChanges = ChangeList.of(changeO0, changeO1, changeO2, changeC0, changeC1, changeC2);
     }

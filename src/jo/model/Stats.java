@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Stats {
+    private double lastKnownPrice;
     private StatVar hiLo;
     private StatVar openClose;
 
@@ -52,4 +53,13 @@ public class Stats {
     public void setOpenClose(StatVar openClose) {
         this.openClose = openClose;
     }
+
+    public double getLastKnownPrice() {
+        return lastKnownPrice;
+    }
+
+    public void setLastKnownPrice(double lastKnownPrice) {
+        this.lastKnownPrice = lastKnownPrice;
+    }
+
 }

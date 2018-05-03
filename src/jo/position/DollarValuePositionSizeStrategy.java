@@ -3,26 +3,24 @@ package jo.position;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import jo.model.MarketData;
-
 public class DollarValuePositionSizeStrategy implements PositionSizeStrategy {
     protected final Logger log = LogManager.getLogger(this.getClass());
-    private double dollarAmount;
+    private double maxDollarAmount;
+    private double maxRiskDollarAmount;
 
-    public DollarValuePositionSizeStrategy(double dollarAmount) {
-        this.dollarAmount = dollarAmount;
+    public DollarValuePositionSizeStrategy(double maxDollarAmount, double maxRiskDollarAmount) {
+        this.maxDollarAmount = maxDollarAmount;
+        this.maxRiskDollarAmount = maxRiskDollarAmount;
     }
 
     @Override
-    public int getPositionSize(MarketData md) {
-        double lastPrice;
-        while ((lastPrice = md.getLastPrice()) < 1) {
-            log.info("Waiting for price data");
-            md.getSignal().waitForSignal();
-        }
+    public int getPositionSize(double openPrice, double riskPerShare) {
+        int maxPositionSize = (int) (maxDollarAmount / openPrice);
+        int maxRiskShares = (int) (maxRiskDollarAmount / riskPerShare);
+        int positionSize = Math.min(maxPositionSize, maxRiskShares);
 
-        int positionSize = (int) (dollarAmount / lastPrice);
-        log.info("Position size " + positionSize);
+        log.info("maxPositionSize {}, maxRiskShares {} => positionSize {}    [openPrice {}, maxRiskDollarAmount {}]",
+                maxPositionSize, maxRiskShares, positionSize, openPrice, maxRiskDollarAmount);
 
         return positionSize;
     }

@@ -23,7 +23,7 @@ import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
 import jo.tech.ChangeList;
 import jo.tech.EMA;
-import jo.tech.PctChange;
+import jo.tech.BarsPctChange;
 import jo.tech.StopTrail;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
@@ -62,12 +62,12 @@ public class MovingAverageHLBot extends BaseBot {
     private OpenPositionOrderHandler openPositionOrderHandler = new OpenPositionOrderHandler();
     private ClosePositionOrderHandler closePositionOrderHandler = new ClosePositionOrderHandler();
 
-    private PctChange changeH0;
-    private PctChange changeH1;
-    private PctChange changeH2;
-    private PctChange changeL0;
-    private PctChange changeL1;
-    private PctChange changeL2;
+    private BarsPctChange changeH0;
+    private BarsPctChange changeH1;
+    private BarsPctChange changeH2;
+    private BarsPctChange changeL0;
+    private BarsPctChange changeL1;
+    private BarsPctChange changeL2;
     private ChangeList hlChanges;
     private Bars realitimeBars;
 
@@ -103,12 +103,12 @@ public class MovingAverageHLBot extends BaseBot {
         this.maL1 = new EMA(maBars, BarType.LOW, period, 1);
         this.maL2 = new EMA(maBars, BarType.LOW, period, 2);
 
-        this.changeH0 = new PctChange(maBars, BarType.HIGH, 0);
-        this.changeH1 = new PctChange(maBars, BarType.HIGH, 1);
-        this.changeH2 = new PctChange(maBars, BarType.HIGH, 2);
-        this.changeL0 = new PctChange(maBars, BarType.LOW, 0);
-        this.changeL1 = new PctChange(maBars, BarType.LOW, 1);
-        this.changeL2 = new PctChange(maBars, BarType.LOW, 2);
+        this.changeH0 = new BarsPctChange(maBars, BarType.HIGH, 0);
+        this.changeH1 = new BarsPctChange(maBars, BarType.HIGH, 1);
+        this.changeH2 = new BarsPctChange(maBars, BarType.HIGH, 2);
+        this.changeL0 = new BarsPctChange(maBars, BarType.LOW, 0);
+        this.changeL1 = new BarsPctChange(maBars, BarType.LOW, 1);
+        this.changeL2 = new BarsPctChange(maBars, BarType.LOW, 2);
 
         this.hlChanges = ChangeList.of(changeH0, changeH1, changeH2, changeL0, changeL1, changeL2);
 
@@ -230,7 +230,7 @@ public class MovingAverageHLBot extends BaseBot {
             final double stopLossTrail = openPrice - trailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.max(stopLossTrail, stopLossEdge));
-            final int totalQuantity = positionSize.getPositionSize(md);
+            final int totalQuantity = positionSize.getPositionSize(openPrice, 0.15);
 
             log.info("Bars HL: {}, {}, {} <- last ", fmt(barHigh2 - barLow2), fmt(barHigh1 - barLow1), fmt(barHigh0 - barLow0));
             log.info("Bar Distance barLow - maH: {}, {}, {} <- last ", fmt(barLow2 - maValH2), fmt(barLow1 - maValH1), fmt(barLow0 - maValH0));
@@ -256,7 +256,7 @@ public class MovingAverageHLBot extends BaseBot {
             final double stopLossTrail = openPrice + trailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.min(stopLossTrail, stopLossEdge));
-            final int totalQuantity = positionSize.getPositionSize(md);
+            final int totalQuantity = positionSize.getPositionSize(openPrice, 0.15);
 
             log.info("Bar Distance maL - barHigh: {}, {}, {} <- last ", fmt(maValL2 - barHigh2), fmt(maValL1 - barHigh1), fmt(maValL0 - barHigh0));
             log.info("Bar Distance edge - barHigh: {}, {}, {} <- last ", fmt(maEdgeVal2 - barHigh2), fmt(maEdgeVal1 - barHigh1), fmt(maEdgeVal0 - barHigh0));

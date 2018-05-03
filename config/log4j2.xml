@@ -5,14 +5,14 @@
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
         </Console>
 
-        <RollingFile name="File" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd-HH}.log">
+        <RollingFile name="File" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd}.log">
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
         </RollingFile>
 
-        <RollingFile name="AppFile" filePattern="log/app/app-%d{yyyy-MM-dd-HH}.log">
+        <RollingFile name="AppFile" filePattern="log/app/app-%d{yyyy-MM-dd}.log">
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
@@ -20,7 +20,7 @@
         </RollingFile>
 
 
-        <RollingFile name="PNL" filePattern="log/app/pnl-%d{yyyy-MM-dd-HH}-%i.log">
+        <RollingFile name="PNL" filePattern="log/app/pnl-%d{yyyy-MM-dd}.log">
             <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />

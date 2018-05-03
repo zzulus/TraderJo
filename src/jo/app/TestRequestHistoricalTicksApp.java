@@ -2,7 +2,6 @@ package jo.app;
 
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.SynchronousQueue;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -29,7 +28,7 @@ import jo.util.AsyncVal;
 public class TestRequestHistoricalTicksApp {
     public static void main(String[] args) throws InterruptedException {
         IBService ib = new IBService();
-        Contract contract = Stocks.TQQQ(true);
+        Contract contract = Stocks.of("TQQQ", true);
 
         AsyncVal<Bars> barsEx = new AsyncVal<>();
 

@@ -176,7 +176,7 @@ public class DonchianBot extends BaseBot {
             final double prevBarClose = bars.getLastBar(BarType.CLOSE);
             final double stopLossMin = openPrice - 0.15; //TODO % of GrabProfit
             final double stopLossPrice = fixPriceVariance(stopLossMin); //Math.max(stopLossMin, prevBarClose);
-            final double totalQuantity = positionSize.getPositionSize(md);
+            final double totalQuantity = positionSize.getPositionSize(openPrice, 0.15);
 
             log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
@@ -207,7 +207,7 @@ public class DonchianBot extends BaseBot {
             final double prevBar = bars.getLastBar(BarType.CLOSE);
             final double stopLossMin = openPrice + 0.15; //TODO % of GrabProfit
             final double stopLossPrice = fixPriceVariance(stopLossMin); // Math.min(stopLossMax, Math.max(stopLossMin, stopLossPrevHigh));
-            final double totalQuantity = positionSize.getPositionSize(md);
+            final double totalQuantity = positionSize.getPositionSize(openPrice, 0.15);
 
             log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
             log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));

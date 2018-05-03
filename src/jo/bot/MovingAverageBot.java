@@ -21,9 +21,9 @@ import jo.position.DollarValueTrailAmountStrategy;
 import jo.position.HighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
+import jo.tech.BarsPctChange;
 import jo.tech.ChangeList;
 import jo.tech.EMA;
-import jo.tech.PctChange;
 import jo.tech.StopTrail;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
@@ -35,11 +35,17 @@ public class MovingAverageBot extends BaseBot {
     private SyncSignal signal;
     private SyncSignal priceSignal;
     private Bars maBars;
+    private Bars rtBars;
 
     private EMA maEdge0;
     private EMA maEdge1;
     private EMA maEdge2;
 
+    private EMA maRt0;
+    private EMA maRt1;
+    private EMA maRt2;
+
+    private int rtPeriod = 5; // last 25 seconds
     public int period = 18;
     private TrailAmountStrategy trailAmountStrategy;
 
@@ -49,28 +55,23 @@ public class MovingAverageBot extends BaseBot {
     private BotState botStatePrev;
     private StopTrail stopTrail;
     private int skipBarIdx;
-    private int openPositionBarIdx;
 
-    private long cancelOpenOrderWaitInterval = TimeUnit.SECONDS.toMillis(10);
+    private long cancelOpenOrderWaitInterval = TimeUnit.SECONDS.toMillis(45);
     private long cancelOpenOrderAfter;
 
     private OpenPositionOrderHandler openPositionOrderHandler = new OpenPositionOrderHandler();
     private ClosePositionOrderHandler closePositionOrderHandler = new ClosePositionOrderHandler();
 
-    private PctChange changeO0;
-    private PctChange changeO1;
-    private PctChange changeO2;
-    private PctChange changeC0;
-    private PctChange changeC1;
-    private PctChange changeC2;
+    private BarsPctChange changeO0;
+    private BarsPctChange changeO1;
+    private BarsPctChange changeO2;
+    private BarsPctChange changeC0;
+    private BarsPctChange changeC1;
+    private BarsPctChange changeC2;
     private ChangeList ocChanges;
-    private Bars realitimeBars;
-    private double smallTrailAmount;
-    private double largeTrailAmount;
 
-    public MovingAverageBot(Contract contract, PositionSizeStrategy positionSize, TrailAmountStrategy trailAmountStrategy) {
-        super(contract, positionSize);
-        this.trailAmountStrategy = trailAmountStrategy;
+    public MovingAverageBot(Contract contract, PositionSizeStrategy positionSize) {
+        super(contract, positionSize);        
     }
 
     @Override
@@ -86,25 +87,28 @@ public class MovingAverageBot extends BaseBot {
         this.priceSignal = md.getSignal();
         this.signal = priceSignal;
 
-        this.maBars = md.getBars(BarSize._1_min);
-        this.realitimeBars = md.getBars(BarSize._5_secs);
+        this.rtBars = md.getBars(BarSize._5_secs);
+        this.maRt0 = new EMA(rtBars, BarType.CLOSE, rtPeriod, 0);
+        this.maRt1 = new EMA(rtBars, BarType.CLOSE, rtPeriod, 1);
+        this.maRt2 = new EMA(rtBars, BarType.CLOSE, rtPeriod, 2);
 
+        this.maBars = md.getBars(BarSize._1_min);
         this.maEdge0 = new EMA(maBars, BarType.CLOSE, period, 0);
         this.maEdge1 = new EMA(maBars, BarType.CLOSE, period, 1);
         this.maEdge2 = new EMA(maBars, BarType.CLOSE, period, 2);
 
-        this.changeO0 = new PctChange(maBars, BarType.OPEN, 0);
-        this.changeO1 = new PctChange(maBars, BarType.OPEN, 1);
-        this.changeO2 = new PctChange(maBars, BarType.OPEN, 2);
-        this.changeC0 = new PctChange(maBars, BarType.CLOSE, 0);
-        this.changeC1 = new PctChange(maBars, BarType.CLOSE, 1);
-        this.changeC2 = new PctChange(maBars, BarType.CLOSE, 2);
+        this.changeO0 = new BarsPctChange(maBars, BarType.OPEN, 0);
+        this.changeO1 = new BarsPctChange(maBars, BarType.OPEN, 1);
+        this.changeO2 = new BarsPctChange(maBars, BarType.OPEN, 2);
+        this.changeC0 = new BarsPctChange(maBars, BarType.CLOSE, 0);
+        this.changeC1 = new BarsPctChange(maBars, BarType.CLOSE, 1);
+        this.changeC2 = new BarsPctChange(maBars, BarType.CLOSE, 2);
 
         this.ocChanges = ChangeList.of(changeO0, changeO1, changeO2, changeC0, changeC1, changeC2);
 
         Stats hs = Stats.tryLoad(contract.symbol());
         if (hs != null) {
-            this.trailAmountStrategy = new DollarValueTrailAmountStrategy(hs.getHiLo().getAvg());
+            this.trailAmountStrategy = new DollarValueTrailAmountStrategy(hs.getHiLo().getP90());
         } else {
             this.trailAmountStrategy = new HighLowAvgTrailAmountStrategy(maBars, 180, 0);
         }
@@ -164,25 +168,44 @@ public class MovingAverageBot extends BaseBot {
         Double maEdgeVal1 = fixPriceVariance(maEdge1.get());
         Double maEdgeVal2 = fixPriceVariance(maEdge2.get());
 
+        Double maRtVal0 = fixPriceVariance(maRt0.get());
+        Double maRtVal1 = fixPriceVariance(maRt1.get());
+        Double maRtVal2 = fixPriceVariance(maRt2.get());
+
         double barLow0 = maBars.getLastBar(BarType.LOW, 0);
         double barLow1 = maBars.getLastBar(BarType.LOW, 1);
         double barLow2 = maBars.getLastBar(BarType.LOW, 2);
         double barHigh0 = maBars.getLastBar(BarType.HIGH, 0);
         double barHigh1 = maBars.getLastBar(BarType.HIGH, 1);
         double barHigh2 = maBars.getLastBar(BarType.HIGH, 2);
+        double barOpen0 = maBars.getLastBar(BarType.OPEN, 0);
+        double barOpen1 = maBars.getLastBar(BarType.OPEN, 1);
+        double barOpen2 = maBars.getLastBar(BarType.OPEN, 2);
+        double barClose0 = maBars.getLastBar(BarType.CLOSE, 0);
+        double barClose1 = maBars.getLastBar(BarType.CLOSE, 1);
+        double barClose2 = maBars.getLastBar(BarType.CLOSE, 2);
 
         if (NullUtils.anyNull(maEdgeVal0, maEdgeVal1, maEdgeVal2))
             return;
 
-        double maEdgeValChange1 = PctChange.of(maEdgeVal2, maEdgeVal1);
-        double maEdgeValChange0 = PctChange.of(maEdgeVal1, maEdgeVal0);
+        double maEdgeValChange1 = BarsPctChange.of(maEdgeVal2, maEdgeVal1);
+        double maEdgeValChange0 = BarsPctChange.of(maEdgeVal1, maEdgeVal0);
 
-        boolean maEdgeGoingUp = maEdgeValChange1 > 0.0005 && maEdgeValChange0 > 0.0005;
-        boolean maEdgeGoingDown = maEdgeValChange1 < -0.0005 && maEdgeValChange0 < -0.0005;
+        double maRtValChange1 = BarsPctChange.of(maRtVal2, maRtVal1);
+        double maRtValChange0 = BarsPctChange.of(maRtVal1, maRtVal0);
+
+        boolean maEdgeGoingUp = maEdgeValChange1 > 0 && maEdgeValChange0 > 0;
+        boolean maEdgeGoingDown = maEdgeValChange1 < 0 && maEdgeValChange0 < 0;
+
+        boolean maRtGoingUp = maRtValChange1 > 0 && maRtValChange0 > 0;
+        boolean maRtGoingDown = maRtValChange1 < 0 && maRtValChange0 < 0;
 
         boolean placeOrders = false;
 
         boolean openLong = maEdgeGoingUp
+                && maRtGoingUp
+                && barOpen0 < barClose0
+                && barOpen1 < barClose1
                 && barLow0 - maEdgeVal0 > 0.02
                 && lastPrice > maEdgeVal0
                 && bidPrice > maEdgeVal0
@@ -191,6 +214,9 @@ public class MovingAverageBot extends BaseBot {
         ;
 
         boolean openShort = maEdgeGoingDown
+                && maRtGoingDown
+                && barOpen0 > barClose0
+                && barOpen1 > barClose1
                 && barHigh0 - maEdgeVal0 < -0.02
                 && lastPrice < maEdgeVal0
                 && bidPrice < maEdgeVal0
@@ -198,19 +224,16 @@ public class MovingAverageBot extends BaseBot {
         //&& ocChanges.allNegative()
         ;
 
-        this.smallTrailAmount = trailAmountStrategy.getTrailAmount(md);
-        this.largeTrailAmount = trailAmountStrategy.getTrailAmount(md) * 1.6;
-
-        double strategyTrailAmount = smallTrailAmount;
+        double strategyTrailAmount = trailAmountStrategy.getTrailAmount(md);
 
         if (openLong) {
             String ref = updateTradeRef();
 
-            final double openPrice = realitimeBars.getLastBar().getWap();
+            final double openPrice = rtBars.getLastBar().getWap();
             final double stopLossTrail = openPrice - strategyTrailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.max(stopLossTrail, stopLossEdge));
-            final int totalQuantity = positionSize.getPositionSize(md);
+            final int totalQuantity = positionSize.getPositionSize(openPrice, strategyTrailAmount);
 
             log.info("Bars HL: {}, {}, {} <- last ", fmt(barHigh2 - barLow2), fmt(barHigh1 - barLow1), fmt(barHigh0 - barLow0));
             log.info("Bar Distance barLow - edge: {}, {}, {} <- last ", fmt(barLow2 - maEdgeVal2), fmt(barLow1 - maEdgeVal1), fmt(barLow0 - maEdgeVal0));
@@ -231,11 +254,11 @@ public class MovingAverageBot extends BaseBot {
             String ref = updateTradeRef();
 
             //final double openPrice = Math.max(lastPrice, bidPrice + 0.01); //lastPrice;
-            final double openPrice = realitimeBars.getLastBar().getWap();
+            final double openPrice = rtBars.getLastBar().getWap();
             final double stopLossTrail = openPrice + strategyTrailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.min(stopLossTrail, stopLossEdge));
-            final int totalQuantity = positionSize.getPositionSize(md);
+            final int totalQuantity = positionSize.getPositionSize(openPrice, strategyTrailAmount);
 
             log.info("Bar Distance edge - barHigh: {}, {}, {} <- last ", fmt(maEdgeVal2 - barHigh2), fmt(maEdgeVal1 - barHigh1), fmt(maEdgeVal0 - barHigh0));
             log.info("Bars HL: {}, {}, {} <- last ", fmt(barHigh2 - barLow2), fmt(barHigh1 - barLow1), fmt(barHigh0 - barLow0));
@@ -274,19 +297,18 @@ public class MovingAverageBot extends BaseBot {
 
             stopTrail = new StopTrail(ib, contract, closeOrder, md, strategyTrailAmount);
             cancelOpenOrderAfter = System.currentTimeMillis() + cancelOpenOrderWaitInterval;
-            openPositionBarIdx = barSize;
-
         } else {
-            skipBarIdx = barSize;
+            markBarUsed();
         }
     }
 
     private void mayBeUpdateProfitTaker() {
+        markBarUsed();
+
         // TODO If started going against us - switch to shorter EMA
         double edgeVal = fixPriceVariance(maEdge0.get());
         boolean longPosition = (closeOrder.action() == Action.SELL);
 
-        int barIdx = maBars.getSize();
         double openPrice = openOrder.lmtPrice();
         double currentPrice = md.getLastPrice();
         double currentTrailAmount = stopTrail.getTrailAmount();
@@ -306,25 +328,6 @@ public class MovingAverageBot extends BaseBot {
         //        }
 
         stopTrail.maybeUpdateStopPrice(edgeVal);
-        //skipBarIdx = maBars.getSize();
-
-        if (barIdx > openPositionBarIdx && currentTrailAmount == smallTrailAmount) {
-            boolean updateToLargeTrail = false;
-            if (longPosition && currentPrice > openPrice + 0.02) {
-                updateToLargeTrail = true;
-            }
-
-            if (!longPosition && currentPrice < openPrice - 0.02) {
-                updateToLargeTrail = true;
-            }
-
-            if (updateToLargeTrail) {
-                log.info("mayBeUpdateProfitTaker {}: updating trail amount from {} to {}",
-                        longPosition ? "long" : "short",
-                        fmt(smallTrailAmount), fmt(largeTrailAmount));
-                stopTrail.setTrailAmount(largeTrailAmount);
-            }
-        }
     }
 
     @Override
@@ -336,9 +339,11 @@ public class MovingAverageBot extends BaseBot {
     @Override
     protected void closePositionOrderFilled(double avgFillPrice) {
         super.closePositionOrderFilled(avgFillPrice);
+        markBarUsed();
         if (stopTrail != null) {
             stopTrail.stop();
         }
+
     }
 
     @Override
@@ -347,6 +352,10 @@ public class MovingAverageBot extends BaseBot {
         if (stopTrail != null) {
             stopTrail.stop();
         }
+    }
+
+    private void markBarUsed() {
+        skipBarIdx = maBars.getSize();
     }
 
     public void run() {
@@ -364,6 +373,7 @@ public class MovingAverageBot extends BaseBot {
             log.info("Exit");
         } catch (Exception e) {
             log.error("Error in bot", e);
+            throw new RuntimeException(e);
         }
     }
 }

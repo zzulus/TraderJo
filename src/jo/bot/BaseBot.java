@@ -16,7 +16,7 @@ import jo.handler.OrderHandlerAdapter;
 import jo.model.MarketData;
 import jo.model.OrderStatusInput;
 import jo.position.PositionSizeStrategy;
-import jo.util.PnLLogger;
+import jo.util.PnL;
 import jo.util.TradeRef;
 
 public abstract class BaseBot implements Bot {
@@ -65,7 +65,7 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void closePositionOrderFilled(double closeAvgFillPrice) {
-        PnLLogger.log(contract, openOrder.action(), openOrder.totalQuantity(), openAvgFillPrice, closeAvgFillPrice);
+        PnL.log(contract, openOrder.orderId(), openOrder.action(), openOrder.totalQuantity(), openAvgFillPrice, closeAvgFillPrice);
     }
 
     protected void closePositionOrderCancelled() {

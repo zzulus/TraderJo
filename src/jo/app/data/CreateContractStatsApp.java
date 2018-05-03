@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ib.controller.Formats;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -25,8 +26,8 @@ import jo.recording.event.AbstractEvent;
 import jo.recording.event.EventTypeRegistry;
 import jo.recording.event.RealTimeBarEvent;
 
-public class CreateHistoricalStatsApp {
-    private static File historicalsDir = new File("historical\\2018-05-01-1m-20d");
+public class CreateContractStatsApp {
+    private static File historicalsDir = new File("historical/2018-05-02-1m-20d");
     private static ObjectMapper objectMapper = new ObjectMapper();
     static {
         objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
@@ -41,7 +42,7 @@ public class CreateHistoricalStatsApp {
     }
 
     private static void calculate(Bars bars, String symbol) throws Exception {
-        System.out.println(symbol);
+        //System.out.println(symbol);
 
         TDoubleList open = bars.getOpen();
         TDoubleList close = bars.getClose();
@@ -64,17 +65,13 @@ public class CreateHistoricalStatsApp {
         hiLoDiffs.sort();
         openCloseDiffs.sort();
 
-        for (int i = 1; i < 10; i++) {
-            double val = hiLoDiffs.get(size * i / 10);
-            System.out.println("HiLo P" + i + "0: " + val);
-        }
-
-        for (int i = 1; i < 10; i++) {
-            double val = openCloseDiffs.get(size * i / 10);
-            System.out.println("OpenClose P" + i + "0: " + val);
+        double hiLoP90 = hiLoDiffs.get(size * 9 / 10);
+        if (hiLoP90 < 0.05) {
+            System.out.println(symbol + " HiLo P90: " + Formats.fmt(hiLoP90) + "   Price " + Formats.fmt(close.get(size - 1)));
         }
 
         Stats stat = new Stats();
+        stat.setLastKnownPrice(close.get(size - 1));
         stat.setHiLo(StatVar.of(hiLoDiffs));
         stat.setOpenClose(StatVar.of(openCloseDiffs));
 

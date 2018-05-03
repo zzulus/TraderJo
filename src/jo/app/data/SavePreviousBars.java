@@ -1,4 +1,4 @@
-package jo.app;
+package jo.app.data;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -16,6 +16,7 @@ import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.WhatToShow;
 
+import jo.app.MyStocks;
 import jo.constant.Stocks;
 import jo.controller.IBService;
 import jo.handler.ConnectionHandlerAdapter;
@@ -25,8 +26,8 @@ import jo.recording.event.RealTimeBarEvent;
 import jo.util.AsyncExec;
 import jo.util.AsyncVal;
 
-public class GatherStatisticsApp {
-    protected final static Logger log = LogManager.getLogger(GatherStatisticsApp.class);
+public class SavePreviousBars {
+    protected final static Logger log = LogManager.getLogger(SavePreviousBars.class);
 
     public static void main(String[] args) throws InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -57,7 +58,7 @@ public class GatherStatisticsApp {
         Contract contract = Stocks.smartOf(symbol);
         System.out.println(contract.symbol());
 
-        File folder = new File("D:\\autobot\\TraderJo\\historical\\2018-05-01-1m-20d");
+        File folder = new File("historical/2018-05-02-1m-20d");
         folder.mkdirs();
 
         File file = new File(folder, symbol + ".log");
@@ -120,6 +121,7 @@ public class GatherStatisticsApp {
 
         stockSymbols.addAll(MyStocks.TICKS_ONLY_STOCKS);
         stockSymbols.addAll(MyStocks.TICKS_ONLY_ETFS);
+        stockSymbols.addAll(MyStocks.EARNINGS_STOCKS);
         return stockSymbols;
     }
 }

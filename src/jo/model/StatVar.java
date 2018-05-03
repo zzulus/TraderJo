@@ -16,6 +16,8 @@ public class StatVar {
     private double p70;
     private double p80;
     private double p90;
+    private double p95;
+    private double p99;
 
     public static StatVar of(TDoubleList values) {
         StatVar stat = new StatVar();
@@ -31,6 +33,8 @@ public class StatVar {
         stat.setP70(fixPriceVariance(values.get(size * 7 / 10)));
         stat.setP80(fixPriceVariance(values.get(size * 8 / 10)));
         stat.setP90(fixPriceVariance(values.get(size * 9 / 10)));
+        stat.setP95(fixPriceVariance(values.get(size * 95 / 100)));
+        stat.setP99(fixPriceVariance(values.get(size * 99 / 100)));
 
         return stat;
     }
@@ -113,6 +117,22 @@ public class StatVar {
 
     public void setP90(double p90) {
         this.p90 = p90;
+    }
+
+    public double getP99() {
+        return p99;
+    }
+
+    public void setP99(double p99) {
+        this.p99 = p99;
+    }
+
+    public double getP95() {
+        return p95;
+    }
+
+    public void setP95(double p95) {
+        this.p95 = p95;
     }
 
 }

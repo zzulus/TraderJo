@@ -18,7 +18,6 @@ import com.ib.client.Types.WhatToShow;
 
 import jo.bot.Bot;
 import jo.bot.MovingAverageBot;
-import jo.bot.MovingAverageHLBot;
 import jo.command.AppCommand;
 import jo.command.StartBotsCommand;
 import jo.constant.Stocks;
@@ -45,45 +44,16 @@ public class TraderApp implements IApp {
     }
 
     public TraderApp() {
-        Contract spy = Stocks.smartOf("SPY");
-        Contract xle = Stocks.smartOf("XLE");
-        Contract xlb = Stocks.smartOf("XLB");
-        Contract ibb = Stocks.smartOf("IBB");
-        Contract xlu = Stocks.smartOf("XLU");
-
-        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000);
+        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000, 1.1);
 
         Set<String> stockSymbols = new LinkedHashSet<>();
-        stockSymbols.add("AAPL");
-        stockSymbols.add("MSFT");
-        //stockSymbols.add("TSLA");
-        stockSymbols.add("FB");
-        stockSymbols.add("BABA");
-        // stockSymbols.add("NFLX");
-        stockSymbols.add("NVDA");
-        stockSymbols.add("CAT");
-        stockSymbols.add("INTC");
-        stockSymbols.add("WFC");
-        stockSymbols.add("XLE");
-        stockSymbols.add("PG");
-        stockSymbols.add("C");
-        stockSymbols.add("JPM");
-        stockSymbols.add("SMH");
-        stockSymbols.add("XOM");
-        stockSymbols.add("MO");
-        stockSymbols.add("MMM");
-        stockSymbols.add("XLB");
-        stockSymbols.add("V");
-        stockSymbols.add("PYPL");
-
-        stockSymbols.addAll(MyStocks.TICKS_ONLY_STOCKS);
+        stockSymbols.addAll(MyStocks.EARNINGS_STOCKS);
+        stockSymbols.addAll(MyStocks.STOCKS_TO_TRADE);
 
         List<Bot> bots = new ArrayList<>();
         for (String stockSymbol : stockSymbols) {
             Contract contract = Stocks.smartOf(stockSymbol);
-            //TrailAmountStrategy trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
-            TrailAmountStrategy trailAmountStrategy = HighLowAvgTrailAmountStrategy.createDefault();
-            MovingAverageBot bot = new MovingAverageBot(contract, positionSizeStrategy, trailAmountStrategy);
+            MovingAverageBot bot = new MovingAverageBot(contract, positionSizeStrategy);
             bots.add(bot);
         }
 

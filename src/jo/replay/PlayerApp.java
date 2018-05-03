@@ -21,7 +21,6 @@ import com.ib.client.Contract;
 import com.ib.client.Types.BarSize;
 
 import jo.bot.Bot;
-import jo.bot.DonchianBot;
 import jo.constant.Stocks;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
@@ -110,7 +109,7 @@ public class PlayerApp {
     }
 
     private void initApp() {
-        contract = Stocks.TQQQ(true);
+        contract = Stocks.of("TQQQ", true);
         ib = new ReplayBroker();
         app = new ReplayApp(ib);
 
