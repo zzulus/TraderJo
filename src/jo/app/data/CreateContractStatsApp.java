@@ -65,11 +65,6 @@ public class CreateContractStatsApp {
         hiLoDiffs.sort();
         openCloseDiffs.sort();
 
-        double hiLoP90 = hiLoDiffs.get(size * 9 / 10);
-        if (hiLoP90 < 0.05) {
-            System.out.println(symbol + " HiLo P90: " + Formats.fmt(hiLoP90) + "   Price " + Formats.fmt(close.get(size - 1)));
-        }
-
         Stats stat = new Stats();
         stat.setLastKnownPrice(close.get(size - 1));
         stat.setHiLo(StatVar.of(hiLoDiffs));
@@ -81,6 +76,16 @@ public class CreateContractStatsApp {
             ps.println(str);
             ps.flush();
         }
+
+        double hiLoP90 = hiLoDiffs.get(size * 90 / 100);
+        double hiLoP95 = hiLoDiffs.get(size * 95 / 100);
+        double hiLoP99 = hiLoDiffs.get(size * 99 / 100);
+        System.out.println(symbol + "\t" + Formats.fmt(stat.getLastKnownPrice())
+                + "\t\t" + Formats.fmt(hiLoP90) + "\t" + (Formats.fmt(100 * hiLoP90 / stat.getLastKnownPrice()))
+                + "\t\t" + Formats.fmt(hiLoP95) + "\t" + (Formats.fmt(100 * hiLoP95 / stat.getLastKnownPrice()))
+                + "\t\t" + Formats.fmt(hiLoP99) + "\t" + (Formats.fmt(100 * hiLoP99 / stat.getLastKnownPrice()))
+        );
+
     }
 
     private static Bars loadBars(File file) {

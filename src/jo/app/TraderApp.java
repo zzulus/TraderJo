@@ -27,9 +27,7 @@ import jo.controller.IBroker;
 import jo.handler.IConnectionHandler;
 import jo.model.MarketData;
 import jo.position.DollarValuePositionSizeStrategy;
-import jo.position.HighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
-import jo.position.TrailAmountStrategy;
 import jo.util.AsyncExec;
 
 public class TraderApp implements IApp {
@@ -44,12 +42,12 @@ public class TraderApp implements IApp {
     }
 
     public TraderApp() {
-        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000, 1.1);
+        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000, 1.0);
 
         Set<String> stockSymbols = new LinkedHashSet<>();
         stockSymbols.addAll(MyStocks.EARNINGS_STOCKS);
         stockSymbols.addAll(MyStocks.STOCKS_TO_TRADE);
-
+        
         List<Bot> bots = new ArrayList<>();
         for (String stockSymbol : stockSymbols) {
             Contract contract = Stocks.smartOf(stockSymbol);

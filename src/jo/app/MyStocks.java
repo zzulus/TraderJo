@@ -1,6 +1,13 @@
 package jo.app;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.io.IOUtils;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -122,7 +129,7 @@ public class MyStocks {
             "BMY",
             "UNP",
             "TXN");
-    
+
     public static final Set<String> STOCKS_TO_TRADE = ImmutableSet.of(
             "AAPL",
             "MSFT",
@@ -171,40 +178,18 @@ public class MyStocks {
             "UNP",
             "TXN");
 
-    public static final Set<String> EARNINGS_STOCKS = ImmutableSet.of(
-            "DDD",
-            "WK",
-            "GRMN",
-            "SQ",
-            "FIT",
-            "FEYE",
-            "MA",
-            "MRO",
-            "CVS",
-            "SSYS",
-            "DATA",
-            "YUM",
-            "W",
-            "P",
-            "APO",
-            "GPRO",
-            "IEP",
-            "SHAK",
-            "ATVI",
-            "TEVA",
-            "SRPT",
-            "SWKS",
-            "WTW",
-            "HLF",
-            "APRN",
-            "CYBR",
-            "FTNT",
-            "LOCO",
-            "VIRT",
-            "AMD",
-            "BABA",
-            "IMGN",
-            "GOGO",
-            "CBOE",
-            "HSBC");
+    public static final Set<String> EARNINGS_STOCKS = new LinkedHashSet<>();
+    static {
+        try (InputStream is = MyStocks.class.getResourceAsStream("earnings.txt")) {
+            List<String> lines = IOUtils.readLines(is, Charset.defaultCharset());
+            lines.stream()
+                    .map(s -> s.trim())
+                    .filter(s -> !s.startsWith("#"))
+                    .filter(s -> !s.isEmpty())
+                    .forEach(s -> EARNINGS_STOCKS.add(s));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

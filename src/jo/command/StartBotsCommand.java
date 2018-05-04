@@ -21,7 +21,7 @@ public class StartBotsCommand implements AppCommand {
         for (Bot bot : bots) {
             bot.init(ib, app);
             bot.start();
-            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+            Uninterruptibles.sleepUninterruptibly(20, TimeUnit.SECONDS);
         }
     }
 }

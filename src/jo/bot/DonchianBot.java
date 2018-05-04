@@ -22,6 +22,7 @@ import jo.tech.Channel;
 import jo.tech.DonchianChannel;
 import jo.tech.SMA;
 import jo.tech.StopTrail;
+import jo.trade.TradeSummary;
 import jo.util.AsyncExec;
 import jo.util.SyncSignal;
 
@@ -46,7 +47,6 @@ public class DonchianBot extends BaseBot {
     private long cancelOpenOrderAfter;
 
     private OpenPositionOrderHandler openPositionOrderHandler = new OpenPositionOrderHandler();
-    private MocOrderHandler mocOrderHandler = new MocOrderHandler();
     private ClosePositionOrderHandler closePositionOrderHandler = new ClosePositionOrderHandler();
 
     public DonchianBot(Contract contract, PositionSizeStrategy positionSize, double trailAmount) {
@@ -237,6 +237,9 @@ public class DonchianBot extends BaseBot {
             openOrderStatus = OrderStatus.PendingSubmit;
             closeOrderStatus = OrderStatus.PendingSubmit;
 
+            TradeSummary.addOrder(contract, openOrder);
+            TradeSummary.addOrder(contract, closeOrder);
+
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
 
@@ -249,14 +252,14 @@ public class DonchianBot extends BaseBot {
     }
 
     @Override
-    protected void openPositionOrderFilled(double avgFillPrice) {
-        super.openPositionOrderFilled(avgFillPrice);
+    protected void openPositionOrderFilled(int orderId, double avgFillPrice) {
+        super.openPositionOrderFilled(orderId, avgFillPrice);
         stopTrail.start();
     }
 
     @Override
-    protected void closePositionOrderFilled(double avgFillPrice) {
-        super.closePositionOrderFilled(avgFillPrice);
+    protected void closePositionOrderFilled(int orderId, double avgFillPrice) {
+        super.closePositionOrderFilled(orderId, avgFillPrice);
         if (stopTrail != null) {
             stopTrail.stop();
         }

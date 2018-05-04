@@ -25,6 +25,7 @@ import jo.tech.ChangeList;
 import jo.tech.EMA;
 import jo.tech.BarsPctChange;
 import jo.tech.StopTrail;
+import jo.trade.TradeSummary;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
 import jo.util.Orders;
@@ -55,6 +56,7 @@ public class MovingAverageHLBot extends BaseBot {
     private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
     private BotState botStatePrev;
     private StopTrail stopTrail;
+    private int skipBarIdx = 0;
 
     private long cancelOpenOrderWaitInterval = TimeUnit.SECONDS.toMillis(10);
     private long cancelOpenOrderAfter;
@@ -161,8 +163,6 @@ public class MovingAverageHLBot extends BaseBot {
             mayBeUpdateProfitTaker();
         }
     }
-
-    private int skipBarIdx = 0;
 
     private void mayBeOpenPosition() {
         int barSize = maBars.getSize();
@@ -289,6 +289,9 @@ public class MovingAverageHLBot extends BaseBot {
                 closeOrder.transmit(true);
             }
 
+            TradeSummary.addOrder(contract, openOrder);
+            TradeSummary.addOrder(contract, closeOrder);
+
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
 
@@ -297,8 +300,12 @@ public class MovingAverageHLBot extends BaseBot {
             stopTrail = new StopTrail(ib, contract, closeOrder, md, trailAmount);
             cancelOpenOrderAfter = System.currentTimeMillis() + cancelOpenOrderWaitInterval;
         } else {
-            skipBarIdx = barSize;
+            markBarUsed();
         }
+    }
+
+    private void markBarUsed() {
+        skipBarIdx = maBars.getSize();
     }
 
     private void mayBeUpdateProfitTaker() {
@@ -314,14 +321,14 @@ public class MovingAverageHLBot extends BaseBot {
     }
 
     @Override
-    protected void openPositionOrderFilled(double avgFillPrice) {
-        super.openPositionOrderFilled(avgFillPrice);
+    protected void openPositionOrderFilled(int orderId, double avgFillPrice) {
+        super.openPositionOrderFilled(orderId, avgFillPrice);
         stopTrail.start();
     }
 
     @Override
-    protected void closePositionOrderFilled(double avgFillPrice) {
-        super.closePositionOrderFilled(avgFillPrice);
+    protected void closePositionOrderFilled(int orderId, double avgFillPrice) {
+        super.closePositionOrderFilled(orderId, avgFillPrice);
         if (stopTrail != null) {
             stopTrail.stop();
         }

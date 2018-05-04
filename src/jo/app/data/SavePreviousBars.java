@@ -5,6 +5,9 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,8 +43,14 @@ public class SavePreviousBars {
             @Override
             public void connected() {
                 AsyncExec.execute(() -> {
-                    for (String symbol : stockSymbols) {
-                        gatherData(objectMapper, ib, symbol);
+                    ExecutorService pool = Executors.newFixedThreadPool(5);
+                    try {
+                        for (String symbol : stockSymbols) {
+                            pool.submit(() -> gatherData(objectMapper, ib, symbol));
+                        }
+                        pool.shutdown();
+                        pool.awaitTermination(1, TimeUnit.HOURS);
+                    } catch (InterruptedException e) {
                     }
                     ex.set("Done");
                 });
@@ -58,7 +67,7 @@ public class SavePreviousBars {
         Contract contract = Stocks.smartOf(symbol);
         System.out.println(contract.symbol());
 
-        File folder = new File("historical/2018-05-02-1m-20d");
+        File folder = new File("historical/2018-05-03-1m-20d");
         folder.mkdirs();
 
         File file = new File(folder, symbol + ".log");

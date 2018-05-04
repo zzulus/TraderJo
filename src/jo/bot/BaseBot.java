@@ -9,15 +9,13 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import jo.filter.Filter;
 import jo.handler.OrderHandlerAdapter;
 import jo.model.MarketData;
 import jo.model.OrderStatusInput;
 import jo.position.PositionSizeStrategy;
-import jo.util.PnL;
-import jo.util.TradeRef;
+import jo.trade.TradeRef;
+import jo.trade.TradeSummary;
 
 public abstract class BaseBot implements Bot {
     protected Logger log = LogManager.getLogger(this.getClass());
@@ -27,18 +25,11 @@ public abstract class BaseBot implements Bot {
 
     protected Filter positionFilter;
 
-    protected double openAvgFillPrice;
-    protected double takeProfitOrderAvgFillPrice;
-    protected int currentPosition = 0;
-
     protected Order openOrder;
-    protected Order closeOrder;    
+    protected Order closeOrder;
 
     protected OrderStatus openOrderStatus = null;
     protected OrderStatus closeOrderStatus = null;
-    protected OrderStatus stopLossOrderStatus = null;
-
-    protected TIntSet executedOrders = new TIntHashSet();
 
     protected Thread thread;
 
@@ -53,8 +44,8 @@ public abstract class BaseBot implements Bot {
 
     }
 
-    protected void openPositionOrderFilled(double avgFillPrice) {
-
+    protected void openPositionOrderFilled(int orderId, double avgFillPrice) {
+        TradeSummary.addExecution(orderId, avgFillPrice);
     }
 
     protected void openPositionOrderCancelled() {
@@ -64,8 +55,8 @@ public abstract class BaseBot implements Bot {
 
     }
 
-    protected void closePositionOrderFilled(double closeAvgFillPrice) {
-        PnL.log(contract, openOrder.orderId(), openOrder.action(), openOrder.totalQuantity(), openAvgFillPrice, closeAvgFillPrice);
+    protected void closePositionOrderFilled(int orderId, double avgFillPrice) {
+        TradeSummary.addExecution(orderId, avgFillPrice);
     }
 
     protected void closePositionOrderCancelled() {
@@ -120,15 +111,20 @@ public abstract class BaseBot implements Bot {
     }
 
     protected String updateTradeRef() {
-        String prefix = this.getClass().getSimpleName() + "-" + contract.symbol();
-        String tradeRef = TradeRef.create(prefix);
-        this.log = LogManager.getLogger(tradeRef);
+        String tradeRef = TradeRef.create(contract.symbol());
+        Thread.currentThread().setName(tradeRef);
         return tradeRef;
     }
 
     protected class OpenPositionOrderHandler extends OrderHandlerAdapter {
         @Override
         public void orderStatus(OrderStatusInput input) {
+            if (openOrder.orderId() != input.getOrderId()) {
+                log.warn("OpenPositionOrderHandler: reported order {} != current open order {}",
+                        input.getOrderId(), openOrder.orderId());
+                return;
+            }
+
             OrderStatus status = input.getStatus();
             final double filled = input.getFilled();
             final double remaining = input.getRemaining();
@@ -147,9 +143,7 @@ public abstract class BaseBot implements Bot {
             }
 
             if (status == OrderStatus.Filled && remaining < 0.01) {
-                openAvgFillPrice = avgFillPrice;
-                currentPosition = (int) filled; // TODO Deal with partially filled orders 
-                openPositionOrderFilled(avgFillPrice);
+                openPositionOrderFilled(input.getOrderId(), avgFillPrice);
             }
 
             // remap ApiCancelled to Canceled
@@ -175,6 +169,12 @@ public abstract class BaseBot implements Bot {
     protected class ClosePositionOrderHandler extends OrderHandlerAdapter {
         @Override
         public void orderStatus(OrderStatusInput input) {
+            if (closeOrder.orderId() != input.getOrderId()) {
+                log.warn("ClosePositionOrderHandler: reported order {} != current close order {}",
+                        input.getOrderId(), closeOrder.orderId());
+                return;
+            }
+
             OrderStatus status = input.getStatus();
             final double filled = input.getFilled();
             final double remaining = input.getRemaining();
@@ -193,9 +193,7 @@ public abstract class BaseBot implements Bot {
             }
 
             if (status == OrderStatus.Filled && remaining < 0.01) {
-                takeProfitOrderAvgFillPrice = avgFillPrice;
-                currentPosition -= filled;
-                closePositionOrderFilled(avgFillPrice);
+                closePositionOrderFilled(input.getOrderId(), avgFillPrice);
             }
 
             // remap ApiCancelled to Canceled
@@ -217,49 +215,6 @@ public abstract class BaseBot implements Bot {
         }
     }
 
-    protected class StopLossOrderHandler extends OrderHandlerAdapter {
-        @Override
-        public void orderStatus(OrderStatusInput input) {
-            OrderStatus status = input.getStatus();
-            final double filled = input.getFilled();
-            final double remaining = input.getRemaining();
-            final String whyHeld = input.getWhyHeld();
-            final double avgFillPrice = input.getAvgFillPrice();
-            log.info("StopLoss: OderStatus: status {}, filled {}, remaining {}, whyHeld {}", status, filled, remaining, whyHeld);
-
-            if (stopLossOrderStatus == status) {
-                return;
-            }
-
-            if (status == OrderStatus.Submitted) {
-                //takeProfitOrderSubmitted();
-            }
-
-            if (status == OrderStatus.Filled && remaining < 0.01) {
-                takeProfitOrderAvgFillPrice = avgFillPrice;
-                currentPosition -= filled;
-                closePositionOrderFilled(avgFillPrice);
-            }
-
-            // remap ApiCancelled to Canceled
-            if (status == OrderStatus.ApiCancelled) {
-                status = OrderStatus.Cancelled;
-            }
-
-            if (status == OrderStatus.Cancelled) {
-                closePositionOrderCancelled();
-            }
-
-            // finally assign status
-            if (status == OrderStatus.Filled
-                    || status == OrderStatus.Cancelled
-                    || status == OrderStatus.PreSubmitted
-                    || status == OrderStatus.Submitted) {
-                stopLossOrderStatus = status;
-            }
-        }
-    }
-
     protected class MocOrderHandler extends OrderHandlerAdapter {
         @Override
         public void orderStatus(OrderStatusInput input) {
@@ -269,9 +224,7 @@ public abstract class BaseBot implements Bot {
             final double avgFillPrice = input.getAvgFillPrice();
 
             if (status == OrderStatus.Filled && remaining < 0.01) {
-                takeProfitOrderAvgFillPrice = avgFillPrice;
-                currentPosition -= filled;
-                closePositionOrderFilled(avgFillPrice);
+                closePositionOrderFilled(input.getOrderId(), avgFillPrice);
             }
         }
     }
