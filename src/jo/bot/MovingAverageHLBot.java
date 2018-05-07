@@ -25,7 +25,7 @@ import jo.tech.ChangeList;
 import jo.tech.EMA;
 import jo.tech.BarsPctChange;
 import jo.tech.StopTrail;
-import jo.trade.TradeSummary;
+import jo.trade.TradeBook;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
 import jo.util.Orders;
@@ -289,8 +289,8 @@ public class MovingAverageHLBot extends BaseBot {
                 closeOrder.transmit(true);
             }
 
-            TradeSummary.addOrder(contract, openOrder);
-            TradeSummary.addOrder(contract, closeOrder);
+            TradeBook.addOrder(contract, openOrder);
+            TradeBook.addOrder(contract, closeOrder);
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);

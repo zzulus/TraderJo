@@ -15,7 +15,7 @@ import jo.model.MarketData;
 import jo.model.OrderStatusInput;
 import jo.position.PositionSizeStrategy;
 import jo.trade.TradeRef;
-import jo.trade.TradeSummary;
+import jo.trade.TradeBook;
 
 public abstract class BaseBot implements Bot {
     protected Logger log = LogManager.getLogger(this.getClass());
@@ -45,7 +45,7 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void openPositionOrderFilled(int orderId, double avgFillPrice) {
-        TradeSummary.addExecution(orderId, avgFillPrice);
+        TradeBook.addExecution(orderId, avgFillPrice);
     }
 
     protected void openPositionOrderCancelled() {
@@ -56,7 +56,7 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void closePositionOrderFilled(int orderId, double avgFillPrice) {
-        TradeSummary.addExecution(orderId, avgFillPrice);
+        TradeBook.addExecution(orderId, avgFillPrice);
     }
 
     protected void closePositionOrderCancelled() {

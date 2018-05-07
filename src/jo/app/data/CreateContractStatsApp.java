@@ -27,7 +27,7 @@ import jo.recording.event.EventTypeRegistry;
 import jo.recording.event.RealTimeBarEvent;
 
 public class CreateContractStatsApp {
-    private static File historicalsDir = new File("historical/2018-05-02-1m-20d");
+    private static File historicalsDir = new File("historical/2018-05-03-1m-20d");
     private static ObjectMapper objectMapper = new ObjectMapper();
     static {
         objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);

@@ -95,4 +95,10 @@ public class BrokerAdapter implements IBroker {
     public void reqHistoricalData(Contract contract, String endDateTime, int duration, DurationUnit durationUnit, BarSize barSize, WhatToShow whatToShow, boolean rthOnly, IHistoricalDataHandler handler) {
     }
 
+    @Override
+    public void reqNextOrderId() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

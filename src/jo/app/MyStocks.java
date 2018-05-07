@@ -1,5 +1,6 @@
 package jo.app;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -180,7 +181,7 @@ public class MyStocks {
 
     public static final Set<String> EARNINGS_STOCKS = new LinkedHashSet<>();
     static {
-        try (InputStream is = MyStocks.class.getResourceAsStream("earnings.txt")) {
+        try (InputStream is = new FileInputStream("earnings.txt")) {
             List<String> lines = IOUtils.readLines(is, Charset.defaultCharset());
             lines.stream()
                     .map(s -> s.trim())

@@ -17,7 +17,14 @@ public class AsyncExec {
         t.start();
         return t;
     }
-    
+
+    public static Thread startDaemonThread(Runnable target) {
+        Thread t = new Thread(target);
+        t.setDaemon(true);
+        t.start();
+        return t;
+    }
+
     public static Thread execute(Runnable target) {
         Thread t = new Thread(target);
         t.start();

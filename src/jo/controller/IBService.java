@@ -196,6 +196,11 @@ public class IBService implements IBroker {
         this.clientId = clientId;
     }
 
+    @Override
+    public void reqNextOrderId() {
+        client.reqIds(0);
+    }
+
     public void reqAccountUpdates(boolean subscribe, String acctCode, IAccountHandler handler) {
         if (!checkConnection())
             return;
@@ -783,7 +788,7 @@ public class IBService implements IBroker {
     // Private stuff
     // ==========================================================================
     private int getNextRequestId() {
-        return reqId.incrementAndGet();
+        return reqId.decrementAndGet();
     }
 
     @Override
@@ -828,11 +833,14 @@ public class IBService implements IBroker {
 
         @Override
         public void nextValidId(int nextOrderId) {
-            orderId.set(nextOrderId);
-            reqId.set(nextOrderId + 10000000); // let order id's not collide with other request id's
-            isConnected = true;
-            if (connectionHandler != null) {
-                connectionHandler.connected();
+            log.info("Next valid order id {}", nextOrderId);
+            orderId.getAndUpdate(i -> (nextOrderId > i ? nextOrderId : i));
+
+            if (!isConnected) {
+                isConnected = true;
+                if (connectionHandler != null) {
+                    connectionHandler.connected();
+                }
             }
         }
 

@@ -77,9 +77,9 @@ public class StopTrail {
         double orderPrice = fixPriceVariance(order.auxPrice());
         boolean update = false;
 
-        log.info("Check: {} order stop price {}, proposed stop price {}, trail amount {}, last price {}",
-                longPosition ? "long" : "short",
-                fmt(orderPrice), fmt(proposedStopPrice), fmt(trailAmount), fmt(lastPrice));
+//        log.info("Check: {} order stop price {}, proposed stop price {}, trail amount {}, last price {}",
+//                longPosition ? "long" : "short",
+//                fmt(orderPrice), fmt(proposedStopPrice), fmt(trailAmount), fmt(lastPrice));
 
         if (longPosition && proposedStopPrice > orderPrice) {
             update = true;

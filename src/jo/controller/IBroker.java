@@ -39,4 +39,6 @@ public interface IBroker {
     void reqTopMktData(Contract contract, String genericTickList, boolean snapshot, ITopMktDataHandler handler);
 
     void reqHistoricalData(Contract contract, String endDateTime, int duration, DurationUnit durationUnit, BarSize barSize, WhatToShow whatToShow, boolean rthOnly, IHistoricalDataHandler handler);
+
+    void reqNextOrderId();
 }

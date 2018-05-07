@@ -2,40 +2,45 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+            <PatternLayout pattern="%d{DEFAULT} [%t] %level %c{1} - %msg%n" />
         </Console>
 
-        <RollingFile name="File" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd}.log">
-            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+        <RollingFile name="App" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{DEFAULT} [%t] %level %c{1} - %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
         </RollingFile>
 
-        <RollingFile name="AppFile" filePattern="log/app/app-%d{yyyy-MM-dd}.log">
-            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+        <RollingFile name="PNL" filePattern="log/%d{yyyy-MM-dd}/pnl-%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{DEFAULT} [%9t] %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
         </RollingFile>
 
-
-        <RollingFile name="PNL" filePattern="log/app/pnl-%d{yyyy-MM-dd}.log">
-            <PatternLayout pattern="%d{ISO8601} [%t] %level %logger - %msg%n" />
+        <RollingFile name="PNLCSV" filePattern="log/%d{yyyy-MM-dd}/pnl-%d{yyyy-MM-dd}.csv">
+            <PatternLayout pattern="%d{DEFAULT} %msg%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
             </Policies>
         </RollingFile>
-
     </Appenders>
+
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="File" />
-            <AppenderRef ref="AppFile" />
+            <AppenderRef ref="App" />
         </Root>
+
         <Logger name="PNL" level="INFO">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="App" />
             <AppenderRef ref="PNL" />
+        </Logger>
+
+        <Logger name="PNLCSV" level="INFO">
+            <AppenderRef ref="PNLCSV" />
         </Logger>
     </Loggers>
 </Configuration>

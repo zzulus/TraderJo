@@ -67,7 +67,7 @@ public class SavePreviousBars {
         Contract contract = Stocks.smartOf(symbol);
         System.out.println(contract.symbol());
 
-        File folder = new File("historical/2018-05-03-1m-20d");
+        File folder = new File("historical/2018-05-04-1m-20d");
         folder.mkdirs();
 
         File file = new File(folder, symbol + ".log");

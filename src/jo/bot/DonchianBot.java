@@ -22,7 +22,7 @@ import jo.tech.Channel;
 import jo.tech.DonchianChannel;
 import jo.tech.SMA;
 import jo.tech.StopTrail;
-import jo.trade.TradeSummary;
+import jo.trade.TradeBook;
 import jo.util.AsyncExec;
 import jo.util.SyncSignal;
 
@@ -237,8 +237,8 @@ public class DonchianBot extends BaseBot {
             openOrderStatus = OrderStatus.PendingSubmit;
             closeOrderStatus = OrderStatus.PendingSubmit;
 
-            TradeSummary.addOrder(contract, openOrder);
-            TradeSummary.addOrder(contract, closeOrder);
+            TradeBook.addOrder(contract, openOrder);
+            TradeBook.addOrder(contract, closeOrder);
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);

@@ -19,6 +19,7 @@ import com.ib.client.Types.WhatToShow;
 import jo.bot.Bot;
 import jo.bot.MovingAverageBot;
 import jo.command.AppCommand;
+import jo.command.GetNextOrderIdCommand;
 import jo.command.StartBotsCommand;
 import jo.constant.Stocks;
 import jo.controller.IApp;
@@ -47,7 +48,7 @@ public class TraderApp implements IApp {
         Set<String> stockSymbols = new LinkedHashSet<>();
         stockSymbols.addAll(MyStocks.EARNINGS_STOCKS);
         stockSymbols.addAll(MyStocks.STOCKS_TO_TRADE);
-        
+
         List<Bot> bots = new ArrayList<>();
         for (String stockSymbol : stockSymbols) {
             Contract contract = Stocks.smartOf(stockSymbol);
@@ -55,7 +56,9 @@ public class TraderApp implements IApp {
             bots.add(bot);
         }
 
-        postConnectCommands = Lists.newArrayList(new StartBotsCommand(bots));
+        postConnectCommands = new ArrayList<>();
+        postConnectCommands.add(new GetNextOrderIdCommand());
+        postConnectCommands.add(new StartBotsCommand(bots));
     }
 
     public void start() {

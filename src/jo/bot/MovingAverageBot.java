@@ -25,7 +25,7 @@ import jo.tech.BarsPctChange;
 import jo.tech.ChangeList;
 import jo.tech.EMA;
 import jo.tech.StopTrail;
-import jo.trade.TradeSummary;
+import jo.trade.TradeBook;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
 import jo.util.Orders;
@@ -135,9 +135,16 @@ public class MovingAverageBot extends BaseBot {
             botStatePrev = botState;
         }
 
-        if (botState == BotState.PENDING && whatIf && System.currentTimeMillis() > cancelOpenOrderAfter + TimeUnit.MINUTES.toMillis(2)) {
-            log.info("WhatIf, cancelling open order");
-            openOrderStatus = null;
+        if (botState == BotState.PENDING) {
+            if (whatIf && System.currentTimeMillis() > cancelOpenOrderAfter + TimeUnit.MINUTES.toMillis(2)) {
+                log.info("WhatIf, cancelling open order");
+                openOrderStatus = null;
+            }
+
+            if (!whatIf && System.currentTimeMillis() > cancelOpenOrderAfter) {
+                log.warn("Too slow in PENDING, canceling");
+                ib.cancelOrder(openOrder.orderId());
+            }
             return;
         }
 
@@ -145,10 +152,21 @@ public class MovingAverageBot extends BaseBot {
             return;
         }
 
-        if (botState == BotState.OPENNING_POSITION && System.currentTimeMillis() > cancelOpenOrderAfter) {
-            log.info("Too slow, cancelling open order");
-            ib.cancelOrder(openOrder.orderId());
-            // TODO Liquidate position or update price
+        // TODO Liquidate position or update price
+
+        if (botState == BotState.OPENNING_POSITION) {
+            if (System.currentTimeMillis() < cancelOpenOrderAfter) {
+                double wap = rtBars.getLastBar().getWap();
+                if (wap != openOrder.lmtPrice()) {
+                    log.info("Updating open order from {} to {}", fmt(openOrder.lmtPrice()), fmt(wap));
+                    openOrder.lmtPrice(wap);
+                    ib.placeOrModifyOrder(contract, openOrder, null);
+                }
+            } else {
+                log.warn("Too slow, cancelling open order");
+                ib.cancelOrder(openOrder.orderId());                
+            }
+            
             return;
         }
 
@@ -278,6 +296,7 @@ public class MovingAverageBot extends BaseBot {
 
             openOrder = Orders.newLimitSellOrder(ib, totalQuantity, openPrice);
             closeOrder = Orders.newStopBuyOrder(ib, totalQuantity, stopLossPrice, openOrder.orderId());
+
             openOrder.orderRef(ref);
             closeOrder.orderRef(ref);
 
@@ -299,8 +318,8 @@ public class MovingAverageBot extends BaseBot {
                 closeOrder.transmit(true);
             }
 
-            TradeSummary.addOrder(contract, openOrder);
-            TradeSummary.addOrder(contract, closeOrder);
+            TradeBook.addOrder(contract, openOrder);
+            TradeBook.addOrder(contract, closeOrder);
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
@@ -325,10 +344,10 @@ public class MovingAverageBot extends BaseBot {
         double currentPrice = md.getLastPrice();
         double currentTrailAmount = stopTrail.getTrailAmount();
 
-        log.info("mayBeUpdateProfitTaker {}: check if should update from {} to new edge {}",
-                longPosition ? "long" : "short",
-                fmt(closeOrder.auxPrice()),
-                fmt(edgeVal));
+//        log.info("mayBeUpdateProfitTaker {}: check if should update from {} to new edge {}",
+//                longPosition ? "long" : "short",
+//                fmt(closeOrder.auxPrice()),
+//                fmt(edgeVal));
 
         //        // force stop loss to positive zone
         //        if (longPosition && openPrice < stopLossPrice && currentPrice > lastOpen) {

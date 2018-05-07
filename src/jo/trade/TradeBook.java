@@ -14,8 +14,13 @@ import com.ib.client.Order;
 import jo.util.Formats;
 import jo.util.LongShort;
 
-public class TradeSummary {
+public class TradeBook {
     public static final Logger log = LogManager.getLogger("PNL");
+    public static final Logger csv = LogManager.getLogger("PNLCSV");
+    static {
+        csv.info("Date\tTrade\tAction\tSymbol\tQty\tOpen\tClose\tP&L\tContract P&L\tTotal");
+    }
+
     private static volatile double grandTotalPnL = 0;
     private static Map<String, MutableDouble> pnlByContract = new ConcurrentHashMap<>();
     private static Map<Integer, Trade> trades = new ConcurrentHashMap<>();
@@ -90,12 +95,12 @@ public class TradeSummary {
 
         grandTotalPnL += pnl;
         contractPnl.add(pnl);
-        
+
         String oldThreadName = Thread.currentThread().getName();
-        Thread.currentThread().setName(openTrade.getTradeRef()); 
-        
+        Thread.currentThread().setName(openTrade.getTradeRef());
+
         // TODO use MDC
-        log.info("[{}] {} {}, qty {}, open {}, close {}, P&L {}. Contract P&L {}. Total P&L {}.",
+        log.info("{} {}, qty {}, open {}, close {}, P&L {}. Contract P&L {}. Total P&L {}.",
                 openTrade.getTradeRef(),
                 isLongTrade ? "Long" : "Short",
                 symbol,
@@ -105,7 +110,18 @@ public class TradeSummary {
                 Formats.fmt(pnl),
                 Formats.fmt(contractPnl.doubleValue()),
                 Formats.fmt(grandTotalPnL));
-        
+
+        csv.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                openTrade.getTradeRef(),
+                isLongTrade ? "Long" : "Short",
+                symbol,
+                totalQuantity,
+                Formats.fmt(openTrade.getAvgFillPrice()),
+                Formats.fmt(closePrice),
+                Formats.fmt(pnl),
+                Formats.fmt(contractPnl.doubleValue()),
+                Formats.fmt(grandTotalPnL));
+
         Thread.currentThread().setName(oldThreadName);
     }
 }
