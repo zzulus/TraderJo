@@ -3,6 +3,8 @@
 
 package jo.controller;
 
+import static java.util.Collections.emptyList;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -400,7 +402,7 @@ public class IBService implements IBroker {
 
         int reqId = getNextRequestId();
         optionCompMap.put(reqId, handler);
-        client.calculateImpliedVolatility(reqId, c, optPrice, underPrice);
+        client.calculateImpliedVolatility(reqId, c, optPrice, underPrice, emptyList());
     }
 
     public void reqOptionComputation(Contract c, double vol, double underPrice, IOptHandler handler) {
@@ -409,7 +411,7 @@ public class IBService implements IBroker {
 
         int reqId = getNextRequestId();
         optionCompMap.put(reqId, handler);
-        client.calculateOptionPrice(reqId, c, vol, underPrice);
+        client.calculateOptionPrice(reqId, c, vol, underPrice, emptyList());
     }
 
     public void cancelOptionComp(IOptHandler handler) {
@@ -626,7 +628,7 @@ public class IBService implements IBroker {
 
         int reqId = getNextRequestId();
         fundamentalMap.put(reqId, handler);
-        client.reqFundamentalData(reqId, contract, reportType.getApiString());
+        client.reqFundamentalData(reqId, contract, reportType.getApiString(), emptyList());
     }
 
     public void reqCurrentTime(ITimeHandler handler) {
@@ -761,13 +763,13 @@ public class IBService implements IBroker {
         client.reqHistoricalTicks(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow.name(), rthOnly ? 1 : 0, ignoreSize, Collections.emptyList());
     }
 
-    public void reqTickByTickData(Contract contract, String tickType, ITickByTickDataHandler handler) {
+    public void reqTickByTickData(Contract contract, String tickType, int numberOfTicks, boolean ignoreSize, ITickByTickDataHandler handler) {
         if (!checkConnection())
             return;
 
         int reqId = getNextRequestId();
         tickByTickDataMap.put(reqId, handler);
-        client.reqTickByTickData(reqId, contract, tickType);
+        client.reqTickByTickData(reqId, contract, tickType, numberOfTicks, ignoreSize);
     }
 
     public void cancelTickByTickData(ITickByTickDataHandler handler) {
@@ -833,7 +835,6 @@ public class IBService implements IBroker {
 
         @Override
         public void nextValidId(int nextOrderId) {
-            log.info("Next valid order id {}", nextOrderId);
             orderId.getAndUpdate(i -> (nextOrderId > i ? nextOrderId : i));
 
             if (!isConnected) {

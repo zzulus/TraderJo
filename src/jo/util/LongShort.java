@@ -42,6 +42,14 @@ public enum LongShort {
         return byOpenOrder(action) == SHORT;
     }
 
+    public static boolean isLongByOpen(Order order) {
+        return byOpenOrder(order.action()) == LONG;
+    }
+
+    public static boolean isShortByOpen(Order order) {
+        return byOpenOrder(order.action()) == SHORT;
+    }
+
     public static boolean isLongByClose(Action action) {
         return byCloseOrder(action) == LONG;
     }

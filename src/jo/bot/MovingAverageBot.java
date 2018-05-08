@@ -27,6 +27,7 @@ import jo.tech.EMA;
 import jo.tech.StopTrail;
 import jo.trade.TradeBook;
 import jo.util.AsyncExec;
+import jo.util.LongShort;
 import jo.util.NullUtils;
 import jo.util.Orders;
 import jo.util.SyncSignal;
@@ -37,6 +38,10 @@ public class MovingAverageBot extends BaseBot {
     private SyncSignal priceSignal;
     private Bars maBars;
     private Bars rtBars;
+    private Bars maOpenBars;
+
+    private EMA maOpenLong;
+    private EMA maOpenShort;
 
     private EMA maEdge0;
     private EMA maEdge1;
@@ -99,6 +104,10 @@ public class MovingAverageBot extends BaseBot {
         this.maEdge1 = new EMA(maBars, BarType.CLOSE, period, 1);
         this.maEdge2 = new EMA(maBars, BarType.CLOSE, period, 2);
 
+        this.maOpenBars = md.getBars(BarSize._15_secs);
+        this.maOpenLong = new EMA(maBars, BarType.HIGH, period, 9);
+        this.maOpenShort = new EMA(maBars, BarType.LOW, period, 9);
+
         this.changeO0 = new BarsPctChange(maBars, BarType.OPEN, 0);
         this.changeO1 = new BarsPctChange(maBars, BarType.OPEN, 1);
         this.changeO2 = new BarsPctChange(maBars, BarType.OPEN, 2);
@@ -155,18 +164,24 @@ public class MovingAverageBot extends BaseBot {
         // TODO Liquidate position or update price
 
         if (botState == BotState.OPENNING_POSITION) {
-            if (System.currentTimeMillis() < cancelOpenOrderAfter) {
-                double wap = rtBars.getLastBar().getWap();
-                if (wap != openOrder.lmtPrice()) {
-                    log.info("Updating open order from {} to {}", fmt(openOrder.lmtPrice()), fmt(wap));
-                    openOrder.lmtPrice(wap);
-                    ib.placeOrModifyOrder(contract, openOrder, null);
-                }
+            double newOpenPrice;
+            if (LongShort.isLongByOpen(openOrder)) {
+                newOpenPrice = maOpenLong.get();
             } else {
-                log.warn("Too slow, cancelling open order");
-                ib.cancelOrder(openOrder.orderId());                
+                newOpenPrice = maOpenShort.get();
             }
-            
+
+            newOpenPrice = fixPriceVariance(newOpenPrice);
+
+            if (newOpenPrice != openOrder.lmtPrice()) {
+                log.info("Updating open order from {} to {}", fmt(openOrder.lmtPrice()), fmt(newOpenPrice));
+                openOrder.lmtPrice(newOpenPrice);
+                ib.placeOrModifyOrder(contract, openOrder, null);
+            }
+
+            //log.warn("Too slow, cancelling open order");
+            //ib.cancelOrder(openOrder.orderId());
+
             return;
         }
 
@@ -190,6 +205,9 @@ public class MovingAverageBot extends BaseBot {
         double lastPrice = md.getLastPrice();
         double bidPrice = md.getBidPrice(); // buy
         double askPrice = md.getAskPrice(); // sell
+
+        double openLongPrice = fixPriceVariance(maOpenLong.get());
+        double openShortPrice = fixPriceVariance(maOpenShort.get());
 
         Double maEdgeVal0 = fixPriceVariance(maEdge0.get());
         Double maEdgeVal1 = fixPriceVariance(maEdge1.get());
@@ -233,6 +251,7 @@ public class MovingAverageBot extends BaseBot {
                 && maRtGoingUp
                 && barOpen0 < barClose0
                 && barOpen1 < barClose1
+                && barOpen2 < barClose2
                 && barLow0 - maEdgeVal0 > 0.02
                 && lastPrice > maEdgeVal0
                 && bidPrice > maEdgeVal0
@@ -244,6 +263,7 @@ public class MovingAverageBot extends BaseBot {
                 && maRtGoingDown
                 && barOpen0 > barClose0
                 && barOpen1 > barClose1
+                && barOpen2 > barClose2
                 && barHigh0 - maEdgeVal0 < -0.02
                 && lastPrice < maEdgeVal0
                 && bidPrice < maEdgeVal0
@@ -256,7 +276,7 @@ public class MovingAverageBot extends BaseBot {
         if (openLong) {
             String tradeRef = updateTradeRef();
 
-            final double openPrice = rtBars.getLastBar().getWap();
+            final double openPrice = openLongPrice;
             final double stopLossTrail = openPrice - strategyTrailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.max(stopLossTrail, stopLossEdge));
@@ -281,7 +301,7 @@ public class MovingAverageBot extends BaseBot {
             String ref = updateTradeRef();
 
             //final double openPrice = Math.max(lastPrice, bidPrice + 0.01); //lastPrice;
-            final double openPrice = rtBars.getLastBar().getWap();
+            final double openPrice = openShortPrice;
             final double stopLossTrail = openPrice + strategyTrailAmount;
             final double stopLossEdge = maEdgeVal0;
             final double stopLossPrice = fixPriceVariance(Math.min(stopLossTrail, stopLossEdge));
@@ -344,10 +364,10 @@ public class MovingAverageBot extends BaseBot {
         double currentPrice = md.getLastPrice();
         double currentTrailAmount = stopTrail.getTrailAmount();
 
-//        log.info("mayBeUpdateProfitTaker {}: check if should update from {} to new edge {}",
-//                longPosition ? "long" : "short",
-//                fmt(closeOrder.auxPrice()),
-//                fmt(edgeVal));
+        //        log.info("mayBeUpdateProfitTaker {}: check if should update from {} to new edge {}",
+        //                longPosition ? "long" : "short",
+        //                fmt(closeOrder.auxPrice()),
+        //                fmt(edgeVal));
 
         //        // force stop loss to positive zone
         //        if (longPosition && openPrice < stopLossPrice && currentPrice > lastOpen) {

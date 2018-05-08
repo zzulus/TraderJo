@@ -37,12 +37,12 @@ import jo.recording.event.TickSizeEvent;
 import jo.recording.event.TickStringEvent;
 
 public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandler, IErrorHandler, IDeepMktDataHandler {
-    private static final Logger log = LogManager.getLogger(MarketDataRecorder.class);    
+    private static final Logger log = LogManager.getLogger(MarketDataRecorder.class);
     private PrintWriter ps;
     private BlockingQueue<AbstractEvent> q = new ArrayBlockingQueue<>(64000);
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    public MarketDataRecorder(Contract contract) {        
+    public MarketDataRecorder(Contract contract) {
         this.objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
         String symbol = contract.symbol();
@@ -66,7 +66,7 @@ public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandl
         try {
             while (true) {
                 Object event = q.take();
-                String str = objectMapper.writeValueAsString(event); // wtf, writeValue(stream) closes the stream
+                String str = objectMapper.writeValueAsString(event);
                 write(str);
             }
         } catch (InterruptedException e) {
@@ -84,8 +84,8 @@ public class MarketDataRecorder implements IRealTimeBarHandler, ITopMktDataHandl
     private void openFile(String symbol) {
         LocalDateTime now = LocalDateTime.now();
 
-        File dir = new File("log/" + now.format(DateTimeFormatter.ISO_LOCAL_DATE));
-        dir.mkdir();
+        File dir = new File("log/" + now.format(DateTimeFormatter.ISO_LOCAL_DATE) + "/market");
+        dir.mkdirs();
 
         String fileName = String.format("Market-%s-%s.log",
                 symbol,
