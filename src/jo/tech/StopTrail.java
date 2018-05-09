@@ -14,7 +14,6 @@ import com.ib.client.Types.Action;
 import jo.controller.IBroker;
 import jo.model.MarketData;
 import jo.util.AsyncExec;
-import jo.util.PriceUtils;
 import jo.util.SyncSignal;
 
 public class StopTrail {
@@ -35,7 +34,7 @@ public class StopTrail {
         this.contract = contract;
         this.order = order;
         this.md = md;
-        this.trailAmount = PriceUtils.fixPriceVariance(trailAmount);
+        this.trailAmount = fixPriceVariance(trailAmount);
         this.longPosition = (order.action() == Action.SELL);
     }
 
@@ -77,9 +76,9 @@ public class StopTrail {
         double orderPrice = fixPriceVariance(order.auxPrice());
         boolean update = false;
 
-//        log.info("Check: {} order stop price {}, proposed stop price {}, trail amount {}, last price {}",
-//                longPosition ? "long" : "short",
-//                fmt(orderPrice), fmt(proposedStopPrice), fmt(trailAmount), fmt(lastPrice));
+        //        log.info("Check: {} order stop price {}, proposed stop price {}, trail amount {}, last price {}",
+        //                longPosition ? "long" : "short",
+        //                fmt(orderPrice), fmt(proposedStopPrice), fmt(trailAmount), fmt(lastPrice));
 
         if (longPosition && proposedStopPrice > orderPrice) {
             update = true;
@@ -110,12 +109,14 @@ public class StopTrail {
     }
 
     public void setTrailAmount(double newTrailAmount) {
-        log.info("Updating trailAmount: from {} to {}",
-                fmt(this.trailAmount), fmt(newTrailAmount));
+        newTrailAmount = fixPriceVariance(newTrailAmount);
 
         if (trailAmount == this.trailAmount) {
             return;
         }
+
+        log.info("Updating trailAmount: from {} to {}",
+                fmt(this.trailAmount), fmt(newTrailAmount));
 
         checkArgument(newTrailAmount > 0, "trailAmount cannot be less zero: %s", newTrailAmount);
         this.trailAmount = newTrailAmount;

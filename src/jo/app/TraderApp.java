@@ -42,7 +42,7 @@ public class TraderApp implements IApp {
     }
 
     public TraderApp() {
-        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000, 1.0);
+        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(500, 2.0);
 
         Set<String> stockSymbols = new LinkedHashSet<>();
         stockSymbols.addAll(MyStocks.EARNINGS_STOCKS);

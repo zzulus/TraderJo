@@ -19,6 +19,8 @@ public class DollarValuePositionSizeStrategy implements PositionSizeStrategy {
         int maxRiskShares = (int) (maxRiskDollarAmount / riskPerShare);
         int positionSize = Math.min(maxPositionSize, maxRiskShares);
 
+        positionSize = Math.max(positionSize, 1);
+
         log.info("maxPositionSize {}, maxRiskShares {} => positionSize {}    [openPrice {}, maxRiskDollarAmount {}]",
                 maxPositionSize, maxRiskShares, positionSize, openPrice, maxRiskDollarAmount);
 

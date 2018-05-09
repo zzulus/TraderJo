@@ -7,5 +7,6 @@ import jo.model.MarketData;
 public interface TrailAmountStrategy {
     Double getTrailAmount(MarketData md);
 
-    void init(IBroker ib, IApp app);
+    default void init(IBroker ib, IApp app) {
+    }
 }

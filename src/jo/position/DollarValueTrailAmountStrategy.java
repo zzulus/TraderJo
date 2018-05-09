@@ -19,8 +19,4 @@ public class DollarValueTrailAmountStrategy implements TrailAmountStrategy {
     public static DollarValueTrailAmountStrategy of(double value) {
         return new DollarValueTrailAmountStrategy(value);
     }
-
-    @Override
-    public void init(IBroker ib, IApp app) {
-    }
 }

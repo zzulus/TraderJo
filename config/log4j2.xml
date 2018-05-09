@@ -8,21 +8,21 @@
         <RollingFile name="App" filePattern="log/%d{yyyy-MM-dd}/app-%d{yyyy-MM-dd}.log">
             <PatternLayout pattern="%d{DEFAULT} [%t] %level %c{1} - %msg%n" />
             <Policies>
-                <TimeBasedTriggeringPolicy />
+                <OnStartupTriggeringPolicy />
             </Policies>
         </RollingFile>
 
         <RollingFile name="PNL" filePattern="log/%d{yyyy-MM-dd}/pnl-%d{yyyy-MM-dd}.log">
             <PatternLayout pattern="%d{DEFAULT} [%9t] %msg%n" />
             <Policies>
-                <TimeBasedTriggeringPolicy />
+                <OnStartupTriggeringPolicy />
             </Policies>
         </RollingFile>
 
         <RollingFile name="PNLCSV" filePattern="log/%d{yyyy-MM-dd}/pnl-%d{yyyy-MM-dd}.csv">
             <PatternLayout pattern="%d{DEFAULT} %msg%n" />
             <Policies>
-                <TimeBasedTriggeringPolicy />
+                <OnStartupTriggeringPolicy />
             </Policies>
         </RollingFile>
     </Appenders>

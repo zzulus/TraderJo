@@ -100,7 +100,7 @@ public class TradeBook {
         Thread.currentThread().setName(openTrade.getTradeRef());
 
         // TODO use MDC
-        log.info("{} {}, qty {}, open {}, close {}, P&L {}. Contract P&L {}. Total P&L {}.",
+        log.info("{} {}, qty {}, open {}, close {}, P&L {}. Contract P&L {}. Total P&L {}",
                 openTrade.getTradeRef(),
                 isLongTrade ? "Long" : "Short",
                 symbol,

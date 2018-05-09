@@ -32,6 +32,30 @@ public class Orders {
     }
 
     // ==============
+    public static Order newMktBuyOrder(IBroker ib, int totalQuantity) {
+        Order order = new Order();
+        order.orderId(ib.getNextOrderId());
+        order.action(Action.BUY);
+        order.orderType(OrderType.MKT);
+        order.totalQuantity(totalQuantity);
+        //order.lmtPrice(lmtPrice);
+        order.transmit(false);
+
+        return order;
+    }
+
+    public static Order newMktSellOrder(IBroker ib, int totalQuantity) {
+        Order order = new Order();
+        order.orderId(ib.getNextOrderId());
+        order.action(Action.SELL);
+        order.orderType(OrderType.MKT);
+        order.totalQuantity(totalQuantity);
+        order.transmit(false);
+
+        return order;
+    }
+
+    // ==============
     public static Order newMocBuyOrder(IBroker ib, int totalQuantity, int parentId) {
         Order order = new Order();
         order.orderId(ib.getNextOrderId());
