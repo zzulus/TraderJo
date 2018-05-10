@@ -1,7 +1,5 @@
 package jo.position;
 
-import jo.controller.IApp;
-import jo.controller.IBroker;
 import jo.model.MarketData;
 
 public class DollarValueTrailAmountStrategy implements TrailAmountStrategy {

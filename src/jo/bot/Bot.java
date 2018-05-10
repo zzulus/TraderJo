@@ -1,10 +1,9 @@
 package jo.bot;
 
-import jo.controller.IApp;
-import jo.controller.IBroker;
+import jo.model.Context;
 
 public interface Bot {
-    void init(IBroker ib, IApp app);
+    void init(Context ctx);
 
     void runLoop();
 

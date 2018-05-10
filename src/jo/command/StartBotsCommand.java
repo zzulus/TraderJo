@@ -1,5 +1,7 @@
 package jo.command;
 
+import static java.lang.System.currentTimeMillis;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -11,13 +13,13 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 import jo.bot.Bot;
-import jo.controller.IApp;
-import jo.controller.IBroker;
+import jo.model.Context;
 
 public class StartBotsCommand implements AppCommand {
     private static final Logger log = LogManager.getLogger(StartBotsCommand.class);
     // https://interactivebrokers.github.io/tws-api/historical_limitations.html
-    private static final long PACING_TIME_WINDOW_SECONDS = TimeUnit.MINUTES.toSeconds(9) + 50; // 9 min 50 seconds just in case
+    // Making more than 60 requests within any 10 minute period
+    private static final long PACING_TIME_WINDOW_MS = TimeUnit.MINUTES.toMillis(10);
     private static final int PACING_MAX_REQUESTS = 50;
 
     private List<Bot> bots;
@@ -27,35 +29,35 @@ public class StartBotsCommand implements AppCommand {
     }
 
     @Override
-    public void execute(IBroker ib, IApp app) {
-        TLongList times = new TLongArrayList();
+    public void execute(Context ctx) {
+        TLongList botsStartTime = new TLongArrayList();
 
-        int botNum = 0;
+        int botNum = 1;
         for (Bot bot : bots) {
-            log.info("Bot {}/{}", botNum++, bots.size());
-            times.add(currentTimeSeconds());
+            log.info("Starting bot {}/{}", botNum++, bots.size());
+            botsStartTime.add(currentTimeMillis());
 
-            bot.init(ib, app);
+            bot.init(ctx);
             bot.start();
 
-            avoidPacingViolation(times);
+            avoidPacingViolation(botsStartTime);
         }
     }
 
     private void avoidPacingViolation(TLongList times) {
+        // try to not spook IB off
+        Uninterruptibles.sleepUninterruptibly(50, TimeUnit.MILLISECONDS);
+
         if (times.size() >= PACING_MAX_REQUESTS) {
             int offset = times.size() - PACING_MAX_REQUESTS;
-            long timeStamp = times.get(offset);
-            long waitPeriodSeconds = PACING_TIME_WINDOW_SECONDS - (currentTimeSeconds() - timeStamp);
+            long timeStampMs = times.get(offset);
+            long waitTimeMs = PACING_TIME_WINDOW_MS - (currentTimeMillis() - timeStampMs);
 
-            if (waitPeriodSeconds > 0) {
-                log.info("Sleeping {} seconds to avoid pacing vioalation", waitPeriodSeconds);
-                Uninterruptibles.sleepUninterruptibly(waitPeriodSeconds, TimeUnit.SECONDS);
+            if (waitTimeMs > 0) {
+                log.info("Sleeping {} ms to avoid pacing vioalation", waitTimeMs);
+                Uninterruptibles.sleepUninterruptibly(waitTimeMs, TimeUnit.MILLISECONDS);
             }
         }
     }
 
-    private long currentTimeSeconds() {
-        return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
-    }
 }

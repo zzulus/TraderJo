@@ -64,14 +64,4 @@ public class ATRFlex {
 
         return value;
     }
-
-    public static void main(String[] args) {
-        Bars bars = new Bars();
-        bars.addBar(new Bar(0, 265.87, 266.23, 0, 265.95, 0, 0, 0));
-        bars.addBar(new Bar(0, 265.94, 266.10, 0, 266.07, 0, 0, 0));
-        //bars.addBar(new Bar(0, 266.05, 266.25, 0, 266.17, 0, 0, 0));
-
-        ATRFlex atr = new ATRFlex(bars, 1, 0);
-        System.out.println(atr.get());
-    }
 }

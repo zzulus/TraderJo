@@ -12,11 +12,11 @@ import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 
 import gnu.trove.list.TDoubleList;
-import jo.controller.IApp;
 import jo.controller.IBroker;
 import jo.handler.IHistoricalDataHandler;
 import jo.model.Bar;
 import jo.model.Bars;
+import jo.model.Context;
 import jo.model.MarketData;
 import jo.util.AsyncVal;
 import jo.util.Formats;
@@ -44,11 +44,12 @@ public class HistoricalHighLowAvgTrailAmountStrategy implements TrailAmountStrat
     }
 
     @Override
-    public void init(IBroker ib, IApp app) {
+    public void init(Context ctx) {
         AsyncVal<Bars> barsExchange = AsyncVal.create();
         log.info("Calculating historical trailing amount for " + contract.symbol());
         //AsyncExec.execute(() -> {
-            ib.reqHistoricalData(contract, "20180425 23:59:59 GMT", periodDays, DurationUnit.DAY, barSize, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
+        IBroker ib = ctx.getIb();
+        ib.reqHistoricalData(contract, "20180425 23:59:59 GMT", periodDays, DurationUnit.DAY, barSize, WhatToShow.TRADES, true, new IHistoricalDataHandler() {
                 private final Bars bars = new Bars();
 
                 @Override

@@ -1,5 +1,7 @@
 package jo.trade;
 
+import java.util.Date;
+
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.Types.Action;
@@ -12,6 +14,7 @@ public class Trade {
     private int totalQuantity;
     private String tradeRef;
     private double avgFillPrice = Double.MIN_VALUE;
+    private Date fillTime;
 
     public static Trade of(Contract contract, Order order) {
         Trade trade = new Trade();
@@ -70,6 +73,7 @@ public class Trade {
 
     public void setAvgFillPrice(double avgFillPrice) {
         this.avgFillPrice = avgFillPrice;
+        this.fillTime = new Date();
     }
 
     public boolean hasAvgFillPrice() {
@@ -82,6 +86,10 @@ public class Trade {
 
     public void setTradeRef(String tradeRef) {
         this.tradeRef = tradeRef;
+    }
+
+    public Date getFillTime() {
+        return fillTime;
     }
 
     @Override

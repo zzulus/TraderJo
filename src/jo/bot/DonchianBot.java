@@ -11,18 +11,15 @@ import com.ib.client.OrderType;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
-import jo.controller.IApp;
-import jo.controller.IBroker;
-import jo.filter.Filter;
-import jo.filter.NasdaqRegularHoursFilter;
+import jo.filter.NasdaqRegularHours;
 import jo.model.BarType;
 import jo.model.Bars;
+import jo.model.Context;
 import jo.position.PositionSizeStrategy;
 import jo.tech.Channel;
 import jo.tech.DonchianChannel;
 import jo.tech.SMA;
 import jo.tech.StopTrail;
-import jo.trade.TradeBook;
 import jo.util.AsyncExec;
 import jo.util.SyncSignal;
 
@@ -37,9 +34,6 @@ public class DonchianBot extends BaseBot {
     public int lowerPeriod = 120;
     public int upperPeriod = 120;
     private double trailAmount;
-    private IBroker ib;
-    private IApp app;
-    private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
     private Bars bars;
     private BotState botStatePrev;
     private StopTrail stopTrail;
@@ -55,15 +49,13 @@ public class DonchianBot extends BaseBot {
     }
 
     @Override
-    public void init(IBroker ib, IApp app) {
+    public void init(Context ctx) {
         log.info("Start bot for {}", contract.symbol());
 
-        this.ib = ib;
-        this.app = app;
+        this.ctx = ctx;
+        this.ib = ctx.getIb();
 
-        this.app.initMarketData(contract);
-
-        this.md = app.getMarketData(contract.symbol());
+        this.md = ctx.initMarketData(contract);
         this.bars = md.getBars(BarSize._5_secs);
 
         this.barSignal = bars.getSignal();
@@ -162,11 +154,13 @@ public class DonchianBot extends BaseBot {
         double barClose = bars.getLastBar(BarType.CLOSE);
         double lastPrice = md.getLastPrice();
 
-        double smaVal = fastSMA.get();
+        Double smaVal = fastSMA.get();
+        if (smaVal == null) {
+            return;
+        }
 
         log.info(String.format("Channel: L: %.2f, M: %.2f, U: %.2f", ch.getLower(), ch.getMiddle(), ch.getUpper()));
         log.info(String.format("Last price: %.2f, smaVal: %.2f, barOpen: %.2f, barClose: %.2f", lastPrice, smaVal, barOpen, barClose));
-        System.out.println();
 
         boolean placeOrders = false;
 
@@ -237,8 +231,8 @@ public class DonchianBot extends BaseBot {
             openOrderStatus = OrderStatus.PendingSubmit;
             closeOrderStatus = OrderStatus.PendingSubmit;
 
-            TradeBook.addOrder(contract, openOrder);
-            TradeBook.addOrder(contract, closeOrder);
+            ctx.getTradeBook().addOrder(contract, openOrder);
+            ctx.getTradeBook().addOrder(contract, closeOrder);
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
@@ -281,7 +275,7 @@ public class DonchianBot extends BaseBot {
                     return;
                 }
 
-                if (nasdaqIsOpen.isActive(app, contract, md)) {
+                if (NasdaqRegularHours.INSTANCE.isMarketOpen()) {
                     runLoop();
                 }
             }

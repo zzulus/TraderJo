@@ -4,28 +4,23 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 
-import com.ib.client.Contract;
-
-import jo.controller.IApp;
-import jo.model.MarketData;
-
 // NASDAQ
 // Pre-Market:     4:00 a.m. to 9:30 a.m.
 // Regular Market: 9:30 a.m. to 4:00 p.m.
 // After Market:   4:00 p.m. to 8:00 p.m.
-public class NasdaqRegularHoursFilter implements Filter {
+public class NasdaqRegularHours {
+    public static final NasdaqRegularHours INSTANCE = new NasdaqRegularHours(0);
     private static final ZoneId EST_ZONE = ZoneId.of("America/New_York");
     private final int endOffsetMinutes;
 
-    public NasdaqRegularHoursFilter(int endOffsetMinutes) {
+    public NasdaqRegularHours(int endOffsetMinutes) {
         this.endOffsetMinutes = endOffsetMinutes;
     }
 
     /*
      * @return true if NASDAQ is open
      */
-    @Override
-    public boolean isActive(IApp app, Contract contract, MarketData marketData) {
+    public boolean isMarketOpen() {
         // TODO switch to epochTime and precomputed ranges
         ZonedDateTime timeInNY = ZonedDateTime.now(EST_ZONE);
 
@@ -38,12 +33,4 @@ public class NasdaqRegularHoursFilter implements Filter {
                 longTime >= 930 && longTime <= 1600 - endOffsetMinutes;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jo.filter.Filter#getName()
-     */
-    public String getName() {
-        return "NasdaqRegularHoursFilter";
-    }
 }

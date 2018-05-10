@@ -1,14 +1,9 @@
 package jo.replay;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.ib.client.Contract;
 
-import jo.controller.IApp;
-import jo.controller.IBroker;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.ErrorEvent;
@@ -18,39 +13,15 @@ import jo.recording.event.TickPriceEvent;
 import jo.recording.event.TickSizeEvent;
 import jo.recording.event.TickStringEvent;
 
-public class ReplayApp implements IApp {
+public class EventDriver {
+    private ReplayContext ctx;
 
-    private Map<String, MarketData> marketDataMap = new ConcurrentHashMap<>();
-    private ReplayBroker ib;
-
-    public ReplayApp(ReplayBroker ib) {
-        this.ib = ib;
-        ib.setApp(this);
-    }
-
-    public MarketData initMarketData(String symbol) {
-        return marketDataMap.computeIfAbsent(symbol, (k) -> new MarketData());
-    }
-
-    @Override
-    public MarketData getMarketData(String symbol) {
-        return marketDataMap.get(symbol);
-    }
-
-    @Override
-    public Map<String, MarketData> getMarketDataMap() {
-        return marketDataMap;
-    }
-
-    @Override
-    public IBroker getIb() {
-        return ib;
+    public EventDriver(ReplayContext ctx) {
+        this.ctx = ctx;
     }
 
     public void handleReplayEvent(Contract contract, AbstractEvent event) {
-        // System.out.println(ToStringBuilder.reflectionToString(event));
-
-        MarketData marketData = marketDataMap.get(contract.symbol());
+        MarketData marketData = ctx.getMarketData(contract.symbol());
 
         if (event instanceof RealTimeBarEvent) {
             RealTimeBarEvent typedEvent = (RealTimeBarEvent) event;
@@ -80,11 +51,6 @@ public class ReplayApp implements IApp {
             throw new RuntimeException("Unsupported event: " + ToStringBuilder.reflectionToString(event));
         }
 
-        ib.handleReplayEvent(contract, event);
-    }
-
-    @Override
-    public void initMarketData(Contract contract) {
-        // TODO Auto-generated method stub       
+        ctx.getReplayBroker().handleReplayEvent(contract, event);
     }
 }

@@ -9,21 +9,21 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 
-import jo.filter.Filter;
+import jo.controller.IBroker;
 import jo.handler.OrderHandlerAdapter;
+import jo.model.Context;
 import jo.model.MarketData;
 import jo.model.OrderStatusInput;
 import jo.position.PositionSizeStrategy;
 import jo.trade.TradeRef;
-import jo.trade.TradeBook;
 
 public abstract class BaseBot implements Bot {
     protected Logger log = LogManager.getLogger(this.getClass());
     protected Contract contract;
     protected PositionSizeStrategy positionSize;
     protected MarketData md;
-
-    protected Filter positionFilter;
+    protected Context ctx;
+    protected IBroker ib;
 
     protected Order openOrder;
     protected Order closeOrder;
@@ -45,7 +45,7 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void openPositionOrderFilled(int orderId, double avgFillPrice) {
-        TradeBook.addExecution(orderId, avgFillPrice);
+        ctx.getTradeBook().addExecution(orderId, avgFillPrice);
     }
 
     protected void openPositionOrderCancelled() {
@@ -56,7 +56,7 @@ public abstract class BaseBot implements Bot {
     }
 
     protected void closePositionOrderFilled(int orderId, double avgFillPrice) {
-        TradeBook.addExecution(orderId, avgFillPrice);
+        ctx.getTradeBook().addExecution(orderId, avgFillPrice);
     }
 
     protected void closePositionOrderCancelled() {

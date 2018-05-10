@@ -62,8 +62,4 @@ public class ATR {
 
         return value;
     }
-
-    public static void main(String[] args) {
-        System.out.println(BarsPctChange.of(1, 2));
-    }
 }

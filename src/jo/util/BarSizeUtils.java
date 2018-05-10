@@ -43,8 +43,4 @@ public class BarSizeUtils {
 
         return timeUnit.toSeconds(duration);
     }
-
-    public static void main(String[] args) {
-        System.out.println(getRatio(BarSize._1_min, BarSize._5_secs));
-    }
 }

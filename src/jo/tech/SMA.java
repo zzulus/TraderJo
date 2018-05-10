@@ -72,13 +72,4 @@ public class SMA {
 
         return out[0];
     }
-
-    public static void main(String[] args) {
-        TDoubleNakedArrayList series = new TDoubleNakedArrayList();
-        series.add(0);
-        series.add(1);
-        series.add(20);
-
-        System.out.println(of(series));
-    }
 }

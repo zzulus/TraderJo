@@ -15,17 +15,18 @@ import jo.util.Formats;
 import jo.util.LongShort;
 
 public class TradeBook {
+    private static final int HALT_STOP_LOSS = -50;
     public static final Logger log = LogManager.getLogger("PNL");
     public static final Logger csv = LogManager.getLogger("PNLCSV");
     static {
-        csv.info("Date\tTrade\tAction\tSymbol\tQty\tOpen\tClose\tP&L\tContract P&L\tTotal");
+        csv.info("Date Trade Action Symbol Qty OpenPrice ClosePrice OpenTime CloseTime P&L ContractP&L Total");
     }
 
-    private static volatile double grandTotalPnL = 0;
-    private static Map<String, MutableDouble> pnlByContract = new ConcurrentHashMap<>();
-    private static Map<Integer, Trade> trades = new ConcurrentHashMap<>();
+    private volatile double grandTotalPnL = 0;
+    private Map<String, MutableDouble> pnlByContract = new ConcurrentHashMap<>();
+    private Map<Integer, Trade> trades = new ConcurrentHashMap<>();
 
-    public static synchronized void addOrder(Contract contract, Order order) {
+    public synchronized void addOrder(Contract contract, Order order) {
         int orderId = order.orderId();
 
         if (trades.containsKey(orderId)) {
@@ -37,7 +38,7 @@ public class TradeBook {
         trades.put(orderId, trade);
     }
 
-    public static synchronized void addExecution(int orderId, double avgFillPrice) {
+    public synchronized void addExecution(int orderId, double avgFillPrice) {
         Trade trade = trades.get(orderId);
 
         // sanity check
@@ -67,13 +68,13 @@ public class TradeBook {
 
         calculatePnL(openTrade, closeTrade);
 
-        if (grandTotalPnL < -100) {
-            System.err.println("Grand total loss " + grandTotalPnL + " > $100, halt");
+        if (grandTotalPnL < HALT_STOP_LOSS) {
+            System.err.println("Grand total loss " + grandTotalPnL + " > $50, halt");
             System.exit(-1);
         }
     }
 
-    private static void calculatePnL(Trade openTrade, Trade closeTrade) {
+    private void calculatePnL(Trade openTrade, Trade closeTrade) {
         String symbol = closeTrade.getContract().symbol();
 
         // sanity check
@@ -100,24 +101,28 @@ public class TradeBook {
         Thread.currentThread().setName(openTrade.getTradeRef());
 
         // TODO use MDC
-        log.info("{} {}, qty {}, open {}, close {}, P&L {}. Contract P&L {}. Total P&L {}",
+        log.info("Trade {}. {} {}, qty {}, open {}, close {}, open time {}, close time {}. P&L {}. Contract P&L {}. Total P&L {}",
                 openTrade.getTradeRef(),
                 isLongTrade ? "Long" : "Short",
                 symbol,
                 totalQuantity,
                 Formats.fmt(openTrade.getAvgFillPrice()),
                 Formats.fmt(closePrice),
+                Formats.fmtTime(openTrade.getFillTime()),
+                Formats.fmtTime(closeTrade.getFillTime()),
                 Formats.fmt(pnl),
                 Formats.fmt(contractPnl.doubleValue()),
                 Formats.fmt(grandTotalPnL));
 
-        csv.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        csv.info("{} {} {} {} {} {} {} {} {} {} {}",
                 openTrade.getTradeRef(),
                 isLongTrade ? "Long" : "Short",
                 symbol,
                 totalQuantity,
                 Formats.fmt(openTrade.getAvgFillPrice()),
                 Formats.fmt(closePrice),
+                Formats.fmtTime(openTrade.getFillTime()),
+                Formats.fmtTime(closeTrade.getFillTime()),
                 Formats.fmt(pnl),
                 Formats.fmt(contractPnl.doubleValue()),
                 Formats.fmt(grandTotalPnL));

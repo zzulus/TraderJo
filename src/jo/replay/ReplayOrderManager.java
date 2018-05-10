@@ -29,15 +29,15 @@ import jo.recording.event.TickPriceEvent;
 public class ReplayOrderManager {
     private static final Logger log = LogManager.getLogger(ReplayOrderManager.class);
     private static final Set<TickType> acceptedTickTypes = ImmutableSet.of(TickType.ASK, TickType.BID, TickType.LAST);
-    private ReplayApp app;
+    private final ReplayContext ctx;
     private final Map<Integer, ReplayOrder> openOrders = new HashMap<>();
     private final List<ReplayOrder> filledOrders = new ArrayList<>();
     private final Map<String, MutableInt> positions = new HashMap<>();
     private double pnl = 0;
     private double commissions = 0;
 
-    public void setApp(ReplayApp app) {
-        this.app = app;
+    public ReplayOrderManager(ReplayContext ctx) {        
+        this.ctx = ctx;
     }
 
     public synchronized void tick(Contract contract, AbstractEvent event) {
@@ -67,7 +67,7 @@ public class ReplayOrderManager {
 
             OrderType orderType = order.orderType();
             Action action = order.action();
-            MarketData marketData = app.getMarketData(replayOrder.getContract().symbol());
+            MarketData marketData = ctx.getMarketData(replayOrder.getContract().symbol());
 
             double buyPrice = marketData.getAskPrice();
             double sellPrice = marketData.getBidPrice();
@@ -137,7 +137,7 @@ public class ReplayOrderManager {
         OrderState orderState = newOrderState(OrderStatus.Filled.name());
         IOrderHandler handler = replayOrder.getHandler();
         handler.orderState(null, orderState); // TODO
-        
+
         OrderStatusInput input = new OrderStatusInput();
         input.setStatus(OrderStatus.Filled);
         input.setFilled(order.totalQuantity());
@@ -145,7 +145,7 @@ public class ReplayOrderManager {
         input.setAvgFillPrice(executePrice);
         input.setParentId(order.parentId());
         input.setLastFillPrice(executePrice);
-        
+
         handler.orderStatus(input);
     }
 

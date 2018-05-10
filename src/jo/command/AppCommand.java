@@ -1,8 +1,7 @@
 package jo.command;
 
-import jo.controller.IApp;
-import jo.controller.IBroker;
+import jo.model.Context;
 
 public interface AppCommand {
-    void execute(IBroker ib, IApp app);
+    void execute(Context ctx);
 }

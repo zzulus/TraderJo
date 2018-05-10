@@ -1,6 +1,7 @@
 package jo.bot;
 
 import static jo.util.Formats.fmt;
+import static jo.util.LongShort.isLongByOpen;
 import static jo.util.PriceUtils.fixPriceVariance;
 
 import java.util.concurrent.TimeUnit;
@@ -9,21 +10,22 @@ import com.ib.client.Contract;
 import com.ib.client.OrderStatus;
 import com.ib.client.Types.BarSize;
 
-import jo.controller.IApp;
 import jo.controller.IBroker;
-import jo.filter.Filter;
-import jo.filter.NasdaqRegularHoursFilter;
+import jo.filter.NasdaqRegularHours;
 import jo.model.BarType;
 import jo.model.Bars;
+import jo.model.Context;
 import jo.position.ATRMaxOfTrailAmountStrategy;
+import jo.position.ATRPercentileOfTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
+import jo.tech.ATR;
 import jo.tech.BarsPctChange;
 import jo.tech.ChangeList;
 import jo.tech.EMA;
 import jo.tech.StopTrail;
-import jo.trade.TradeBook;
 import jo.util.AsyncExec;
+import jo.util.LongShort;
 import jo.util.NullUtils;
 import jo.util.Orders;
 import jo.util.SyncSignal;
@@ -47,9 +49,6 @@ public class MovingAverageBot extends BaseBot {
     public int period = 18;
     private TrailAmountStrategy trailAmountStrategy;
 
-    private IBroker ib;
-    private IApp app;
-    private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
     private BotState botStatePrev;
     private StopTrail stopTrail;
     private int skipBarIdx;
@@ -68,21 +67,20 @@ public class MovingAverageBot extends BaseBot {
     private BarsPctChange changeC1;
     private BarsPctChange changeC2;
     private ChangeList ocChanges;
+    private ATR startingStopLoss;
 
     public MovingAverageBot(Contract contract, PositionSizeStrategy positionSize) {
         super(contract, positionSize);
     }
 
     @Override
-    public void init(IBroker ib, IApp app) {
+    public void init(Context ctx) {
         log.info("Start bot for {}", contract.symbol());
 
-        this.ib = ib;
-        this.app = app;
+        this.ctx = ctx;
+        this.ib = ctx.getIb();
 
-        this.app.initMarketData(contract);
-
-        this.md = app.getMarketData(contract.symbol());
+        this.md = ctx.initMarketData(contract);
         this.priceSignal = md.getSignal();
         this.signal = priceSignal;
 
@@ -115,8 +113,10 @@ public class MovingAverageBot extends BaseBot {
         //            this.trailAmountStrategy = new HighLowAvgTrailAmountStrategy(maBars, 180, 0);
         //        }
 
-        this.trailAmountStrategy = new ATRMaxOfTrailAmountStrategy(maBars, 3.0, period - 1, period);
-        this.trailAmountStrategy.init(ib, app);
+        this.trailAmountStrategy = new ATRPercentileOfTrailAmountStrategy(maBars, 3.0, period - 1, 20, 0.8);
+        this.trailAmountStrategy.init(this.ctx);
+
+        this.startingStopLoss = new ATR(maBars, period - 1, 0);
     }
 
     @Override
@@ -217,24 +217,22 @@ public class MovingAverageBot extends BaseBot {
 
         boolean openLong = //maEdgeGoingUp
                 maRtGoingUp
-                        && Math.abs(barClose0 - barOpen0) > 0.02
                         && barClose0 > barOpen0
                         && barClose1 > barOpen1
                         && barClose2 > barOpen2
                         && barLow0 > maEdgeVal0
-                        && lastPrice > maEdgeVal0
-                        //&& bidPrice > maEdgeVal0
-                        && askPrice > maEdgeVal0;
+                        && lastPrice > maEdgeVal0;
+        //&& bidPrice > maEdgeVal0
+        //&& askPrice > maEdgeVal0;
 
         boolean openShort = //maEdgeGoingDown
                 maRtGoingDown
-                        && Math.abs(barClose0 - barOpen0) > 0.02
                         && barClose0 < barOpen0
                         && barClose1 < barOpen1
                         && barClose2 < barOpen2
                         && barHigh0 < maEdgeVal0
                         && lastPrice < maEdgeVal0
-                        && bidPrice < maEdgeVal0
+        //&& bidPrice < maEdgeVal0
         //&& askPrice < maEdgeVal0
         ;
 
@@ -300,8 +298,8 @@ public class MovingAverageBot extends BaseBot {
                 closeOrder.transmit(true);
             }
 
-            TradeBook.addOrder(contract, openOrder);
-            TradeBook.addOrder(contract, closeOrder);
+            ctx.getTradeBook().addOrder(contract, openOrder);
+            ctx.getTradeBook().addOrder(contract, closeOrder);
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
@@ -329,6 +327,24 @@ public class MovingAverageBot extends BaseBot {
     protected void openPositionOrderFilled(int orderId, double avgFillPrice) {
         super.openPositionOrderFilled(orderId, avgFillPrice);
         stopTrail.start();
+
+        Double startingStopLossPrice = startingStopLoss.get();
+
+        if (startingStopLossPrice != null) {
+            double stopLossPrice;
+            if (isLongByOpen(openOrder)) {
+                stopLossPrice = avgFillPrice - startingStopLossPrice;
+            } else {
+                stopLossPrice = avgFillPrice + startingStopLossPrice;
+            }
+
+            log.info("Open price {}, Trail ATR {}, Setting starting stop loss at {}",
+                    fmt(avgFillPrice),
+                    fmt(startingStopLossPrice),
+                    fmt(stopLossPrice));
+
+            stopTrail.maybeUpdateStopPrice(stopLossPrice);
+        }
     }
 
     @Override
@@ -361,7 +377,7 @@ public class MovingAverageBot extends BaseBot {
                     return;
                 }
 
-                if (nasdaqIsOpen.isActive(app, contract, md)) {
+                if (NasdaqRegularHours.INSTANCE.isMarketOpen()) {
                     runLoop();
                 }
             }

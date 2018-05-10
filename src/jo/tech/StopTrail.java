@@ -71,7 +71,7 @@ public class StopTrail {
         log.info("Exit");
     }
 
-    public void maybeUpdateStopPrice(double proposedStopPrice) {
+    public synchronized void maybeUpdateStopPrice(double proposedStopPrice) {
         double lastPrice = md.getLastPrice();
         double orderPrice = fixPriceVariance(order.auxPrice());
         boolean update = false;
@@ -108,7 +108,7 @@ public class StopTrail {
         return fixPriceVariance(trailStop);
     }
 
-    public void setTrailAmount(double newTrailAmount) {
+    public synchronized void setTrailAmount(double newTrailAmount) {
         newTrailAmount = fixPriceVariance(newTrailAmount);
 
         if (trailAmount == this.trailAmount) {

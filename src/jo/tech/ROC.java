@@ -47,17 +47,4 @@ public class ROC {
 
         return value;
     }
-
-    public static void main(String[] args) {
-        TDoubleList l = new TDoubleArrayList();
-        l.add(177.18);
-        l.add(0);
-        l.add(0);
-        l.add(0);
-        l.add(0);
-        l.add(177.45);
-
-        ROC roc = new ROC(l, 5, 0);
-        System.out.println(roc.get());
-    }
 }

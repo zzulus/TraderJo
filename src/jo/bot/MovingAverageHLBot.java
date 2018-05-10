@@ -10,22 +10,20 @@ import com.ib.client.OrderStatus;
 import com.ib.client.Types.Action;
 import com.ib.client.Types.BarSize;
 
-import jo.controller.IApp;
 import jo.controller.IBroker;
-import jo.filter.Filter;
-import jo.filter.NasdaqRegularHoursFilter;
+import jo.filter.NasdaqRegularHours;
 import jo.model.BarType;
 import jo.model.Bars;
+import jo.model.Context;
 import jo.model.Stats;
 import jo.position.DollarValueTrailAmountStrategy;
 import jo.position.HighLowAvgTrailAmountStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.position.TrailAmountStrategy;
+import jo.tech.BarsPctChange;
 import jo.tech.ChangeList;
 import jo.tech.EMA;
-import jo.tech.BarsPctChange;
 import jo.tech.StopTrail;
-import jo.trade.TradeBook;
 import jo.util.AsyncExec;
 import jo.util.NullUtils;
 import jo.util.Orders;
@@ -50,10 +48,6 @@ public class MovingAverageHLBot extends BaseBot {
 
     public int period = 6;
     private TrailAmountStrategy trailAmountStrategy;
-
-    private IBroker ib;
-    private IApp app;
-    private Filter nasdaqIsOpen = new NasdaqRegularHoursFilter(1);
     private BotState botStatePrev;
     private StopTrail stopTrail;
     private int skipBarIdx = 0;
@@ -79,15 +73,13 @@ public class MovingAverageHLBot extends BaseBot {
     }
 
     @Override
-    public void init(IBroker ib, IApp app) {
+    public void init(Context ctx) {
         log.info("Start bot for {}", contract.symbol());
 
-        this.ib = ib;
-        this.app = app;
+        this.ctx = ctx;
+        this.ib = ctx.getIb();
 
-        this.app.initMarketData(contract);
-
-        this.md = app.getMarketData(contract.symbol());
+        this.md = ctx.initMarketData(contract);
         this.priceSignal = md.getSignal();
         this.signal = priceSignal;
 
@@ -122,7 +114,7 @@ public class MovingAverageHLBot extends BaseBot {
             //this.trailAmountStrategy = new HistoricalHighLowAvgTrailAmountStrategy(BarSize._1_min, 1, 0, contract);
         }
 
-        this.trailAmountStrategy.init(ib, app);
+        this.trailAmountStrategy.init(ctx);
     }
 
     @Override
@@ -289,8 +281,8 @@ public class MovingAverageHLBot extends BaseBot {
                 closeOrder.transmit(true);
             }
 
-            TradeBook.addOrder(contract, openOrder);
-            TradeBook.addOrder(contract, closeOrder);
+            ctx.getTradeBook().addOrder(contract, openOrder);
+            ctx.getTradeBook().addOrder(contract, closeOrder);
 
             ib.placeOrModifyOrder(contract, openOrder, openPositionOrderHandler);
             ib.placeOrModifyOrder(contract, closeOrder, closePositionOrderHandler);
@@ -350,7 +342,7 @@ public class MovingAverageHLBot extends BaseBot {
                     return;
                 }
 
-                if (nasdaqIsOpen.isActive(app, contract, md)) {
+                if (NasdaqRegularHours.INSTANCE.isMarketOpen()) {
                     runLoop();
                 }
             }

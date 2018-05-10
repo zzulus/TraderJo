@@ -1,5 +1,7 @@
 # https://seekingalpha.com/earnings/earnings-calendar
 # https://finance.yahoo.com/calendar/earnings/
+CDEV
+CRSP
 APLE
 CTSH
 EVHC
