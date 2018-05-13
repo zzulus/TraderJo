@@ -66,7 +66,7 @@ public class TestBotEntryApp {
     private void run() {
         int size = srcBars.getSize();
         for (int i = 1; i < size; i++) {
-            Bar bar = srcBars.getBar(size - i);
+            Bar bar = srcBars.getBarFromEnd(size - i);
             maBars.addBar(bar);
             mayBeOpenPosition();
         }

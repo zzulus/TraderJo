@@ -67,7 +67,7 @@ public class MovingAverageBot extends BaseBot {
     private BarsPctChange changeC1;
     private BarsPctChange changeC2;
     private ChangeList ocChanges;
-    private ATR startingStopLoss;
+    private ATR atr1x;
 
     public MovingAverageBot(Contract contract, PositionSizeStrategy positionSize) {
         super(contract, positionSize);
@@ -116,7 +116,7 @@ public class MovingAverageBot extends BaseBot {
         this.trailAmountStrategy = new ATRPercentileOfTrailAmountStrategy(maBars, 3.0, period - 1, 20, 0.8);
         this.trailAmountStrategy.init(this.ctx);
 
-        this.startingStopLoss = new ATR(maBars, period - 1, 0);
+        this.atr1x = new ATR(maBars, period - 1, 0);
     }
 
     @Override
@@ -194,11 +194,12 @@ public class MovingAverageBot extends BaseBot {
         double barClose2 = maBars.getLastBar(BarType.CLOSE, 2);
 
         Double trailAmount = trailAmountStrategy.getTrailAmount(md);
+        Double atrVal = atr1x.get();
 
         if (NullUtils.anyNull(maEdgeVal0, maEdgeVal1, maEdgeVal2))
             return;
 
-        if (NullUtils.anyNull(trailAmount))
+        if (NullUtils.anyNull(trailAmount, atrVal))
             return;
 
         double maEdgeValChange1 = BarsPctChange.of(maEdgeVal2, maEdgeVal1);
@@ -217,9 +218,10 @@ public class MovingAverageBot extends BaseBot {
 
         boolean openLong = //maEdgeGoingUp
                 maRtGoingUp
+                        && Math.abs(barClose0 - barOpen0) < atrVal
                         && barClose0 > barOpen0
                         && barClose1 > barOpen1
-                        && barClose2 > barOpen2
+                        //&& barClose2 > barOpen2
                         && barLow0 > maEdgeVal0
                         && lastPrice > maEdgeVal0;
         //&& bidPrice > maEdgeVal0
@@ -227,9 +229,10 @@ public class MovingAverageBot extends BaseBot {
 
         boolean openShort = //maEdgeGoingDown
                 maRtGoingDown
+                        && Math.abs(barClose0 - barOpen0) < atrVal
                         && barClose0 < barOpen0
                         && barClose1 < barOpen1
-                        && barClose2 < barOpen2
+                        //&& barClose2 < barOpen2
                         && barHigh0 < maEdgeVal0
                         && lastPrice < maEdgeVal0
         //&& bidPrice < maEdgeVal0
@@ -328,7 +331,7 @@ public class MovingAverageBot extends BaseBot {
         super.openPositionOrderFilled(orderId, avgFillPrice);
         stopTrail.start();
 
-        Double startingStopLossPrice = startingStopLoss.get();
+        Double startingStopLossPrice = atr1x.get();
 
         if (startingStopLossPrice != null) {
             double stopLossPrice;
@@ -337,6 +340,8 @@ public class MovingAverageBot extends BaseBot {
             } else {
                 stopLossPrice = avgFillPrice + startingStopLossPrice;
             }
+
+            stopLossPrice = fixPriceVariance(stopLossPrice);
 
             log.info("Open price {}, Trail ATR {}, Setting starting stop loss at {}",
                     fmt(avgFillPrice),

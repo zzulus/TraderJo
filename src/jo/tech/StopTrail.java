@@ -74,6 +74,7 @@ public class StopTrail {
     public synchronized void maybeUpdateStopPrice(double proposedStopPrice) {
         double lastPrice = md.getLastPrice();
         double orderPrice = fixPriceVariance(order.auxPrice());
+        proposedStopPrice = fixPriceVariance(proposedStopPrice);
         boolean update = false;
 
         //        log.info("Check: {} order stop price {}, proposed stop price {}, trail amount {}, last price {}",

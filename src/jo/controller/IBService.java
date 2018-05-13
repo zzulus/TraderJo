@@ -4,6 +4,8 @@
 package jo.controller;
 
 import static java.util.Collections.emptyList;
+import static jo.util.Formats.fmt;
+import static jo.util.PriceUtils.fixPriceVariance;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -98,6 +100,8 @@ import jo.model.Bar;
 import jo.model.OrderStatusInput;
 import jo.util.AdvisorUtil;
 import jo.util.ConcurrentHashSet;
+import jo.util.Formats;
+import jo.util.PriceUtils;
 
 public class IBService implements IBroker {
     private static final Logger log = LogManager.getLogger(IBService.class);
@@ -456,6 +460,18 @@ public class IBService implements IBroker {
             order.orderId(getNextOrderId());
         }
 
+        if (order.lmtPrice() != Double.MAX_VALUE) {
+            order.lmtPrice(fixPriceVariance(order.lmtPrice()));
+        }
+
+        if (order.auxPrice() != Double.MAX_VALUE) {
+            order.auxPrice(fixPriceVariance(order.auxPrice()));
+        }
+        
+        if (order.trailStopPrice() != Double.MAX_VALUE) {
+            order.trailStopPrice(fixPriceVariance(order.trailStopPrice()));
+        }
+
         log.info("placeOrModifyOrder: orderId {}, parentOrderId {}, symbol {}, orderType {}, action {}, totalQuantity {}, lmtPrice {}, auxPrice {}, trailStopPrice {}",
                 order.orderId(),
                 order.parentId(),
@@ -463,9 +479,9 @@ public class IBService implements IBroker {
                 order.getOrderType(),
                 order.action(),
                 order.totalQuantity(),
-                order.lmtPrice() == Double.MAX_VALUE ? "*" : order.lmtPrice(),
-                order.auxPrice() == Double.MAX_VALUE ? "*" : order.auxPrice(),
-                order.trailStopPrice() == Double.MAX_VALUE ? "*" : order.trailStopPrice());
+                order.lmtPrice() == Double.MAX_VALUE ? "*" : fmt(order.lmtPrice()),
+                order.auxPrice() == Double.MAX_VALUE ? "*" : fmt(order.auxPrice()),
+                order.trailStopPrice() == Double.MAX_VALUE ? "*" : fmt(order.trailStopPrice()));
 
         if (handler != null) {
             orderHandlers.put(order.orderId(), handler);

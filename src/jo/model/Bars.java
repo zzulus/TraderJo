@@ -1,8 +1,5 @@
 package jo.model;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.common.base.Preconditions;
 
 import gnu.trove.list.TDoubleList;
@@ -14,10 +11,8 @@ import jo.collection.TDoubleNakedArrayList;
 import jo.util.SyncSignal;
 
 public class Bars {
-    private static final Logger log = LogManager.getLogger(Bars.class);
     private int size = 0;
     private final SyncSignal signal = new SyncSignal();
-
     private final TLongList time = new TLongArrayList();
     private final TDoubleNakedArrayList high = new TDoubleNakedArrayList();
     private final TDoubleNakedArrayList low = new TDoubleNakedArrayList();
@@ -29,26 +24,32 @@ public class Bars {
 
     public Bar getLastBar() {
         Preconditions.checkArgument(size > 0, "No data yet");
-        return getBar(0);
+        return getBarFromEnd(0);
     }
 
-    public Bar getBar(int offsetFromEnd) {
+    /*
+     * Get Nth bar from the beginning, typical List behavior.
+     */
+    public Bar get(int i) {
+        Bar bar = new Bar();
+        bar.setTime(time.get(i));
+        bar.setHigh(high.get(i));
+        bar.setLow(low.get(i));
+        bar.setOpen(open.get(i));
+        bar.setClose(close.get(i));
+        bar.setWap(wap.get(i));
+        bar.setVolume(volume.get(i));
+        bar.setCount(count.get(i));
+
+        return bar;
+    }
+
+    public Bar getBarFromEnd(int offsetFromEnd) {
         Preconditions.checkArgument(size > 0, "No data yet");
 
         int offset = size - offsetFromEnd - 1;
         Preconditions.checkArgument(offset > -1, "Index out of bound: lastPos %s, offsetFromEnd %s", size, offsetFromEnd);
-
-        Bar bar = new Bar();
-        bar.setTime(time.get(offset));
-        bar.setHigh(high.get(offset));
-        bar.setLow(low.get(offset));
-        bar.setOpen(open.get(offset));
-        bar.setClose(close.get(offset));
-        bar.setWap(wap.get(offset));
-        bar.setVolume(volume.get(offset));
-        bar.setCount(count.get(offset));
-
-        return bar;
+        return get(offset);
     }
 
     public synchronized void addBar(Bar bar) {
