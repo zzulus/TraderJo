@@ -15,6 +15,21 @@ public class Stocks {
         return contract;
     }
 
+    public static Contract callOptionOf(String name, boolean smart, int strike, String date) {
+        Contract contract = new Contract();
+        contract.symbol(name);
+        contract.secType(SecType.OPT);
+        contract.currency(Currency.USD);
+        contract.exchange(smart ? "SMART" : "ISLAND");
+        //contract.primaryExch("ISLAND");
+        contract.lastTradeDateOrContractMonth(date);       
+        contract.right("C"); // call
+        contract.strike(strike);
+        contract.multiplier("100");
+
+        return contract;
+    }
+
     public static Contract smartOf(String name) {
         return of(name, true);
     }

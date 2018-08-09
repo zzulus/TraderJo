@@ -3,12 +3,12 @@ package jo.position;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class DollarValuePositionSizeStrategy implements PositionSizeStrategy {
+public class DollarValueWithRiskPositionSizeStrategy implements PositionSizeStrategy {
     protected final Logger log = LogManager.getLogger(this.getClass());
     private double maxDollarAmount;
     private double maxRiskDollarAmount;
 
-    public DollarValuePositionSizeStrategy(double maxDollarAmount, double maxRiskDollarAmount) {
+    public DollarValueWithRiskPositionSizeStrategy(double maxDollarAmount, double maxRiskDollarAmount) {
         this.maxDollarAmount = maxDollarAmount;
         this.maxRiskDollarAmount = maxRiskDollarAmount;
     }

@@ -24,7 +24,7 @@ import jo.bot.Bot;
 import jo.bot.DonchianBot;
 import jo.constant.Stocks;
 import jo.model.MarketData;
-import jo.position.DollarValuePositionSizeStrategy;
+import jo.position.DollarValueWithRiskPositionSizeStrategy;
 import jo.recording.event.AbstractEvent;
 import jo.recording.event.EventTypeRegistry;
 import jo.recording.event.MarketDepthEvent;
@@ -53,7 +53,7 @@ public class PlayerApp {
         }
         System.out.println();
 
-        DollarValuePositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(1000, 10);
+        DollarValueWithRiskPositionSizeStrategy positionSizeStrategy = new DollarValueWithRiskPositionSizeStrategy(1000, 10);
 
         for (double out = 0.09; out < 2.0; out += 0.02) {
             for (int lowerPeriod = 1; lowerPeriod < 50; lowerPeriod += 1) {

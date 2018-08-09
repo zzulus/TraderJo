@@ -148,6 +148,8 @@ public class MarketData implements IRealTimeBarHandler, ITopMktDataHandler, IDee
             return;
         }
 
+        System.out.println("tickPrice: " + tickType + "  " + price);
+
         if (isRecording) {
             recorder.tickPrice(tickType, price);
         }

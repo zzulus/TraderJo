@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import com.ib.client.Contract;
 
 import jo.bot.Bot;
-import jo.bot.MovingAverageBot;
+import jo.bot.MovingAverageAtrLimitBot;
 import jo.command.AppCommand;
 import jo.command.GetNextOrderIdCommand;
 import jo.command.StartBotsCommand;
@@ -20,7 +20,8 @@ import jo.controller.IBService;
 import jo.handler.IConnectionHandler;
 import jo.model.Context;
 import jo.model.DefaultContext;
-import jo.position.DollarValuePositionSizeStrategy;
+import jo.position.DollarValueWithRiskPositionSizeStrategy;
+import jo.position.FixedDollarValuePositionSizeStrategy;
 import jo.position.PositionSizeStrategy;
 import jo.util.AsyncExec;
 
@@ -28,23 +29,23 @@ public class TraderApp {
     private static final Logger log = LogManager.getLogger(TraderApp.class);
     private List<AppCommand> postConnectCommands = new ArrayList<>();
 
-    // Key - Stock name, e.g. SPY
-
     public static void main(String[] args) {
         new TraderApp().start();
     }
 
     public TraderApp() {
-        PositionSizeStrategy positionSizeStrategy = new DollarValuePositionSizeStrategy(500, 1.0);
+        PositionSizeStrategy positionSizeStrategy = new DollarValueWithRiskPositionSizeStrategy(500, 1.0);
+        positionSizeStrategy = new FixedDollarValuePositionSizeStrategy(1000);
 
         Set<String> stockSymbols = new LinkedHashSet<>();
         stockSymbols.addAll(MyStocks.EARNINGS_STOCKS);
         stockSymbols.addAll(MyStocks.STOCKS_TO_TRADE);
+        stockSymbols.addAll(MyStocks.TICKS_ONLY_ETFS);
 
         List<Bot> bots = new ArrayList<>();
         for (String stockSymbol : stockSymbols) {
             Contract contract = Stocks.smartOf(stockSymbol);
-            MovingAverageBot bot = new MovingAverageBot(contract, positionSizeStrategy);
+            MovingAverageAtrLimitBot bot = new MovingAverageAtrLimitBot(contract, positionSizeStrategy);
             bots.add(bot);
         }
 

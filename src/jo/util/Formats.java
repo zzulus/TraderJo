@@ -17,6 +17,10 @@ public class Formats {
         return v == Double.MAX_VALUE ? null : FMT2.format(v);
     }
 
+    public static String fmt(Double v) {
+        return v == null ? null : FMT2.format(v);
+    }
+
     /** Format with two decimals; return null for zero. */
     public static String fmtNz(double v) {
         return v == Double.MAX_VALUE || v == 0 ? null : FMT2.format(v);

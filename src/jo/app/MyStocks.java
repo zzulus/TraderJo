@@ -15,9 +15,9 @@ import com.google.common.collect.ImmutableSet;
 public class MyStocks {
     // http://etfdb.com/compare/volume/
     public static final Set<String> TICKS_ONLY_ETFS = ImmutableSet.of(
-            "SPY",
-            "SQQQ",
-            "TQQQ",
+            //"SPY",
+            //"SQQQ",
+            //"TQQQ",
             "QQQ",
             "EEM",
             "XLF",

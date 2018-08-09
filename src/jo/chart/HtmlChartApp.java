@@ -1,5 +1,7 @@
 package jo.chart;
 
+import static jo.util.Formats.fmt;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -20,6 +22,7 @@ import com.ib.client.Types.BarSize;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TLongList;
 import jo.model.Bar;
+import jo.model.BarType;
 import jo.model.Bars;
 import jo.model.MarketData;
 import jo.recording.event.AbstractEvent;
@@ -27,6 +30,8 @@ import jo.recording.event.EventTypeRegistry;
 import jo.recording.event.MarketDepthEvent;
 import jo.recording.event.RealTimeBarEvent;
 import jo.recording.event.TickSizeEvent;
+import jo.tech.EMA;
+import jo.util.Formats;
 
 public class HtmlChartApp {
     private static final SimpleDateFormat TIME_FMT = new SimpleDateFormat("HH:mm:ss");
@@ -51,15 +56,17 @@ public class HtmlChartApp {
         TDoubleList high = oneMinBars.getHigh();
 
         for (int i = 0; i < size; i++) {
-            String s = String.format("['%s', %.2f, %.2f, %.2f, %.2f, %.2f]",
+            EMA ema = new EMA(oneMinBars, BarType.CLOSE, 18, size - i);
+
+            String s = String.format("['%s',  %.2f, %.2f, %.2f, %.2f,  %s]",
                     TIME_FMT.format(new Date(time.get(i) * 1000)),
                     low.get(i),
                     open.get(i),
                     close.get(i),
                     high.get(i),                    
-                    (open.get(i) + close.get(i))/2 - 2
-                    
-                    );
+                    fmt(ema.get())                    
+
+            );
             System.out.print(s);
 
             if (i < size - 1) {
