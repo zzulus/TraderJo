@@ -104,7 +104,7 @@ public class Bar {
     }
 
     public String formattedTime() {
-        return Formats.fmtDate(this.time * 1000);
+        return Formats.fmtDateTime(this.time * 1000);
     }
 
     @Override

@@ -15,6 +15,7 @@ import com.google.common.collect.Sets;
 import com.ib.client.Contract;
 import com.ib.client.HistoricalTick;
 import com.ib.client.HistoricalTickBidAsk;
+import com.ib.client.HistoricalTickLast;
 import com.ib.client.Types.WhatToShow;
 
 import jo.constant.Stocks;
@@ -55,16 +56,18 @@ public class LeapsApp {
             @Override
             public void connected() {
                 //String endDateTime = dateTimeFmt.format(new Date());
-                String endDateTime = "20180808 12:30:00";
+                String endDateTime = "20180809 12:50:00";
                 //System.out.println(endDateTime);
 
                 AsyncExec.execute(() -> {
                     for (Holder h : list) {
                         stockPriceVal = AsyncVal.create();
+                        System.out.println(h.contract.symbol());
 
-                        ib.reqHistoricalTicks(h.contract, endDateTime, null, 1, WhatToShow.MIDPOINT, true, true,
+                        ib.reqHistoricalTicks(h.contract, null, endDateTime, 1, WhatToShow.MIDPOINT, true, true,
                                 new HistoricalTickHandlerAdapter() {
                                     public void historicalTick(int reqId, List<HistoricalTick> ticks, boolean last) {
+                                        System.out.println("S historicalTick");
                                         if (!last)
                                             return;
 
@@ -77,6 +80,7 @@ public class LeapsApp {
 
                                     @Override
                                     public void historicalTickBidAsk(int reqId, List<HistoricalTickBidAsk> ticks, boolean last) {
+                                        System.out.println("S historicalTickBidAsk");
                                         if (last) {
                                             if (!ticks.isEmpty()) {
                                                 stockPriceVal.set(ticks.get(0).priceAsk());
@@ -84,6 +88,10 @@ public class LeapsApp {
                                                 stockPriceVal.set(null);
                                             }
                                         }
+                                    }
+
+                                    public void historicalTickLast(int reqId, List<HistoricalTickLast> ticks, boolean allReceived) {
+                                        System.out.println("S historicalTickLast");
                                     }
                                 });
                         final Double stockPrice = stockPriceVal.get();
@@ -107,9 +115,11 @@ public class LeapsApp {
 
                             optionPriceWait = AsyncVal.create();
 
-                            ib.reqHistoricalTicks(optionContract, endDateTime, null, 1, WhatToShow.MIDPOINT, true, true,
+                            ib.reqHistoricalTicks(optionContract, null, endDateTime, 1, WhatToShow.MIDPOINT, true, true,
                                     new HistoricalTickHandlerAdapter() {
                                         public void historicalTick(int reqId, List<HistoricalTick> ticks, boolean last) {
+                                            System.out.println("O historicalTick");
+
                                             if (!last)
                                                 return;
 
@@ -128,13 +138,22 @@ public class LeapsApp {
 
                                                 System.out.println("  strike " + strike + ": " + strikePrice
                                                         + "   T " + Formats.fmt(timeValue)
-                                                        + "   P " + Formats.fmt(timeValuePerc)+"%");
+                                                        + "   P " + Formats.fmt(timeValuePerc) + "%");
                                                 h.strikes.add(strike);
                                                 h.strikesPrice.add(strikePrice);
                                                 optionPriceWait.set(strikePrice);
                                             } else {
                                                 optionPriceWait.set(null);
                                             }
+                                        }
+
+                                        @Override
+                                        public void historicalTickBidAsk(int reqId, List<HistoricalTickBidAsk> ticks, boolean last) {
+                                            System.out.println("O historicalTickBidAsk");
+                                        }
+
+                                        public void historicalTickLast(int reqId, List<HistoricalTickLast> ticks, boolean allReceived) {
+                                            System.out.println("O historicalTickLast");
                                         }
                                     });
                             optionPriceWait.get();
@@ -148,6 +167,8 @@ public class LeapsApp {
 
             @Override
             public void message(int id, int errorCode, String errorMsg) {
+                System.err.println(errorCode + "  " + errorMsg);
+
                 Set<Integer> ignore = Sets.newHashSet(2104, 2106, 2103, 2105);
                 if (ignore.contains(errorCode))
                     return;

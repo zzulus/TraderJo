@@ -9,6 +9,7 @@ public class Formats {
     private static final Format FMT2 = new DecimalFormat("#,##0.00");
     private static final Format FMT0 = new DecimalFormat("#,##0");
     private static final Format PCT = new DecimalFormat("0.0%");
+    private static final SimpleDateFormat DATE = new SimpleDateFormat("yyyy-MM-dd");
     private static final SimpleDateFormat DATE_TIME = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final SimpleDateFormat TIME = new SimpleDateFormat("HH:mm:ss");
 
@@ -37,17 +38,17 @@ public class Formats {
     }
 
     public static String fmtDate(long ms) {
+        return DATE.format(new Date(ms));
+    }
+    public static String fmtDateTime(long ms) {
         return DATE_TIME.format(new Date(ms));
     }
-
-    public static String fmtDate(Date d) {
+    public static String fmtDateTime(Date d) {
         return DATE_TIME.format(d);
     }
-
     public static String fmtTime(long ms) {
         return TIME.format(new Date(ms));
     }
-
     public static String fmtTime(Date d) {
         return TIME.format(d);
     }
